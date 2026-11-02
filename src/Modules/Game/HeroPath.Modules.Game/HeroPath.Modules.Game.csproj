@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Levels\HeroPath.Modules.Levels\HeroPath.Modules.Levels.csproj" />
+  </ItemGroup>
+
+</Project>

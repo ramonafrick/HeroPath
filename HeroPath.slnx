@@ -1,0 +1,25 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Hosts/">
+    <Project Path="src/Hosts/HeroPath.Web/HeroPath.Web.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/Game/">
+    <Project Path="src/Modules/Game/HeroPath.Modules.Game.UI/HeroPath.Modules.Game.UI.csproj" />
+    <Project Path="src/Modules/Game/HeroPath.Modules.Game/HeroPath.Modules.Game.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Levels/">
+    <Project Path="src/Modules/Levels/HeroPath.Modules.Levels.UI/HeroPath.Modules.Levels.UI.csproj" />
+    <Project Path="src/Modules/Levels/HeroPath.Modules.Levels/HeroPath.Modules.Levels.csproj" />
+  </Folder>
+  <Folder Name="/src/Shared/">
+    <Project Path="src/Shared/HeroPath.Shared.UI/HeroPath.Shared.UI.csproj" />
+    <Project Path="src/Shared/HeroPath.Shared/HeroPath.Shared.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/HeroPath.ArchitectureTests/HeroPath.ArchitectureTests.csproj" />
+    <Project Path="tests/HeroPath.E2E/HeroPath.E2E.csproj" />
+    <Project Path="tests/HeroPath.Modules.Game.Tests/HeroPath.Modules.Game.Tests.csproj" />
+    <Project Path="tests/HeroPath.Modules.Levels.Tests/HeroPath.Modules.Levels.Tests.csproj" />
+  </Folder>
+</Solution>

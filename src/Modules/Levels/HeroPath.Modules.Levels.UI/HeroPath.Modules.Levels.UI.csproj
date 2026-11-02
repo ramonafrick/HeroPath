@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\HeroPath.Modules.Levels\HeroPath.Modules.Levels.csproj" />
+    <ProjectReference Include="..\..\..\Shared\HeroPath.Shared.UI\HeroPath.Shared.UI.csproj" />
+  </ItemGroup>
+
+</Project>

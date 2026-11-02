@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3.mtp-v2" />
+    <PackageReference Include="bunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="Bunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Modules\Game\HeroPath.Modules.Game\HeroPath.Modules.Game.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Game\HeroPath.Modules.Game.UI\HeroPath.Modules.Game.UI.csproj" />
+  </ItemGroup>
+
+</Project>
