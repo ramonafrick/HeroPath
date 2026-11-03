@@ -72,6 +72,25 @@ public class LevelValidatorTests
     public static TheoryData<string> InvalidNames =>
         ["", " ", "   \t", "tab\there", "line\nbreak", "bell\a", new string('x', LevelLimits.MaxNameLength + 1)];
 
+    [Fact]
+    public void Validate_TenStrawberriesAndTenPizzas_IsValid()
+    {
+        var level = Valid() with { Width = 20, Height = 20, Start = new(0, 19), Goal = new(19, 0), Obstacles = [], Items = [.. Items(ItemKind.Strawberry, 10, 0), .. Items(ItemKind.Pizza, 10, 1)] };
+
+        Assert.Empty(LevelValidator.Validate(level));
+    }
+
+    [Fact]
+    public void Validate_ElevenStrawberries_IsTooManyStrawberries() =>
+        AssertOnly(Valid() with { Width = 20, Height = 20, Start = new(0, 19), Goal = new(19, 0), Obstacles = [], Items = Items(ItemKind.Strawberry, 11, 0) }, LevelValidationErrorKind.TooManyStrawberries);
+
+    [Fact]
+    public void Validate_ElevenPizzas_IsTooManyPizzas() =>
+        AssertOnly(Valid() with { Width = 20, Height = 20, Start = new(0, 19), Goal = new(19, 0), Obstacles = [], Items = Items(ItemKind.Pizza, 11, 0) }, LevelValidationErrorKind.TooManyPizzas);
+
+    private static LevelItem[] Items(ItemKind kind, int count, int row) =>
+        [.. Enumerable.Range(0, count).Select(i => new LevelItem(i, row, kind))];
+
     private static LevelDefinition Valid() => new()
     {
         Id = "test",

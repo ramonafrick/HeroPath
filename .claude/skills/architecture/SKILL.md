@@ -12,12 +12,12 @@ Docs: `docs/Architektur C4.md` (§3 containers, §4 components, §6 decisions, �
 ```
 src/
   Shared/
-    HeroPath.Shared/                 pure C#: cross-module contracts (IAppStorage, …)
+    HeroPath.Shared/                 pure C#: cross-module contracts (IAppStorage, …), TextCleaner
     HeroPath.Shared.UI/              RCL: MainLayout, NotFound, theme, SVG graphics, localization, LanguageSwitcher
   Modules/
     Levels/
-      HeroPath.Modules.Levels/       pure C#: Domain/ (Position, Grid, ObstacleKind, ItemKind, LevelDefinition, LevelLimits)
-                                               Application/ (LevelValidator, LevelReadResult, ILevelSource, LevelRepository)
+      HeroPath.Modules.Levels/       pure C#: Domain/ (Position, Grid, ObstacleKind, ItemKind, LevelDefinition, LevelLimits, LevelSolver, EditorTool, LevelEditing)
+                                               Application/ (LevelValidator, LevelReadResult, LevelCheck, LevelIdGenerator, ILevelSource, LevelRepository)
                                                Infrastructure/ (embedded Levels/*.json, JSON context, storage-backed source)
       HeroPath.Modules.Levels.UI/    RCL: board view, LevelPicker, LevelEditor, LevelsModuleExtensions, Resources/
     Game/

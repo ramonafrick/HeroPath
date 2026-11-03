@@ -41,7 +41,7 @@ public class StandardLevelsTests
     {
         var grid = StandardLevels.Get(id).ToGrid();
 
-        Assert.True(LevelSolver.IsSolvable(grid), $"Level '{id}' cannot be solved.");
+        Assert.True(LevelSolver.ShortestSolution(grid) is not null, $"Level '{id}' cannot be solved.");
     }
 
 

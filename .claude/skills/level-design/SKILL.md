@@ -54,7 +54,7 @@ public static TheoryData<string> LevelIds => [.. StandardLevels.All.Select(l => 
 public void Level_IsSolvable(string id) { /* BFS */ }
 ```
 
-The BFS helper stays in the test project. The game itself has no solver (and no hint system, that's out of scope).
+The BFS lives in `HeroPath.Modules.Levels/Domain/LevelSolver.cs` (also used by `LevelCheck` for the level editor); the tests call it directly. The play page has no hint system (out of scope).
 
 ## When designing a new level
 

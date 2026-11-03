@@ -33,4 +33,10 @@ public enum LevelValidationErrorKind
     ItemOnStart,
     CellOccupiedTwice,
     RequiredItemsMissing,
+
+    /// <summary>More than <see cref="Domain.LevelLimits.MaxStrawberries"/> strawberries.</summary>
+    TooManyStrawberries,
+
+    /// <summary>More than <see cref="Domain.LevelLimits.MaxPizzas"/> pizzas.</summary>
+    TooManyPizzas,
 }

@@ -1,5 +1,4 @@
-using System.Globalization;
-using System.Text;
+using HeroPath.Shared.Application;
 
 namespace HeroPath.Modules.Game.Application;
 
@@ -76,26 +75,9 @@ public sealed class HeroChoice
     /// </summary>
     public static string NormalizeName(string? raw, HeroAvatar avatar)
     {
-        if (string.IsNullOrEmpty(raw))
-        {
-            return DefaultName(avatar);
-        }
-
-        var cleaned = string.Concat(raw.Where(character => !IsHidden(character))).Trim();
-        var builder = new StringBuilder();
-        var enumerator = StringInfo.GetTextElementEnumerator(cleaned);
-        for (var count = 0; count < MaxNameLength && enumerator.MoveNext(); count++)
-        {
-            builder.Append(enumerator.GetTextElement());
-        }
-
-        var result = builder.ToString().Trim();
+        var result = TextCleaner.Clean(raw, MaxNameLength);
         return result.Length == 0 ? DefaultName(avatar) : result;
     }
-
-    private static bool IsHidden(char character) =>
-        char.IsControl(character)
-        || CharUnicodeInfo.GetUnicodeCategory(character) is UnicodeCategory.Format or UnicodeCategory.LineSeparator or UnicodeCategory.ParagraphSeparator;
 
     /// <summary>
     /// The name field after the child switched hero: an empty field or the previous hero's default name becomes the new

@@ -53,6 +53,8 @@ public static partial class LevelValidator
             }
 
             AddIf(level.RequireAllItems && level.Items.All(i => i.Kind != ItemKind.Strawberry), LevelValidationErrorKind.RequiredItemsMissing);
+            AddIf(level.Items.Count(i => i.Kind == ItemKind.Strawberry) > LevelLimits.MaxStrawberries, LevelValidationErrorKind.TooManyStrawberries);
+            AddIf(level.Items.Count(i => i.Kind == ItemKind.Pizza) > LevelLimits.MaxPizzas, LevelValidationErrorKind.TooManyPizzas);
         }
 
         return errors;
