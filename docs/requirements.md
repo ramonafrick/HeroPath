@@ -1,143 +1,116 @@
-# Requirements: M1 – Domain der Module Levels und Game
+# Requirements: M2 – Blazor-Grundgerüst, Spielfeld, Figur, Play, Debug, Reset
 
-**Date**: 2026-11-02
+**Date**: 2026-11-03 · Vorgänger: `requirements-M1.md` (Domain, umgesetzt)
 
 ## Problem
 
-Alle Spielregeln (Spielfeld, Bewegung, Bausteine, Interpreter, Gewinn- und Fehlerbedingungen) sollen vor der Oberfläche als reiner, getesteter C#-Code vorliegen. Die Meilensteine M2 bis M5 bauen darauf auf: Die UI ruft nur noch `Interpreter.Step()` auf und zeigt `ExecutionStep` an. Ohne diese Grundlage würde Spiellogik ins Razor-Markup wandern. Play und Debug könnten sich dann unterschiedlich verhalten, und die Kinder (11 bis 13 Jahre) bekämen am Zukunftstag widersprüchliche Ergebnisse oder Abstürze.
+Die Spielregeln aus M1 (`Grid`, `Person`, `Interpreter`) sind getestet, aber noch nicht sichtbar. `PlayPage` ist leer. M2 macht das Spiel zum ersten Mal spielbar: Ein Kind sieht ein Spielfeld mit Held, Hindernissen, Start und Burg, stellt per Klick ein Programm aus Richtungs-Bausteinen zusammen und führt es mit Play (am Stück) oder Debug (Schritt für Schritt) aus. Reset setzt zurück. Damit werden die Lernziele Sequenz und Debugging erlebbar. M3 (Drag & Drop, Wiederhole, Meldungstexte) und M4 (Levels, Start-Dialog, Items) bauen auf dem Grundgerüst auf.
 
 ## Users & Context
 
-- Direkte Nutzer von M1 sind Entwickler:innen und die späteren UI-Meilensteine (M2 bis M5). Es gibt noch keine sichtbare Oberfläche.
-- Indirekt die Kinder: Sie sehen die Ergebnisse der Domain später als Bewegung, Hervorhebung und kindgerechte Meldung.
-- Laufzeit: Blazor WebAssembly im Browser (Host `HeroPath.Web`). Die Domain ist plattformneutral und läuft auch in einem späteren MAUI-Host, der aber nicht Teil von M1 ist.
+- Kinder 11 bis 13 Jahre ohne Vorkenntnisse, begleitet von Software Engineers, am Zukunftstag (ca. 4 Stunden).
+- Laptop mit externem Bildschirm (1920×1080), Maus und Tastatur. Zusätzlich Laptop-Bildschirm 1366×768 ohne externen Monitor. Kein Touch.
+- Host: nur `HeroPath.Web` (Blazor WebAssembly im Browser). Kein MAUI.
 
 ## Functional Requirements
 
-### Modul Levels (`HeroPath.Modules.Levels`)
+### Spielfeld und Figur
+- FR1: Ein Demo-Level als eingebettete JSON-Ressource in `HeroPath.Modules.Levels` (10×10, 2 bis 3 Hindernisse, je mindestens ein Baum, Stein und Teich, keine Items, `requireAllItems = false`). Geladen über `LevelJson.Read` und einen kleinen Level-Dienst in `Modules.Levels/Application`, sodass M4 weitere Levels ergänzen kann. Das Level ist lösbar.
+- FR2: `GameBoard` (Levels.UI) zeichnet das Raster mit CSS Grid: Startfeld (grün + Fussabdruck-Muster), Ziel (Burg auf goldenem Schachbrett), Hindernisse Baum/Stein/Teich.
+- FR3: Der Held ist fest **Max** (Wahl Max/Lisa folgt in M4). Er steht zu Beginn auf dem Start und bewegt sich als eigene, absolut positionierte Ebene per CSS-Transition (keine Neuerzeugung pro Zelle).
+- FR4: Alle Grafiken sind selbst gezeichnete Inline-SVG-Komponenten in `HeroPath.Shared.UI/Graphics` (Max, Start, Burg/Ziel, Baum, Stein, Teich) mit Palette in `theme.css` und lokalisiertem `<title>`.
 
-- FR1: `Position` als `readonly record struct (int X, int Y)`. Der Ursprung `(0,0)` liegt oben links, X wächst nach rechts, Y nach unten.
-- FR2: `ObstacleKind` (`Tree`, `Rock`, `Pond`) und `ItemKind` (`Strawberry`, `Pizza`) als Enums.
-- FR3: `Grid` ist nach dem Erstellen unveränderlich. Es enthält `Width`, `Height`, `Start`, `Goal`, die Hindernisse und die Items sowie `RequireAllItems`. Methoden: `IsInside(Position)`, `GetObstacle(Position) → ObstacleKind?`, `GetItem(Position) → ItemKind?`, dazu eine Abfrage der Pflicht-Items (nur Erdbeeren). Ungültige Daten beim Erstellen führen zu einer Exception, weil sie ein Programmierfehler sind. Geprüfte Daten kommen über den `LevelValidator`.
-- FR4: `LevelDefinition` als unveränderliches Record, das dem JSON-Schema aus dem `game-rules`-Skill entspricht: `schemaVersion`, `id`, `name` (null bei Standard-Levels), `width`, `height`, `start`, `goal`, `requireAllItems`, `obstacles[]`, `items[]`. `LevelDefinition` erzeugt ein `Grid`.
-- FR5: `LevelValidator` (Application) liefert eine Liste von Fehlerwerten (Enum plus betroffene Position, wo sinnvoll) und wirft keine Exception. Er prüft:
-  - Breite und Höhe je 3 bis 20
-  - Start, Ziel, jedes Hindernis und jedes Item liegen im Feld
-  - Start ≠ Ziel
-  - kein Hindernis auf Start oder Ziel, kein Item auf dem Start
-  - höchstens ein Hindernis oder Item pro Feld
-  - `requireAllItems = true` braucht mindestens eine Erdbeere
-  - unbekannte `schemaVersion` ergibt einen Fehler
-- FR6: Level-JSON (Infrastructure): ein source-generierter `LevelJsonContext` mit camelCase-Eigenschaften und Enums als camelCase-Strings, dazu eine Lese- und Schreibmethode. Ungültiges oder kaputtes JSON gibt ein Fehlerergebnis zurück und stürzt nie ab.
+### Programm per Klick
+- FR5: `BlockPalette` mit den Bausteinen Hoch, Runter, Links, Rechts. Ein Klick hängt den Baustein ans Programmende an.
+- FR6: `ProgramEditor` zeigt das Programm als nummerierte Liste (`@key` = `Command.Id`). Jeder Baustein hat einen Entfernen-Knopf, dazu gibt es «Alles löschen».
+- FR7: Ab `ProgramLimits.MaxProgramCommands` (200) Bausteinen ist die Palette deaktiviert.
 
-### Modul Game (`HeroPath.Modules.Game`)
+### Ausführung
+- FR8: **Play** führt das Programm über den M1-`Interpreter` automatisch aus, mit Wartezeit gemäss Tempo zwischen den Schritten (`ExecutionRunner`, `TimeProvider`).
+- FR9: **Debug** führt pro Klick genau einen `Step()` aus. Status danach «Pause» (sofern kein Endzustand).
+- FR10: Nach Debug-Schritten macht **Play** ab der aktuellen Position weiter (gleicher Interpreter). Während Play ist Debug gesperrt. Es gibt keinen Pause-Knopf, nur Reset stoppt einen Lauf.
+- FR11: **Reset** ist immer aktiv: bricht einen laufenden Play ab, erstellt einen neuen Interpreter, Figur zurück auf Start, Status «Bereit», Editor entsperrt. Das Programm bleibt erhalten.
+- FR12: **Tempo** mit nativem `<input type="range">` in 3 Stufen: langsam 900 ms, mittel 500 ms (Standard), schnell 200 ms. Beschriftet in DE/EN. Die Bewegungsanimation passt zur Stufe. Tempo ist auch während Play änderbar.
+- FR13: Palette, Entfernen und «Alles löschen» sind gesperrt, sobald ein Lauf begonnen hat (Läuft, Pause) und nach einem Endzustand (Fehler, Ziel erreicht), bis Reset gedrückt wird. Nach einem Endzustand sind Play und Debug gesperrt.
+- FR14: Ist das Programm leer, sind Play und Debug gesperrt.
 
-- FR7: `Direction` (`Up`, `Down`, `Left`, `Right`). `Up` bedeutet `Y − 1`, `Down` bedeutet `Y + 1`.
-- FR8: `Person` hält **nur** die `Position`, ohne Name und ohne Avatar (Entscheid 2026-11-02). `Move(Direction, Grid) → MoveResult` mit `MoveOutcome` `Moved`, `Blocked` (mit `Hit = ObstacleKind`) oder `OutOfBounds`. Bei `Blocked` und `OutOfBounds` bleibt die Position unverändert.
-- FR9: `ICommand` mit stabiler `Guid Id`, dazu `MoveCommand(Direction)` und `RepeatCommand(Count, Body)`. Gilt `Count ∉ 1..20` oder die Verschachtelung ist tiefer als 2, wirft der Konstruktor von `RepeatCommand` bzw. `ProgramDefinition` eine `ArgumentOutOfRangeException` (Entscheid 2026-11-02). Ein leerer Body ist beim Erstellen erlaubt. (Umgesetzt mit `Command` statt `ICommand`, siehe «Umsetzungsstand».)
-- FR10: `ProgramDefinition` ist eine geordnete Liste von `ICommand`.
-- FR11: Der `Interpreter` wird mit `new Interpreter(program, grid)` erstellt. Er legt die `Person` selbst auf `grid.Start`. Vor dem ersten Schritt ist `State = Ready`. `Step()` führt genau einen `MoveCommand` aus. Wiederhole-Blöcke werden über einen Ausführungsstapel schrittweise aufgelöst, nicht vorab flachgeklopft.
-- FR12: `ExecutionStep` (Record) enthält `CommandId`, `StepNumber` (ab 1), `Position`, `State` (`Ready`, `Running`, `Succeeded`, `Failed`), `Error` (`ExecutionError?`), `CollectedItem` (`ItemKind?`, das in diesem Schritt eingesammelte Item), `HitObstacle` (`ObstacleKind?`) und `MissingItems` (Anzahl, bei `ItemsMissing`).
-- FR13: Der Interpreter stellt `CollectedItems` (`IReadOnlySet<Position>`) bereit. Ein Item wird beim Betreten des Feldes eingesammelt, und zwar nur einmal.
-- FR14: Fehler und Endzustände sind Werte, keine Exceptions:
+### Status und Hervorhebung
+- FR15: Statusanzeige mit den Zuständen Bereit, Läuft, Pause, Fehler, Ziel erreicht (DE/EN). Sie trägt `data-testid="status"`, `data-state` (`ready`, `running`, `paused`, `failed`, `succeeded`) und bei Fehler `data-error` (Name der `ExecutionError`, z. B. `Obstacle`).
+- FR16: Der Baustein der aktuellen `ExecutionStep.CommandId` wird im Programm hervorgehoben (bei Debug und Play). Bei Fehler werden Baustein und betroffenes Feld markiert (Hindernisfeld bzw. Randfeld, auf dem die Figur steht).
+- FR17: Die kindgerechten Detailmeldungen pro Fehlerart («Autsch! …», «Hoppla! …», «Geschafft, Max!») folgen in M3. In M2 zeigt der Status nur den Zustand.
 
-  | Situation | Ergebnis |
-  |---|---|
-  | Programm leer | `Failed`, `EmptyProgram`, keine Bewegung |
-  | Ein Wiederhole-Block (auch verschachtelt) ist leer | `Failed`, `EmptyRepeat`, `CommandId` des leeren Blocks, keine Bewegung. Geprüft wird vor dem ersten Schritt |
-  | Hindernis | `Failed`, `Obstacle`, `HitObstacle`, `CommandId` des auslösenden Bausteins |
-  | Spielfeldrand | `Failed`, `OutOfBounds`, `CommandId` des auslösenden Bausteins |
-  | Mehr als 1000 Schritte | `Failed`, `StepLimitExceeded`. 1000 Schritte sind erlaubt, der 1001. wird nicht ausgeführt |
-  | Programm zu Ende, Ziel nicht erreicht | `Failed`, `GoalNotReached` |
-  | Programm zu Ende auf dem Ziel, Erdbeeren fehlen (`RequireAllItems`) | `Failed`, `ItemsMissing`, `MissingItems` = Anzahl |
-  | Ziel erreicht und Item-Bedingung erfüllt | `Succeeded`, sofort. Übrige Bausteine laufen nicht |
-
-- FR15: Betritt der Held das Ziel, während noch Erdbeeren fehlen, läuft das Programm weiter. Die Pizza zählt nie für `RequireAllItems`.
-- FR16: Nach einem Endzustand liefert jeder weitere `Step()` denselben End-Schritt und ändert nichts mehr. Reset bedeutet: einen neuen Interpreter erstellen.
+### Sprache und Grundgerüst
+- FR18: `MainLayout` mit Kopfzeile: App-Titel («HeldenWeg» / «Hero's Path») und `LanguageSwitcher` (DE/EN) oben rechts.
+- FR19: Umschalten der Sprache ohne Neuladen. Programm, Lauf-Zustand und Figur bleiben erhalten. Die Sprache wird über `IAppStorage` gespeichert (Web-Implementierung mit localStorage im Host) und beim Start wiederhergestellt. Standard und Rückfall bei unbekanntem Wert: `de-CH`.
 
 ## Non-Functional Requirements
 
-- NFR1: Die Domain ist synchron und deterministisch, ohne Blazor, JS, `HttpClient` oder Plattformzugriff. `HeroPath.ArchitectureTests` bleibt grün.
-- NFR2: Keine NuGet-Pakete in den reinen Projekten. JSON nur mit `System.Text.Json` aus dem Framework, mit Source-Generator (trimming-fest für WebAssembly).
-- NFR3: Zu jeder Regel gibt es einen xUnit-Test in `tests/HeroPath.Modules.<X>.Tests`.
-- NFR4: Kein Heldenname in der Domain, also auch nicht in Logs, `ToString()` oder Exceptions.
-- NFR5: `dotnet build`, `dotnet test --solution HeroPath.slnx` und `dotnet format --verify-no-changes` sind grün.
+- NFR1: Keine Spiellogik in Razor oder Code-Behind. `GameSession` und `ExecutionRunner` sind reines C# in `Modules.Game/Application`, ohne Blazor-Typen.
+- NFR2: Alle sichtbaren Texte via resx (DE mit Schweizer Rechtschreibung, ohne «ß», und EN), im Modul, dem sie gehören.
+- NFR3: Klickziele mindestens 44 px, echte `<button>`-Elemente, sichtbarer Fokus, `prefers-reduced-motion` schaltet Transitionen ab.
+- NFR4: Responsives Layout ohne feste Pixelbreiten. Auf 1920×1080 und 1366×768 ist alles ohne Scrollen sichtbar (Spielfeld, Palette, Programm bis ca. 10 Bausteine, Steuerung, Status).
+- NFR5: Start/Ziel und die drei Hindernisse sind auch in Graustufen unterscheidbar (Form/Muster).
+- NFR6: Keine neuen NuGet-Pakete (Fluent UI kommt erst, wenn Dialog/Select gebraucht werden). Keine CDNs, keine fremden Grafiken.
+- NFR7: Kein Heldenname im Speicher und in Logs (in M2 ohnehin fest «Max», nur angezeigt im `<title>` der Grafik).
+- NFR8: `dotnet build`, `dotnet test --solution HeroPath.slnx`, `dotnet format --verify-no-changes` und die E2E-Tests (`HEROPATH_E2E=1`) sind grün.
 
 ## Technical Constraints
 
-- Zuständige Projekte: `HeroPath.Modules.Levels` (Domain, Application/`LevelValidator`, Infrastructure/JSON) und `HeroPath.Modules.Game` (Domain). Tests in `HeroPath.Modules.Levels.Tests` und `HeroPath.Modules.Game.Tests`.
-- Abhängigkeitsrichtung `Shared ← Levels ← Game`. Game verwendet `Grid`, `Position`, `ObstacleKind` und `ItemKind` aus Levels.
-- Grenzwerte stehen bereits in `LevelLimits` und `ProgramLimits` und werden wiederverwendet.
-- Kein Speicher, kein `IAppStorage`, keine UI, keine resx-Texte. Die Domain liefert Fehlerarten und Zahlen, die Texte folgen in M2/M3.
-- Kein E2E-Test, weil sich nichts Sichtbares ändert. Phase 5 (Visual Check) entfällt.
-- Dokumentation nachführen: `docs/Architektur C4.md` §4.2 (Person ohne Name/Avatar, `Interpreter(program, grid)`, neue Felder in `ExecutionStep`, `ItemKind`) und der `game-rules`-Skill.
+- Projekte:
+  - `HeroPath.Modules.Levels`: Demo-Level-JSON als `EmbeddedResource` (Infrastructure), Level-Dienst (Application).
+  - `HeroPath.Modules.Levels.UI`: `GameBoard`, Texte in `LevelsResources`.
+  - `HeroPath.Modules.Game`: `Application/GameSession`, `Application/ExecutionRunner`.
+  - `HeroPath.Modules.Game.UI`: `PlayPage`, `BlockPalette`, `ProgramEditor`, `ControlBar` (inkl. Tempo, Status), `GameResources`, Registrierung in `AddGameModule()`.
+  - `HeroPath.Shared.UI`: SVG-Grafiken, `theme.css`, `MainLayout`-Kopfzeile, `LanguageSwitcher`, `LanguageService`, `SharedResources`.
+  - `HeroPath.Shared`: ggf. Speicher-Schlüssel (`StorageKeys`).
+  - `Hosts/HeroPath.Web`: `LocalStorageAppStorage`, Registrierung, Kultur beim Start setzen.
+- Abhängigkeiten `Shared ← Levels ← Game` (gleich für `.UI`), `HeroPath.ArchitectureTests` und `ClaudeWorkflowTests` bleiben grün (neue öffentliche Typen der Module im `game-rules`-Skill nennen).
+- Grenzwerte aus M1 gelten (`ProgramLimits`, `LevelLimits`). Ohne Wiederhole-Block ist das Schrittlimit (1000) mit 200 Bausteinen nicht erreichbar.
+- Tests: xUnit für `GameSession`, `ExecutionRunner` (mit `FakeTimeProvider` bzw. eigenem Fake, keine echten Wartezeiten) und den Level-Dienst. bUnit für `BlockPalette`, `ProgramEditor`, `ControlBar`, `GameBoard`, `LanguageSwitcher`. Ein Test prüft, dass das Demo-Level gültig und lösbar ist.
+- E2E-Flows (Playwright, Klick-Alternative, Screenshots normal + Graustufen, DE und EN, desktop 1920×1080 und laptop 1366×768):
+  1. Play bis zur Burg → `data-state=succeeded`
+  2. Debug Schritt für Schritt → Figur bewegt sich, Baustein hervorgehoben, `paused`, danach Play macht weiter bis zum Ende
+  3. Fehler Hindernis und Rand → `failed` mit `data-error=Obstacle` bzw. `OutOfBounds`, Baustein und Feld markiert
+  4. Reset + Bearbeiten → Figur zurück auf Start, Editor entsperrt, Baustein entfernen, «Alles löschen», Play/Debug gesperrt
+  5. Sprachwechsel während Pause → Texte wechseln, Programm und Figurposition bleiben
 
 ## Acceptance Criteria
 
-- [ ] Bewegung in alle 4 Richtungen, Rand auf jeder Seite, jede Hindernisart ist getestet.
-- [ ] Wiederhole einfach und verschachtelt (Tiefe 2) läuft. Tiefe 3 sowie Anzahl 0 und 21 werfen eine Exception.
-- [ ] Ein leerer Wiederhole-Block (auch innen) ergibt `EmptyRepeat` mit der richtigen `CommandId`, ohne Bewegung.
-- [ ] `CommandId` zeigt in verschachtelten Wiederhole-Blöcken auf den richtigen inneren `MoveCommand`.
-- [ ] Ist das Ziel erreicht und es bleiben Bausteine übrig, endet der Lauf mit `Succeeded` nach genau diesem Schritt.
-- [ ] Ziel mit fehlenden Erdbeeren: Der Lauf geht weiter. Fehlen am Programmende noch welche, gibt es `ItemsMissing` mit der richtigen Anzahl. Eine nicht eingesammelte Pizza verhindert `Succeeded` nicht.
-- [ ] Items werden nur einmal eingesammelt. `CollectedItem` erscheint nur im Schritt des Einsammelns.
-- [ ] Schrittlimit: genau 1000 Schritte sind erlaubt, der 1001. ergibt `StepLimitExceeded`.
-- [ ] Der Endzustand bleibt bei wiederholtem `Step()` stabil.
-- [ ] `LevelValidator`: zu jeder Regel aus FR5 ein positiver und ein negativer Test.
-- [ ] JSON: Round-Trip (schreiben, lesen) ergibt dasselbe `LevelDefinition`. Das Beispiel-JSON aus dem `game-rules`-Skill wird gelesen. Kaputtes JSON, eine unbekannte `schemaVersion` und unbekannte Enum-Werte geben ein Fehlerergebnis ohne Exception.
-- [ ] Build, Format und alle Tests inklusive ArchitectureTests sind grün.
+- [ ] Beim Öffnen von `/` erscheinen Spielfeld (Demo-Level), Max auf dem Start, Palette, leeres Programm, Steuerung (Play/Debug gesperrt), Tempo «mittel», Status «Bereit».
+- [ ] Ein Klick auf einen Palette-Baustein hängt ihn an. Entfernen und «Alles löschen» funktionieren.
+- [ ] Play mit einer Lösung führt zu «Ziel erreicht», Max steht auf der Burg.
+- [ ] Debug bewegt Max pro Klick um genau ein Feld, der aktuelle Baustein ist hervorgehoben, Status «Pause». Play macht von dort weiter.
+- [ ] Lauf in ein Hindernis bzw. aus dem Feld ergibt «Fehler» mit markiertem Baustein und Feld. Programm zu Ende ohne Burg ergibt «Fehler» (`GoalNotReached`).
+- [ ] Während und nach einem Lauf sind die Bearbeitungsknöpfe gesperrt, nach einem Endzustand auch Play und Debug. Reset stellt den Anfangszustand mit unverändertem Programm her, auch mitten in Play.
+- [ ] Tempo-Stufen wirken auf die Wartezeit (getestet mit Fake-TimeProvider).
+- [ ] Sprachwechsel DE/EN ohne Reload, Programm und Lauf bleiben. Nach dem Neuladen ist die gewählte Sprache wieder aktiv.
+- [ ] Alle 5 E2E-Flows grün, Screenshots in DE und EN, desktop und laptop, vom visual-checker ohne [MUST]-Befund geprüft.
+- [ ] Build, Format, Unit-, bUnit- und Architekturtests grün.
 
 ## Edge Cases & Failure Modes
 
-- Held läuft über das Startfeld zurück → erlaubt, `Moved`.
-- Held läuft über ein Item, ohne dass `RequireAllItems` gesetzt ist → das Item wird eingesammelt, die Gewinnbedingung ändert sich nicht.
-- `RequireAllItems` ist gesetzt, im Level liegt aber nur Pizza → der Validator meldet einen Fehler. Erstellt man das `Grid` direkt, gibt es eine Exception.
-- `Wiederhole 20 × (Wiederhole 20 × …)` mit mehr als 1000 Schritten → `StepLimitExceeded` nach dem 1000. Schritt, ohne Hänger.
-- Der Fehler tritt beim ersten Schritt eines Wiederhole-Blocks auf → `CommandId` des inneren `MoveCommand`, nicht des Wiederhole-Blocks.
-- Kaputtes oder manipuliertes JSON aus dem Speicher (später) → Fehlerergebnis, nie ein Absturz.
-- Darf nie passieren: Eine Exception erreicht die UI während eines regulären Laufs, oder Play und Debug liefern unterschiedliche Ergebnisse.
+- Reset während Play → laufende Schleife bricht sofort ab (Abbruch-Token), kein weiterer Schritt wird danach noch angewendet.
+- Mehrfaches schnelles Klicken auf Play → nur ein Lauf; Play ist ab dem ersten Klick gesperrt.
+- Debug-Klicks nach Endzustand → nicht möglich (gesperrt).
+- 200 Bausteine erreicht → Palette deaktiviert, keine Exception aus `ProgramDefinition`.
+- localStorage blockiert oder voll → Sprache wird nicht gespeichert, das Spiel bleibt voll spielbar, keine Fehlermeldung an das Kind, kein Konsolenfehler, der den E2E-Test bricht.
+- Gespeicherter Sprachwert ungültig/manipuliert → `de-CH`.
+- Demo-Level-JSON ungültig (Programmierfehler) → Test schlägt fehl; zur Laufzeit klarer Fehler statt halb gerendertem Spielfeld.
+- Darf nie passieren: Exception während eines Laufs erreicht die UI; Play und Debug liefern unterschiedliche Ergebnisse; Sprachwechsel verliert das Programm; Heldenname landet im Speicher.
 
 ## Out of Scope
 
-- UI, `GameSession`, `ExecutionRunner`, Tempo, Animation (M2)
-- Standard-Level-Dateien und Lösbarkeits-Check per BFS (M4, `level-design`-Skill)
-- `ILevelSource`, `LevelRepository`, Speichern eigener Levels über `IAppStorage` (M5)
-- Kindgerechte Meldungstexte und resx (M2/M3)
-- Heldenname und Avatar (UI-Zustand, M2/M4)
-- Schritt zurück, relative Steuerung, Wenn-Blöcke
-- MAUI-Host
+- Drag & Drop, Wiederhole-Block, kindgerechte Meldungstexte pro Fehlerart (M3)
+- Level-Auswahl, weitere Vorlagen, Start-Dialog (Held/Name), Lisa, Items Erdbeere/Pizza (M4)
+- Level-Editor, Speichern eigener Levels (M5)
+- Fluent UI Blazor (erst bei Dialog/Select, voraussichtlich M4)
+- Pause-Knopf während Play, Schritt zurück, Konfetti/Erfolgsanimation, Sound, Tastaturkürzel
+- Phone-Layout als Pflicht (Screenshot nur informativ), MAUI-Host
 
 ## Open Questions
 
-- Keine. Diese Punkte habe ich selbst aus den Docs abgeleitet:
-  - Der 1001. Schritt wird nicht mehr ausgeführt.
-  - Leere Wiederhole-Blöcke werden vor dem ersten Schritt im ganzen Programm gesucht. Gemeldet wird der erste in Ausführungsreihenfolge.
-  - Der Interpreter erzeugt die `Person` selbst. Abweichung von §4.2: `new Interpreter(program, grid)` statt `new Interpreter(program, grid, person)`, damit der Held immer auf dem Start beginnt.
-
-## Umsetzungsstand und bekannte Einschränkungen
-
-Stand nach M1 (Code in `src/Modules/Levels/HeroPath.Modules.Levels` und `src/Modules/Game/HeroPath.Modules.Game/Domain`). Die Abschnitte oben beschreiben die Anforderung, dieser Abschnitt den tatsächlichen Stand.
-
-### Abweichungen, im Review entschieden
-
-- **`Command` statt `ICommand`:** Die Befehle sind eine geschlossene Hierarchie (abstrakte Klasse `Command`, `private protected`-Konstruktor, nur `MoveCommand` und `RepeatCommand`). Begründung und Alternative: `Architektur C4.md` §6, Nr. 3a.
-- **`StepNumber`-Semantik:** Bei `Obstacle`, `OutOfBounds` und `StepLimitExceeded` ist es die Nummer des versuchten Zuges (ausgeführte Züge + 1). Sonst ist es die Nummer des zuletzt ausgeführten Zuges, bei `EmptyProgram` und `EmptyRepeat` 0. Der Schritt des letzten Zuges trägt bereits den Endzustand (`Succeeded`, `GoalNotReached` oder `ItemsMissing`), es gibt keinen separaten Abschluss-Schritt.
-- **Zusätzliche Validierungsregeln** (über FR5 hinaus), im `LevelValidator`:
-  - Level-Id muss `^[a-z0-9-]{1,40}$` entsprechen (`InvalidId`).
-  - Level-Name (optional) höchstens 50 Zeichen, nicht nur Leerraum, ohne Steuerzeichen (`InvalidName`).
-  - `null`-Listen oder `null`-Einträge bei Hindernissen und Items ergeben `ObstaclesInvalid` bzw. `ItemsInvalid`, keine Exception.
-  - Mehr Objekte (Hindernisse + Items) als Felder ergibt `TooManyObjects`, danach wird nicht weiter geprüft.
-  - Ein Hindernis auf dem Ziel wird als `ObstacleOnGoal` gemeldet, ein Item auf dem Ziel ist erlaubt. Ein Feld doppelt belegt ergibt `CellOccupiedTwice`.
-- **Grenzwerte:** Maximal 200 Bausteine pro Programm (`ProgramLimits.MaxProgramCommands`, `ProgramDefinition` wirft `ArgumentOutOfRangeException`). Level-JSON höchstens 64 KB (`LevelJson.MaxJsonLength`, 65 536 Zeichen) und maximale Tiefe 8, sonst `InvalidJson`. Übersicht in `Projekt_Kontext.md` §4.
-
-### Offen (Review-Funde, nicht umgesetzt)
-
-- **Interpreter, kleine Aufräumarbeiten:** Der Zustand `Ready` wird in `Step()` zweimal geprüft. Die Zahl der fehlenden Erdbeeren wird bei jedem Schritt berechnet statt nur bei Bedarf. `CollectedItems` gibt die interne Menge direkt zurück (Aufrufer sehen den Live-Stand und könnten sie über einen Cast verändern).
-- **`MoveFrom`:** Könnte ein Operator auf `Position` sein (`Position + Direction`) statt einer Erweiterung auf `Direction`.
-- **`LevelObstacle.GetPosition()`/`LevelItem.GetPosition()`:** Methode statt Property (bewusst, damit die Position nicht ins JSON serialisiert wird). Prüfen, ob eine `[JsonIgnore]`-Property klarer wäre.
-- **`StepNumber` zählt expandierte Züge:** Ein Zug in `Wiederhole 3 mal` zählt dreimal. Die Meldungen sprechen von «Schritt N» (z. B. «Schau dir Schritt {0} noch einmal an»). In M3 prüfen, ob das für Kinder verständlich ist oder ob die Position im Programm besser passt.
-- **`LevelJsonContext`:** Verwendet einen eigenen, nur Strings akzeptierenden Enum-Konverter statt `UseStringEnumConverter`. Prüfen, ob die eingebaute Variante mit Source-Generator inzwischen ausreicht.
-- **`StartEqualsGoal`:** Wird auch gemeldet, wenn Start und Ziel beide ausserhalb des Feldes liegen (zusätzlich zu `StartOutsideGrid` und `GoalOutsideGrid`).
-- **Id-Regex:** Das Muster im `LevelValidator` enthält die Länge 40 fest (`{1,40}`) statt `LevelLimits.MaxIdLength` zu verwenden.
-- **Testnamen:** Die Benennung der Tests ist nicht durchgehend einheitlich.
-- **Datenschutz-Hinweis für M5:** Der Level-Editor soll den Kindern sagen, dass sie im Level-Namen nicht ihren echten Namen verwenden sollen. Der Level-Name wird (anders als der Heldenname) im localStorage gespeichert und im JSON-Export weitergegeben.
+- Keine offenen Fragen. Annahmen, die ich selbst getroffen habe (bitte bei der Freigabe korrigieren):
+  - Layout: Kopfzeile oben, darunter links das Spielfeld, rechts Palette, Programm, Steuerung und Status.
+  - Das Demo-Level hat die Id `demo` und ist keine der 7 Vorlagen. M4 darf es ersetzen oder als Vorlage übernehmen.
+  - Bei `OutOfBounds` wird das Feld markiert, auf dem Max stehen bleibt (der Zug wird nicht ausgeführt).
+  - Die M1-Dokumente liegen jetzt als `docs/requirements-M1.md` und `docs/plan-M1.md` vor. Der Verweis in `Projekt_Kontext.md` §7 ist nachgeführt.
