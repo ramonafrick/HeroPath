@@ -1,0 +1,11 @@
+.program-icon {
+    display: block;
+    width: 1.5rem;
+    height: 1.5rem;
+    flex: none;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}

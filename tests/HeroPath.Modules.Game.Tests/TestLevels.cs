@@ -9,6 +9,9 @@ internal static class TestLevels
 {
     public static Grid DemoGrid() => StandardLevels.Get("demo").ToGrid();
 
+    public static Direction[] Directions(GameSession session) =>
+        [.. session.Program.Commands.OfType<MoveCommand>().Select(c => c.Direction)];
+
     public static void Fill(GameSession session, params Direction[] directions)
     {
         foreach (var direction in directions)

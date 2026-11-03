@@ -34,18 +34,18 @@ public class GameSessionTests
     {
         var session = SessionWith(Direction.Up, Direction.Right, Direction.Down);
 
-        Assert.Equal([Direction.Up, Direction.Right, Direction.Down], session.Commands.Select(c => c.Direction));
+        Assert.Equal([Direction.Up, Direction.Right, Direction.Down], TestLevels.Directions(session));
     }
 
     [Fact]
     public void Remove_KnownId_RemovesOnlyThatBlock()
     {
         var session = SessionWith(Direction.Up, Direction.Right, Direction.Down);
-        var id = session.Commands[1].Id;
+        var id = session.Program.Commands[1].Id;
 
         session.Remove(id);
 
-        Assert.Equal([Direction.Up, Direction.Down], session.Commands.Select(c => c.Direction));
+        Assert.Equal([Direction.Up, Direction.Down], TestLevels.Directions(session));
     }
 
     [Fact]
@@ -57,7 +57,7 @@ public class GameSessionTests
 
         session.Remove(Guid.NewGuid());
 
-        Assert.Single(session.Commands);
+        Assert.Single(session.Program.Commands);
         Assert.Equal(0, changes);
     }
 
@@ -68,7 +68,7 @@ public class GameSessionTests
 
         session.Clear();
 
-        Assert.Empty(session.Commands);
+        Assert.Empty(session.Program.Commands);
     }
 
     [Fact]
@@ -99,7 +99,7 @@ public class GameSessionTests
         var exception = Record.Exception(() => session.Add(Direction.Up));
 
         Assert.Null(exception);
-        Assert.Equal(ProgramLimits.MaxProgramCommands, session.Commands.Count);
+        Assert.Equal(ProgramLimits.MaxProgramCommands, session.Program.Commands.Count);
         Assert.Equal(0, changes);
     }
 
@@ -112,7 +112,7 @@ public class GameSessionTests
             session.Add(Direction.Right);
         }
 
-        session.Remove(session.Commands[0].Id);
+        session.Remove(session.Program.Commands[0].Id);
 
         Assert.True(session.CanAdd);
     }
@@ -126,7 +126,7 @@ public class GameSessionTests
 
         session.Add(Direction.Up);
         session.Add(Direction.Down);
-        session.Remove(session.Commands[0].Id);
+        session.Remove(session.Program.Commands[0].Id);
         session.Clear();
         session.Load(CreateGrid());
 
@@ -138,7 +138,7 @@ public class GameSessionTests
     {
         var (session, runner) = Started(Direction.Up, Direction.Down);
         runner.StepOnce();
-        var id = session.Commands[0].Id;
+        var id = session.Program.Commands[0].Id;
         var changes = 0;
         session.Changed += () => changes++;
 
@@ -147,7 +147,7 @@ public class GameSessionTests
         session.Clear();
 
         Assert.False(session.IsEditable);
-        Assert.Equal(2, session.Commands.Count);
+        Assert.Equal(2, session.Program.Commands.Count);
         Assert.Equal(0, changes);
         runner.Reset();
         Assert.True(session.IsEditable);
@@ -176,7 +176,7 @@ public class GameSessionTests
         runner.StepOnce();
 
         Assert.Equal(new Position(1, 5), session.HeroPosition);
-        Assert.Equal(session.Commands[0].Id, session.CurrentStep!.CommandId);
+        Assert.Equal(session.Program.Commands[0].Id, session.CurrentStep!.CommandId);
         Assert.Equal(1, changes);
     }
 
@@ -242,7 +242,7 @@ public class GameSessionTests
 
         var program = session.ToProgram();
 
-        Assert.Equal(session.Commands.Select(c => c.Id), program.Commands.Select(c => c.Id));
+        Assert.Equal(session.Program.Commands.Select(c => c.Id), program.Commands.Select(c => c.Id));
     }
 
     [Fact]
@@ -283,7 +283,7 @@ public class GameSessionTests
 
         session.Load(session.Grid!);
 
-        Assert.Equal(2, session.Commands.Count);
+        Assert.Equal(2, session.Program.Commands.Count);
         Assert.Equal(RunStatus.Paused, session.Status);
         Assert.Same(step, session.CurrentStep);
         Assert.False(session.IsEditable);
@@ -302,7 +302,7 @@ public class GameSessionTests
         Assert.Same(grid, session.Grid);
         Assert.Equal(RunStatus.Paused, session.Status);
         Assert.Equal(new Position(1, 5), session.HeroPosition);
-        Assert.Equal(2, session.Commands.Count);
+        Assert.Equal(2, session.Program.Commands.Count);
     }
 
     [Fact]
@@ -325,7 +325,7 @@ public class GameSessionTests
         Assert.Null(session.MarkedCell);
         Assert.True(session.IsEditable);
         Assert.Equal(new Position(2, 3), session.HeroPosition);
-        Assert.Equal(2, session.Commands.Count);
+        Assert.Equal(2, session.Program.Commands.Count);
         Assert.Equal(1, changes);
     }
 

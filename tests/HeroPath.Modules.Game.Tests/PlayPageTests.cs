@@ -87,7 +87,7 @@ public class PlayPageTests : CultureBunitContext
         Assert.Equal(RunStatus.Paused, Session.Status);
         Assert.Equal(1, Session.CurrentStep!.StepNumber);
         Assert.Equal(new Position(1, 5), Session.HeroPosition);
-        Assert.Equal(TestLevels.DemoSolution.Length, Session.Commands.Count);
+        Assert.Equal(TestLevels.DemoSolution.Length, Session.Program.Commands.Count);
     }
 
     [Fact]

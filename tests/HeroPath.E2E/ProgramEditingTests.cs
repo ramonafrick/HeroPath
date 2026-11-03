@@ -46,7 +46,8 @@ public class ProgramEditingTests(AppFixture app)
         await ExpectOrderAsync(page, ["up", "up", "right", "right"]);
         await Screenshots.CaptureAsync(page, namePrefix + ".en");
 
-        await page.GetByTestId("program-remove-1").ClickAsync();
+        await page.GetByTestId("program-select-2").ClickAsync();
+        await page.GetByTestId("program-remove").ClickAsync();
         await ExpectOrderAsync(page, ["up", "right", "right"]);
 
         await page.GetByTestId("program-clear").ClickAsync();
@@ -67,7 +68,7 @@ public class ProgramEditingTests(AppFixture app)
         await Expect(blocks).ToHaveCountAsync(directions.Length);
         for (var index = 0; index < directions.Length; index++)
         {
-            await Expect(blocks.Nth(index)).ToHaveAttributeAsync("data-index", index.ToString());
+            await Expect(blocks.Nth(index)).ToHaveAttributeAsync("data-path", (index + 1).ToString());
             await Expect(blocks.Nth(index)).ToHaveAttributeAsync("data-direction", directions[index]);
         }
     }

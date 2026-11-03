@@ -28,3 +28,28 @@
     min-height: 20rem;
     min-width: 0;
 }
+
+.side-tools {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-width: 0;
+}
+
+@media (max-height: 56rem) and (min-width: 82rem) {
+    .play-page {
+        grid-template-columns: auto minmax(18rem, 42rem);
+        max-width: none;
+    }
+
+    .board-area {
+        max-width: calc(100vw - 48rem);
+    }
+
+    .side-panel {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-rows: minmax(0, 1fr);
+        column-gap: 1rem;
+    }
+}

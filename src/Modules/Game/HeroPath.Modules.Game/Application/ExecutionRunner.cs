@@ -28,7 +28,7 @@ public sealed class ExecutionRunner
     /// </summary>
     public bool CanStart =>
         _session.Grid is not null
-        && _session.Commands.Count > 0
+        && _session.Program.Commands.Count > 0
         && _session.Status is RunStatus.Ready or RunStatus.Paused;
 
     /// <summary>

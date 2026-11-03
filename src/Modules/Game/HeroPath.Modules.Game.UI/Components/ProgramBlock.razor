@@ -1,0 +1,121 @@
+@inherits SessionComponentBase
+
+@{
+    var isMove = Command is MoveCommand;
+    var number = string.Join(".", Path);
+    var isSelected = Session.SelectedId == Command.Id;
+    var isCurrent = Session.CurrentStep?.CommandId == Command.Id;
+    var isError = isCurrent && Session.Status == RunStatus.Failed;
+    var editable = Session.IsEditable;
+    var name = Command switch
+    {
+        MoveCommand move => Localizer[$"Block_{move.Direction}"].Value,
+        RepeatCommand repeat => Localizer["Block_Repeat", repeat.Count].Value,
+        _ => string.Empty,
+    };
+}
+<li class="program-block"
+    data-testid="program-block"
+    data-path="@number"
+    data-kind="@(isMove ? "move" : "repeat")"
+    data-selected="@(isSelected ? "true" : "false")"
+    data-command-id="@Command.Id"
+    data-direction="@((Command as MoveCommand)?.Direction.ToSlug())"
+    data-current="@(isCurrent ? "true" : null)"
+    data-error="@(isError ? "true" : null)">
+    <div class="block-row">
+        <button type="button"
+                class="block-select"
+                data-testid="@($"program-select-{number}")"
+                aria-pressed="@(isSelected ? "true" : "false")"
+                aria-label="@Localizer["Program_Block", number, name]"
+                @onclick="() => Session.Select(Command.Id)">
+            <span class="program-number" aria-hidden="true">@number</span>
+            @if (Command is MoveCommand moveCommand)
+            {
+                <DirectionIcon Direction="moveCommand.Direction" />
+                <span class="program-text">@name</span>
+            }
+            else
+            {
+                <ProgramIcon Kind="ProgramIconKind.Repeat" />
+                <span class="program-text">@Localizer["Repeat_Before"]</span>
+            }
+        </button>
+        @if (Command is RepeatCommand header)
+        {
+            <button type="button"
+                    class="block-action"
+                    data-testid="@($"repeat-minus-{number}")"
+                    aria-label="@Localizer["Repeat_Decrease", number]"
+                    disabled="@(!editable || header.Count <= ProgramLimits.MinRepeatCount)"
+                    @onclick="() => Session.SetRepeatCount(header.Id, header.Count - 1)">
+                <ProgramIcon Kind="ProgramIconKind.Minus" />
+            </button>
+            <span class="repeat-count" data-testid="@($"repeat-count-{number}")">@header.Count</span>
+            <button type="button"
+                    class="block-action"
+                    data-testid="@($"repeat-plus-{number}")"
+                    aria-label="@Localizer["Repeat_Increase", number]"
+                    disabled="@(!editable || header.Count >= ProgramLimits.MaxRepeatCount)"
+                    @onclick="() => Session.SetRepeatCount(header.Id, header.Count + 1)">
+                <ProgramIcon Kind="ProgramIconKind.Plus" />
+            </button>
+            <span class="repeat-after">@Localizer["Repeat_After"]</span>
+        }
+        @if (isCurrent)
+        {
+            <svg class="program-marker" role="img" aria-label="@Localizer[isError ? "Program_Error" : "Program_Current"]" viewBox="0 0 24 24" focusable="false">
+                @if (isError)
+                {
+                    <path class="marker-shape" d="M12 2.5 L22.5 21 H1.5 Z" />
+                    <path class="marker-glyph" d="M12 9 V14.5 M12 17.8 V18" />
+                }
+                else
+                {
+                    <circle class="marker-shape" cx="12" cy="12" r="10" />
+                    <path class="marker-glyph-fill" d="M9.5 7 L17 12 L9.5 17 Z" />
+                }
+            </svg>
+        }
+        @if (isSelected)
+        {
+            <div class="block-actions">
+                <button type="button"
+                        class="block-action"
+                        data-testid="program-up"
+                        aria-label="@Localizer["Program_MoveUp", number]"
+                        disabled="@(!Session.CanMoveUp(Command.Id))"
+                        @onclick="() => Session.MoveUp(Command.Id)">
+                    <ProgramIcon Kind="ProgramIconKind.Up" />
+                </button>
+                <button type="button"
+                        class="block-action"
+                        data-testid="program-down"
+                        aria-label="@Localizer["Program_MoveDown", number]"
+                        disabled="@(!Session.CanMoveDown(Command.Id))"
+                        @onclick="() => Session.MoveDown(Command.Id)">
+                    <ProgramIcon Kind="ProgramIconKind.Down" />
+                </button>
+                <button type="button"
+                        class="block-action"
+                        data-testid="program-remove"
+                        aria-label="@Localizer["Program_Remove", number]"
+                        disabled="@(!editable)"
+                        @onclick="() => Session.Remove(Command.Id)">
+                    <ProgramIcon Kind="ProgramIconKind.Remove" />
+                </button>
+            </div>
+        }
+    </div>
+    @if (Command is RepeatCommand repeatCommand)
+    {
+        <ol class="repeat-body" data-testid="@($"repeat-body-{number}")">
+            @for (var index = 0; index < repeatCommand.Body.Count; index++)
+            {
+                var child = repeatCommand.Body[index];
+                <ProgramBlock @key="child.Id" Command="child" Path="[.. Path, index + 1]" />
+            }
+        </ol>
+    }
+</li>

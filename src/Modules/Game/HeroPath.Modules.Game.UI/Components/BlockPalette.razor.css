@@ -34,3 +34,10 @@
     opacity: 0.5;
     cursor: not-allowed;
 }
+
+.palette-repeat {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    gap: 0.5rem;
+    min-height: 2.75rem;
+}

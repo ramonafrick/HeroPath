@@ -129,7 +129,8 @@ public class RunFlowTests(AppFixture app)
             await AssertFitsAsync(page, viewport);
             await CaptureBothLanguagesAsync(page, $"run.reset.{viewport}");
 
-            await page.GetByTestId("program-remove-0").ClickAsync();
+            await page.GetByTestId("program-select-1").ClickAsync();
+            await page.GetByTestId("program-remove").ClickAsync();
             await Expect(page.GetByTestId("program-block")).ToHaveCountAsync(1);
             await page.GetByTestId("program-clear").ClickAsync();
             await Expect(page.GetByTestId("program-block")).ToHaveCountAsync(0);

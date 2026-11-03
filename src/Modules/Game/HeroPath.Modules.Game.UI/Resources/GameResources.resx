@@ -116,4 +116,44 @@
     <value>Hier ist der Fehler</value>
     <comment>Accessible hint on the block that caused the error.</comment>
   </data>
+  <data name="Palette_Repeat" xml:space="preserve">
+    <value>Wiederhole</value>
+    <comment>Palette button that adds a repeat block.</comment>
+  </data>
+  <data name="Block_Repeat" xml:space="preserve">
+    <value>Wiederhole {0} mal</value>
+    <comment>Accessible name of a repeat block. {0} = repeat count.</comment>
+  </data>
+  <data name="Repeat_Before" xml:space="preserve">
+    <value>Wiederhole</value>
+    <comment>Text before the count controls in the header of a repeat block.</comment>
+  </data>
+  <data name="Repeat_After" xml:space="preserve">
+    <value>mal</value>
+    <comment>Text after the count controls in the header of a repeat block.</comment>
+  </data>
+  <data name="Repeat_Decrease" xml:space="preserve">
+    <value>Baustein {0}: Anzahl verringern</value>
+    <comment>Accessible name of the minus button. {0} = block number, for example 3 or 3.2.</comment>
+  </data>
+  <data name="Repeat_Increase" xml:space="preserve">
+    <value>Baustein {0}: Anzahl erhöhen</value>
+    <comment>Accessible name of the plus button. {0} = block number, for example 3 or 3.2.</comment>
+  </data>
+  <data name="Program_MoveUp" xml:space="preserve">
+    <value>Baustein {0} nach oben</value>
+    <comment>Accessible name of the move-up button. {0} = block number, for example 3 or 3.2.</comment>
+  </data>
+  <data name="Program_MoveDown" xml:space="preserve">
+    <value>Baustein {0} nach unten</value>
+    <comment>Accessible name of the move-down button. {0} = block number, for example 3 or 3.2.</comment>
+  </data>
+  <data name="InsertTarget_Root" xml:space="preserve">
+    <value>Neue Bausteine kommen ans Programmende</value>
+    <comment>Line above the program: the next block is appended to the end of the program.</comment>
+  </data>
+  <data name="InsertTarget_Repeat" xml:space="preserve">
+    <value>Neue Bausteine kommen in: Wiederhole-Block {0}</value>
+    <comment>Line above the program: the next block goes into this repeat block. {0} = block number, for example 3 or 3.2.</comment>
+  </data>
 </root>

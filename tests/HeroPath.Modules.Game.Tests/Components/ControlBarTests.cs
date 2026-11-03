@@ -234,6 +234,6 @@ public class ControlBarTests : CultureBunitContext
         bar.WaitForAssertion(() => Assert.Contains("Paused", bar.Find("[data-testid=status]").TextContent));
         Assert.Equal("paused", bar.Find("[data-testid=status]").GetAttribute("data-state"));
         Assert.Equal(new Position(1, 5), _session.HeroPosition);
-        Assert.Equal(2, _session.Commands.Count);
+        Assert.Equal(2, _session.Program.Commands.Count);
     }
 }

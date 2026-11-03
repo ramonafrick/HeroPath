@@ -139,7 +139,7 @@ public class ExecutionRunnerTests
 
         Assert.Equal(RunStatus.Paused, _session.Status);
         Assert.Equal(new Position(1, 5), _session.HeroPosition);
-        Assert.Equal(_session.Commands[0].Id, _session.CurrentStep!.CommandId);
+        Assert.Equal(_session.Program.Commands[0].Id, _session.CurrentStep!.CommandId);
         Assert.False(_session.IsEditable);
     }
 
@@ -255,7 +255,7 @@ public class ExecutionRunnerTests
         var play = _runner.PlayAsync();
         await AdvanceStepAsync();
         Assert.Equal(2, _session.CurrentStep!.StepNumber);
-        var ids = _session.Commands.Select(c => c.Id).ToList();
+        var ids = _session.Program.Commands.Select(c => c.Id).ToList();
 
         _runner.Reset();
         await AdvanceStepAsync(10_000);
@@ -265,7 +265,7 @@ public class ExecutionRunnerTests
         Assert.Null(_session.CurrentStep);
         Assert.Equal(new Position(1, 6), _session.HeroPosition);
         Assert.True(_session.IsEditable);
-        Assert.Equal(ids, _session.Commands.Select(c => c.Id));
+        Assert.Equal(ids, _session.Program.Commands.Select(c => c.Id));
     }
 
     [Fact]
@@ -310,7 +310,7 @@ public class ExecutionRunnerTests
 
         Assert.Equal(RunStatus.Failed, _session.Status);
         Assert.Equal(ExecutionError.Obstacle, _session.CurrentStep!.Error);
-        Assert.Equal(_session.Commands[1].Id, _session.CurrentStep.CommandId);
+        Assert.Equal(_session.Program.Commands[1].Id, _session.CurrentStep.CommandId);
         Assert.Equal(new Position(2, 6), _session.HeroPosition);
         Assert.Equal(new Position(3, 6), _session.MarkedCell);
     }
@@ -466,7 +466,7 @@ public class ExecutionRunnerTests
         Assert.Equal(RunStatus.Paused, _session.Status);
         Assert.Equal(2, _session.CurrentStep!.StepNumber);
         Assert.Equal(new Position(1, 4), _session.HeroPosition);
-        Assert.Equal(TestLevels.DemoSolution.Length, _session.Commands.Count);
+        Assert.Equal(TestLevels.DemoSolution.Length, _session.Program.Commands.Count);
     }
 
     [Fact]

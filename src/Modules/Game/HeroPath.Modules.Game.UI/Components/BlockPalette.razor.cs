@@ -13,4 +13,6 @@ public partial class BlockPalette : SessionComponentBase
     private IStringLocalizer<GameResources> Localizer { get; set; } = default!;
 
     private bool CanAdd => Session.CanAdd && Session.IsEditable;
+
+    private bool CanAddRepeat => Session.IsEditable && Session.CanAddRepeat;
 }

@@ -14,5 +14,13 @@
                 <span>@Localizer[$"Block_{direction}"]</span>
             </button>
         }
+        <button type="button"
+                class="palette-button palette-repeat"
+                data-testid="palette-repeat"
+                disabled="@(!CanAddRepeat)"
+                @onclick="Session.AddRepeat">
+            <ProgramIcon Kind="ProgramIconKind.Repeat" />
+            <span>@Localizer["Palette_Repeat"]</span>
+        </button>
     </div>
 </section>
