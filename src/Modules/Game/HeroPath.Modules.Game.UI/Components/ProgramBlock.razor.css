@@ -1,5 +1,6 @@
 .program-block {
     display: block;
+    flex-shrink: 0;
     list-style: none;
 }
 
@@ -148,6 +149,10 @@
 .program-block[data-hint="true"] > .block-row {
     outline: 4px dotted var(--hp-outline);
     outline-offset: 3px;
+}
+
+.program-block[data-hint="true"] > .repeat-body {
+    border-left-color: transparent;
 }
 
 .program-marker {

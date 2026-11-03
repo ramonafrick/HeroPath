@@ -201,6 +201,7 @@ public class MessageTests(AppFixture app)
         await Expect(message).ToHaveTextAsync("Dein Programm ist voll. Lösch zuerst einen Baustein.");
         await Expect(page.GetByTestId("palette-up")).ToBeDisabledAsync();
         await AssertFitsAsync(page, viewport);
+        await LayoutAssertions.AssertRowsKeepSizeAsync(page);
         await Screenshots.CaptureAsync(page, $"message.program-full.{viewport}.de");
         await SwitchToEnglishAsync(page);
         await Expect(message).ToHaveTextAsync("Your program is full. Delete a block first.");

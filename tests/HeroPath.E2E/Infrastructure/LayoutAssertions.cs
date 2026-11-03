@@ -34,4 +34,23 @@ public static class LayoutAssertions
         }");
         Assert.Empty(problems);
     }
+
+    /// <summary>Program rows keep at least 44 px height and do not touch each other, also while the list scrolls.</summary>
+    public static async Task AssertRowsKeepSizeAsync(IPage page)
+    {
+        var problems = await page.EvaluateAsync<string[]>(@"() => {
+            const rows = [...document.querySelectorAll('[data-testid^=block-row-]')].map(r => ({ id: r.dataset.testid, rect: r.getBoundingClientRect() }));
+            const problems = [];
+            rows.forEach((row, i) => {
+                if (row.rect.height < 43.5) {
+                    problems.push(`${row.id}: height ${row.rect.height}`);
+                }
+                if (i > 0 && row.rect.top < rows[i - 1].rect.bottom + 2) {
+                    problems.push(`${row.id}: touches ${rows[i - 1].id}`);
+                }
+            });
+            return problems;
+        }");
+        Assert.Empty(problems);
+    }
 }

@@ -8,6 +8,11 @@
     margin: 0;
     padding: 0;
     list-style: none;
+    flex-shrink: 0;
+}
+
+.drop-zone[data-hover="true"] {
+    z-index: 1;
 }
 
 .drop-zone[data-end="true"] {
@@ -50,17 +55,16 @@
     height: 2.25rem;
     transform: translate(-50%, -50%);
     fill: var(--hp-surface);
-    stroke: var(--hp-flag);
+    stroke: var(--hp-outline);
     stroke-width: 3;
     stroke-linecap: round;
-    paint-order: stroke;
 }
 
 .zone-hatch {
     position: absolute;
     inset-inline: 0;
-    top: -0.125rem;
-    bottom: -0.125rem;
+    top: -0.5rem;
+    bottom: -0.5rem;
     background: repeating-linear-gradient(135deg, var(--hp-surface) 0 0.375rem, var(--hp-outline) 0.375rem 0.5rem);
     border: 3px dashed var(--hp-outline);
     border-radius: 0.5rem;
