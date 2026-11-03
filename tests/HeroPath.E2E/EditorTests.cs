@@ -66,11 +66,13 @@ public class EditorTests(AppFixture app)
         await Expect(page.GetByTestId("custom-level-list")).ToBeVisibleAsync();
         await LayoutAssertions.AssertNoPageScrollAsync(page);
         await AssertTargetsAreBigEnoughAsync(page);
+        await LayoutAssertions.AssertEditorColumnsFitAsync(page);
         await Screenshots.CaptureAsync(page, $"editor-new.{viewport}.de");
 
         await SwitchToEnglishAsync(page);
         await Expect(page.GetByTestId("editor-name-hint")).ToHaveTextAsync("Please do not use your real name.");
         await Expect(page.GetByTestId("editor-name")).ToHaveValueAsync("My level 1");
+        await LayoutAssertions.AssertEditorColumnsFitAsync(page);
         await Screenshots.CaptureAsync(page, $"editor-new.{viewport}.en");
         await page.GetByTestId("language-de").ClickAsync();
         await Expect(page.GetByTestId("editor-save")).ToHaveTextAsync("Speichern");
@@ -102,6 +104,7 @@ public class EditorTests(AppFixture app)
         await Expect(page.GetByTestId("editor-saved")).ToHaveAttributeAsync("data-outcome", "Saved");
         await Expect(page.GetByTestId("custom-level-list").GetByRole(AriaRole.Button).Filter(new() { HasText = LevelName })).ToBeVisibleAsync();
         await LayoutAssertions.AssertVisibleInEditorPanelAsync(page, "[data-testid=editor-saved]", "[data-testid^=custom-level-custom-]");
+        await LayoutAssertions.AssertEditorColumnsFitAsync(page);
         await Screenshots.CaptureAsync(page, $"editor-built.{viewport}.de");
 
         await SwitchToEnglishAsync(page);
@@ -201,6 +204,7 @@ public class EditorTests(AppFixture app)
         await Expect(status).ToHaveAttributeAsync("data-state", "invalid");
         await Expect(page.GetByTestId("editor-save")).ToBeDisabledAsync();
         await Expect(page.GetByTestId("editor-status")).ToContainTextAsync("Gib deinem Level einen Namen.");
+        await LayoutAssertions.AssertEditorColumnsFitAsync(page);
         await Screenshots.CaptureAsync(page, $"editor-name-empty.{viewport}.de");
         await SwitchToEnglishAsync(page);
         await Expect(page.GetByTestId("editor-status")).ToContainTextAsync("Give your level a name.");
@@ -285,8 +289,10 @@ public class EditorTests(AppFixture app)
         var cell = await page.GetByTestId("edit-cell-10-10").BoundingBoxAsync();
         Assert.NotNull(cell);
         Assert.True(cell.Width >= 28, $"A cell of the 20x20 board must stay clickable, but is {cell.Width} px wide.");
+        await LayoutAssertions.AssertToolLabelsFitAsync(page);
         await Screenshots.CaptureAsync(page, $"editor-20x20.{viewport}.de");
         await SwitchToEnglishAsync(page);
+        await LayoutAssertions.AssertToolLabelsFitAsync(page);
         await Screenshots.CaptureAsync(page, $"editor-20x20.{viewport}.en");
 
         Assert.Empty(errors.Errors);

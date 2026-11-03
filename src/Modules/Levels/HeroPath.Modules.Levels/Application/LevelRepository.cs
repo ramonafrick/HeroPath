@@ -182,7 +182,7 @@ public sealed class LevelRepository
                 var level = read with
                 {
                     Id = LevelIdGenerator.NewId(id => _standardIds.Contains(id) || IndexOf(id) >= 0),
-                    Name = name.Length > 0 ? name : NextDefaultName(defaultNameFormat),
+                    Name = LevelEditing.UniqueName(name.Length > 0 ? name : NextDefaultName(defaultNameFormat), _custom.Select(existing => existing.Name)),
                 };
 
                 var written = await WriteAsync([.. _custom, level], cancellationToken);

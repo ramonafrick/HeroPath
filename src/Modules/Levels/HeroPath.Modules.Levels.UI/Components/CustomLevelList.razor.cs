@@ -30,6 +30,10 @@ public partial class CustomLevelList : LocalizedComponentBase
     [Parameter]
     public EventCallback<string> DeleteRequested { get; set; }
 
+    /// <summary>Extra content directly under the header row (the template select).</summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
     [Inject]
     private IStringLocalizer<LevelsResources> Localizer { get; set; } = default!;
 }

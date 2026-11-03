@@ -401,7 +401,7 @@
     <comment>Label of the big file button that imports a level file.</comment>
   </data>
   <data name="Editor_Import_Hint" xml:space="preserve">
-    <value>Wähle eine Datei mit der Endung .heropath.json aus.</value>
+    <value>Wähle eine .heropath.json-Datei aus.</value>
     <comment>Hint under the import button.</comment>
   </data>
   <data name="Editor_Import_Ok" xml:space="preserve">

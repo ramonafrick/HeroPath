@@ -6,6 +6,7 @@
         <h3 id="custom-level-list-title" class="list-title">@Localizer["Editor_List_Title"]</h3>
         <button type="button" class="new-level" data-testid="editor-new" @onclick="() => NewRequested.InvokeAsync()">@Localizer["Editor_New"]</button>
     </div>
+    @ChildContent
     @if (Levels.Count == 0)
     {
         <p class="list-empty">@Localizer["Editor_List_Empty"]</p>

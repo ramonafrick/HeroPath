@@ -35,6 +35,55 @@ public static class LayoutAssertions
         Assert.Empty(problems);
     }
 
+
+    /// <summary>
+    /// Nothing in the editor's columns needs an internal scroll (scrollHeight not above clientHeight) and the template select lies fully
+    /// inside its column: for states that must fit without scrolling.
+    /// </summary>
+    public static async Task AssertEditorColumnsFitAsync(IPage page)
+    {
+        var problems = await page.EvaluateAsync<string[]>(@"() => {
+            const problems = [];
+            for (const column of document.querySelectorAll('[data-testid=editor-panel] > *')) {
+                if (column.scrollHeight > column.clientHeight) {
+                    problems.push(`column overflows: scrollHeight ${column.scrollHeight} > clientHeight ${column.clientHeight}`);
+                }
+                if (column.scrollWidth > column.clientWidth) {
+                    problems.push(`column scrolls horizontally: ${column.scrollWidth} > ${column.clientWidth}`);
+                }
+            }
+            const select = document.querySelector('[data-testid=editor-template]');
+            const r = select.getBoundingClientRect();
+            const panel = document.querySelector('[data-testid=editor-panel]').getBoundingClientRect();
+            if (r.top < panel.top || r.bottom > panel.bottom || r.bottom > window.innerHeight) {
+                problems.push(`template select ${Math.round(r.top)}-${Math.round(r.bottom)} not fully visible`);
+            }
+            return problems;
+        }");
+        Assert.Empty(problems);
+    }
+
+    /// <summary>No tool label overflows its button or breaks inside a word (each one-word label stays on one line).</summary>
+    public static async Task AssertToolLabelsFitAsync(IPage page)
+    {
+        var problems = await page.EvaluateAsync<string[]>(@"() => {
+            const problems = [];
+            for (const tool of document.querySelectorAll('[data-testid^=editor-tool-]')) {
+                const name = tool.querySelector('.tool-name');
+                if (name.scrollWidth > name.clientWidth + 1) {
+                    problems.push(`${name.textContent}: overflows (${name.scrollWidth} > ${name.clientWidth})`);
+                }
+                const range = document.createRange();
+                range.selectNodeContents(name);
+                if (!name.textContent.includes(' ') && range.getClientRects().length > 1) {
+                    problems.push(`${name.textContent}: broken inside the word`);
+                }
+            }
+            return problems;
+        }");
+        Assert.Empty(problems);
+    }
+
     /// <summary>The page itself must not scroll: board and panels fit the viewport.</summary>
     public static async Task AssertNoPageScrollAsync(IPage page)
     {

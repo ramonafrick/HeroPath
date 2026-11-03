@@ -77,16 +77,17 @@ public class LevelFileTests(AppFixture app)
             await importInput.SetInputFilesAsync(exported);
             var message = page.GetByTestId("editor-import-message");
             await Expect(message).ToHaveAttributeAsync("data-state", "ok");
-            await Expect(message).ToHaveTextAsync("«Käse-Weg» ist jetzt in deiner Liste.");
-            await Expect(page.GetByTestId("custom-level-list").GetByText(LevelName, new() { Exact = true })).ToHaveCountAsync(2);
+            await Expect(message).ToHaveTextAsync("«Käse-Weg (2)» ist jetzt in deiner Liste.");
+            await Expect(page.GetByTestId("custom-level-list").GetByText(LevelName, new() { Exact = true })).ToHaveCountAsync(1);
+            await Expect(page.GetByTestId("custom-level-list").GetByText(LevelName + " (2)", new() { Exact = true })).ToHaveCountAsync(1);
             await Expect(page.Locator("[data-testid^=custom-level-export-]")).ToHaveCountAsync(2);
             await Expect(page.GetByTestId("editor-status")).ToHaveAttributeAsync("data-state", "solvable");
-            await Expect(page.GetByTestId("editor-name")).Not.ToHaveValueAsync(LevelName);
+            await Expect(page.GetByTestId("editor-name")).Not.ToHaveValueAsync(LevelName + " (2)");
             await LayoutAssertions.AssertVisibleInEditorPanelAsync(page, "[data-testid=editor-import-message]", "[data-testid^=custom-level-custom-]");
             await Expect(page.GetByTestId("editor-export-hint")).ToHaveTextAsync("Der Name deines Levels steht in der Datei. Verwende nicht deinen echten Namen.");
             await Screenshots.CaptureAsync(page, "editor-import-ok.laptop.de");
             await SwitchLanguageAsync(page, "en");
-            await Expect(message).ToHaveTextAsync("«Käse-Weg» is now in your list.");
+            await Expect(message).ToHaveTextAsync("«Käse-Weg (2)» is now in your list.");
             await Screenshots.CaptureAsync(page, "editor-import-ok.laptop.en");
             await SwitchLanguageAsync(page, "de");
 
@@ -117,7 +118,8 @@ public class LevelFileTests(AppFixture app)
 
             await page.GotoAsync("/");
             await page.WaitForRenderedAsync("[data-testid=start-page]", errors);
-            await Expect(page.GetByTestId("custom-levels").GetByText(LevelName, new() { Exact = true })).ToHaveCountAsync(2);
+            await Expect(page.GetByTestId("custom-levels").GetByText(LevelName, new() { Exact = true })).ToHaveCountAsync(1);
+            await Expect(page.GetByTestId("custom-levels").GetByText(LevelName + " (2)", new() { Exact = true })).ToHaveCountAsync(1);
 
             Assert.Empty(errors.Errors);
         }

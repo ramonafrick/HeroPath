@@ -209,6 +209,38 @@ public static class LevelEditing
     }
 
     /// <summary>
+    /// <paramref name="name"/> when no name in <paramref name="existingNames"/> equals it (ordinal), otherwise the name with the smallest free
+    /// suffix « (2)», « (3)» …; the base name is cut (never inside a surrogate pair) so the result stays within
+    /// <see cref="LevelLimits.MaxNameLength"/>. Used for imports; names typed in the editor may repeat.
+    /// </summary>
+    public static string UniqueName(string name, IEnumerable<string?> existingNames)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        ArgumentNullException.ThrowIfNull(existingNames);
+        var taken = existingNames.OfType<string>().ToHashSet(StringComparer.Ordinal);
+        if (!taken.Contains(name))
+        {
+            return name;
+        }
+
+        for (var number = 2; ; number++)
+        {
+            var suffix = $" ({number})";
+            var length = Math.Min(name.Length, LevelLimits.MaxNameLength - suffix.Length);
+            if (length > 0 && length < name.Length && char.IsHighSurrogate(name[length - 1]))
+            {
+                length--;
+            }
+
+            var candidate = name[..length].TrimEnd() + suffix;
+            if (!taken.Contains(candidate))
+            {
+                return candidate;
+            }
+        }
+    }
+
+    /// <summary>
     /// A safe file name for exporting a level: lowercase ASCII letters and digits separated by single hyphens (umlauts become ae, oe, ue,
     /// «ß» becomes ss, other accents are dropped), at most <see cref="MaxExportBaseLength"/> characters, «level» when nothing is left,
     /// plus <see cref="ExportExtension"/>. Never contains a path separator or markup.

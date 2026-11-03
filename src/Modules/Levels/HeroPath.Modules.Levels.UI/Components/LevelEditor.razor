@@ -118,24 +118,24 @@
                              LevelOpened="AskOpen"
                              NewRequested="AskNew"
                              DeleteRequested="AskDelete"
-                             ExportRequested="ExportAsync" />
+                             ExportRequested="ExportAsync">
+                <div class="editor-template">
+                    <label class="editor-sr-only" for="editor-template">@Localizer["Editor_Template_Label"]</label>
+                    <select @key="_templateKey"
+                            id="editor-template"
+                            class="editor-template-select"
+                            data-testid="editor-template"
+                            @onchange="TemplateChosen">
+                        <option value="" selected>@Localizer["Editor_Template_Placeholder"]</option>
+                        @foreach (var level in Repository.Standard)
+                        {
+                            <option @key="level.Id" value="@level.Id" data-testid="@($"editor-template-{level.Id}")">@Localizer.NameOf(level)</option>
+                        }
+                    </select>
+                </div>
+            </CustomLevelList>
 
             <EditorLevelFiles @ref="_files" DefaultName="DefaultName" />
-
-            <div class="editor-template">
-                <label class="editor-label" for="editor-template">@Localizer["Editor_Template_Label"]</label>
-                <select @key="_templateKey"
-                        id="editor-template"
-                        class="editor-template-select"
-                        data-testid="editor-template"
-                        @onchange="TemplateChosen">
-                    <option value="" selected>@Localizer["Editor_Template_Placeholder"]</option>
-                    @foreach (var level in Repository.Standard)
-                    {
-                        <option @key="level.Id" value="@level.Id" data-testid="@($"editor-template-{level.Id}")">@Localizer.NameOf(level)</option>
-                    }
-                </select>
-            </div>
         </div>
     </div>
 </div>

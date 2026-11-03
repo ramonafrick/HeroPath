@@ -298,6 +298,19 @@ public class LevelRepositoryTests
     }
 
     [Fact]
+    public async Task Import_SameFileTwice_NumbersTheName()
+    {
+        var file = LevelJson.Write(CustomLevelSamples.Valid("custom-fromfile", "Same"));
+
+        await _repository.ImportAsync(file, DefaultName, Token);
+        var second = await _repository.ImportAsync(file, DefaultName, Token);
+        var third = await _repository.ImportAsync(file, DefaultName, Token);
+
+        Assert.Equal("Same (2)", second.Level!.Name);
+        Assert.Equal("Same (3)", third.Level!.Name);
+    }
+
+    [Fact]
     public async Task Import_StandardIdInFile_GetsANewId()
     {
         var file = LevelJson.Write(CustomLevelSamples.Valid("std-a", "Fake"));
