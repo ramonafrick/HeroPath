@@ -12,7 +12,7 @@ Docs: `docs/Projektidee.md` (behaviour), `docs/Architektur C4.md` §4.2 (class m
 | Module | Domain | Application | Infrastructure |
 |---|---|---|---|
 | `HeroPath.Modules.Levels` | `Position`, `Grid`, `ObstacleKind`, `ItemKind`, `LevelObstacle`, `LevelItem`, `LevelDefinition`, `LevelLimits` | `LevelValidator`, `LevelValidationError`/`LevelValidationErrorKind`, `LevelReadResult`; later `ILevelSource`, `LevelRepository` | `LevelJson` (Read/Write), `LevelJsonContext`; `StandardLevels` (static: `All`, `Get(id)` over the embedded `Levels/*.json`, throws `KeyNotFoundException` for unknown ids and `InvalidOperationException` for an invalid embedded level); later storage-backed custom levels |
-| `HeroPath.Modules.Game` | `Direction` + `DirectionExtensions` (`Offset`, `MoveFrom`), `Person`, `MoveResult`/`MoveOutcome`, `Command` (abstract), `MoveCommand`, `RepeatCommand`, `ProgramDefinition`, `Interpreter`, `ExecutionStep`/`ExecutionState`/`ExecutionError`, `ProgramLimits` | `GameSession`, `ExecutionRunner` | none so far |
+| `HeroPath.Modules.Game` | `Direction` + `DirectionExtensions` (`Offset`, `MoveFrom`), `Person`, `MoveResult`/`MoveOutcome`, `Command` (abstract), `MoveCommand`, `RepeatCommand`, `ProgramDefinition`, `Interpreter`, `ExecutionStep`/`ExecutionState`/`ExecutionError`, `ProgramLimits` | `GameSession`, `ExecutionRunner`, `RunStatus`, `Tempo` + `TempoExtensions` (`Duration`) | none so far |
 
 Game depends on Levels (the interpreter runs on a `Grid`), never the other way round.
 
@@ -142,3 +142,12 @@ Standard levels are embedded resources in `HeroPath.Modules.Levels/Infrastructur
 - Items collected once, `RequireAllItems` true/false, goal with missing items continues.
 - Terminal state is stable on repeated `Step()`.
 - Every embedded level deserializes, validates and is solvable (see the `level-design` skill).
+
+## Run state (ExecutionRunner, GameSession)
+
+- `RunStatus`: `Ready`, `Running` (Play), `Paused` (Debug between steps), `Failed`, `Succeeded`. `Tempo`: `Slow` 900 ms, `Medium` 500 ms (default), `Fast` 200 ms; `Tempo.Duration` (in `TempoExtensions`) maps to the wait and to the board animation.
+- `ExecutionRunner(GameSession, TimeProvider)` is the only writer of run state: `PlayAsync()`, `StepOnce()` (Debug), `Reset()`, `Tempo`. `GameSession.UpdateRun/ResetRun/NotifyChanged` are `internal`; tests drive the state through the runner.
+- One `Interpreter` per run, created lazily from `session.ToProgram()` + `session.Grid` on the first Play/Debug after Ready. Play after Debug continues on it.
+- Play executes the first step immediately, then `Task.Delay(Tempo.Duration, timeProvider, token)` between steps; a tempo change applies to the next wait. Reset cancels the token; the token is checked after the wait, so no step is applied after Reset. `OperationCanceledException` is caught only in the runner.
+- Play while `Running`, Play/Debug after an end state and on an empty program are no-ops. Debug while `Running` is ignored. The first step locks editing (`GameSession.IsEditable` is `Status == Ready`); only Reset unlocks it.
+- `GameSession.CurrentStep`, `HeroPosition` (= `CurrentStep.Position`, else `Grid.Start`), `MarkedCell`: for `Obstacle` the obstacle cell (hero position + direction of the failed `MoveCommand`), for `OutOfBounds` the hero cell, otherwise `null`.

@@ -8,6 +8,16 @@ public class GameSessionTests
 {
     private static Grid CreateGrid() => new(10, 10, new Position(2, 3), new Position(7, 7), [], [], false);
 
+    private static Grid DemoGrid() => TestLevels.DemoGrid();
+
+    private static (GameSession Session, ExecutionRunner Runner) Started(params Direction[] directions)
+    {
+        var session = new GameSession();
+        session.Load(DemoGrid());
+        TestLevels.Fill(session, directions);
+        return (session, new ExecutionRunner(session, TimeProvider.System));
+    }
+
     private static GameSession SessionWith(params Direction[] directions)
     {
         var session = new GameSession();
@@ -119,17 +129,16 @@ public class GameSessionTests
         session.Remove(session.Commands[0].Id);
         session.Clear();
         session.Load(CreateGrid());
-        session.SetEditable(false);
 
-        Assert.Equal(6, changes);
+        Assert.Equal(5, changes);
     }
 
     [Fact]
     public void NotEditable_IgnoresAddRemoveAndClear()
     {
-        var session = SessionWith(Direction.Up, Direction.Down);
+        var (session, runner) = Started(Direction.Up, Direction.Down);
+        runner.StepOnce();
         var id = session.Commands[0].Id;
-        session.SetEditable(false);
         var changes = 0;
         session.Changed += () => changes++;
 
@@ -137,20 +146,93 @@ public class GameSessionTests
         session.Remove(id);
         session.Clear();
 
+        Assert.False(session.IsEditable);
         Assert.Equal(2, session.Commands.Count);
         Assert.Equal(0, changes);
+        runner.Reset();
+        Assert.True(session.IsEditable);
     }
 
     [Fact]
-    public void SetEditable_True_AllowsChangesAgain()
+    public void NewSession_IsReadyWithoutStepAndHeroOnStart()
     {
         var session = new GameSession();
-        session.SetEditable(false);
-        session.SetEditable(true);
+        session.Load(DemoGrid());
 
-        session.Add(Direction.Up);
+        Assert.Equal(RunStatus.Ready, session.Status);
+        Assert.Null(session.CurrentStep);
+        Assert.Null(session.MarkedCell);
+        Assert.True(session.IsEditable);
+        Assert.Equal(new Position(1, 6), session.HeroPosition);
+    }
 
-        Assert.Single(session.Commands);
+    [Fact]
+    public void Step_MovesHeroAndRaisesChanged()
+    {
+        var (session, runner) = Started(Direction.Up);
+        var changes = 0;
+        session.Changed += () => changes++;
+
+        runner.StepOnce();
+
+        Assert.Equal(new Position(1, 5), session.HeroPosition);
+        Assert.Equal(session.Commands[0].Id, session.CurrentStep!.CommandId);
+        Assert.Equal(1, changes);
+    }
+
+    [Fact]
+    public void Obstacle_MarksObstacleCellInAttemptedDirection()
+    {
+        var (session, runner) = Started(Direction.Right, Direction.Right);
+
+        runner.StepOnce();
+        runner.StepOnce();
+
+        Assert.Equal(RunStatus.Failed, session.Status);
+        Assert.Equal(new Position(2, 6), session.HeroPosition);
+        Assert.Equal(new Position(3, 6), session.MarkedCell);
+    }
+
+    [Fact]
+    public void OutOfBounds_MarksHeroCell()
+    {
+        var (session, runner) = Started(Direction.Left, Direction.Left);
+
+        runner.StepOnce();
+        runner.StepOnce();
+
+        Assert.Equal(new Position(0, 6), session.HeroPosition);
+        Assert.Equal(new Position(0, 6), session.MarkedCell);
+    }
+
+    [Fact]
+    public void Reset_AfterRun_ClearsStepAndMark()
+    {
+        var (session, runner) = Started(Direction.Right, Direction.Right);
+        runner.StepOnce();
+        runner.StepOnce();
+        var changes = 0;
+        session.Changed += () => changes++;
+
+        runner.Reset();
+
+        Assert.Equal(RunStatus.Ready, session.Status);
+        Assert.Null(session.CurrentStep);
+        Assert.Null(session.MarkedCell);
+        Assert.Equal(new Position(1, 6), session.HeroPosition);
+        Assert.Equal(1, changes);
+    }
+
+    [Fact]
+    public void Reset_WhenReady_RaisesNoEvent()
+    {
+        var (session, runner) = Started();
+        var changes = 0;
+        session.Changed += () => changes++;
+
+        runner.Reset();
+
+        Assert.Equal(0, changes);
     }
 
     [Fact]

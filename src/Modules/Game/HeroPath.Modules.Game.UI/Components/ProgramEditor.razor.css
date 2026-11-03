@@ -108,3 +108,30 @@
     stroke-width: 3;
     stroke-linecap: round;
 }
+
+.program-block[data-current="true"] {
+    background: var(--hp-goal);
+    border-width: 5px;
+    padding-left: 0.375rem;
+}
+
+.program-block[data-error="true"] {
+    background: var(--hp-surface);
+    border-style: dashed;
+    border-color: var(--hp-flag);
+}
+
+.program-marker {
+    flex: none;
+    width: 1rem;
+    height: 1rem;
+    fill: var(--hp-outline);
+    stroke: var(--hp-outline);
+    stroke-width: 3;
+    stroke-linecap: round;
+}
+
+.program-block[data-error="true"] .program-marker {
+    fill: none;
+    stroke: var(--hp-flag);
+}

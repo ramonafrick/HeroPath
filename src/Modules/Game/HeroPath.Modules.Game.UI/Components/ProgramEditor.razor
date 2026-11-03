@@ -20,16 +20,33 @@
             var number = index + 1;
             var position = index;
             var name = Localizer[$"Block_{command.Direction}"];
+            var isCurrent = Session.CurrentStep?.CommandId == command.Id;
+            var isError = isCurrent && Session.Status == RunStatus.Failed;
             <li @key="command.Id"
                 class="program-block"
                 data-testid="program-block"
                 data-index="@position"
                 data-command-id="@command.Id"
                 data-direction="@command.Direction.ToString().ToLowerInvariant()"
+                data-current="@(isCurrent ? "true" : null)"
+                data-error="@(isError ? "true" : null)"
                 aria-label="@Localizer["Program_Block", number, name]">
                 <span class="program-number" aria-hidden="true">@number</span>
                 <DirectionIcon Direction="command.Direction" />
                 <span class="program-text">@name</span>
+                @if (isCurrent)
+                {
+                    <svg class="program-marker" role="img" aria-label="@Localizer[isError ? "Program_Error" : "Program_Current"]" viewBox="0 0 24 24" focusable="false">
+                        @if (isError)
+                        {
+                            <path d="M6 6 L18 18 M18 6 L6 18" />
+                        }
+                        else
+                        {
+                            <path d="M7 4 L20 12 L7 20 Z" />
+                        }
+                    </svg>
+                }
                 <button type="button"
                         class="program-remove"
                         data-testid="@($"program-remove-{position}")"

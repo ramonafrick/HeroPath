@@ -8,7 +8,10 @@
 <main class="play-page">
     <section class="board-area">
         <h2 class="level-name" data-testid="level-name">@LevelsLocalizer[$"Level_{_level.Id}"]</h2>
-        <GameBoard Grid="_grid" HeroPosition="Session.HeroPosition">
+        <GameBoard Grid="_grid"
+                   HeroPosition="Session.HeroPosition"
+                   MarkedCell="Session.MarkedCell"
+                   StepDuration="Runner.Tempo.Duration">
             <HeroContent>
                 <HeroMax />
             </HeroContent>
@@ -17,5 +20,6 @@
     <aside class="side-panel" data-testid="side-panel">
         <BlockPalette />
         <ProgramEditor />
+        <ControlBar />
     </aside>
 </main>

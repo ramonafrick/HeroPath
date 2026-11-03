@@ -57,7 +57,7 @@ public class ProgramFlowTests(AppFixture app)
 - `Expect(...)` comes from `using static Microsoft.Playwright.Assertions;`. It retries automatically, so never use `Task.Delay`.
 - **Selectors**: `data-testid` on interactive elements and state carriers (`data-state`, `data-step`), defined in the component markup. No CSS classes or localized texts as selectors (texts change with the language).
 - Use the click alternative in E2E tests. Test real HTML5 drag & drop with `page.DragAndDropAsync(source, target)` in **one** dedicated test only (it's flaky by nature).
-- Never assert on animation timing. Reduced motion is on, and the tempo slider is set to the maximum where needed.
+- Never assert on animation timing. Reduced motion is on, and set the tempo to fast before Play with `page.GetByTestId("control-tempo").FillAsync("2")` (range 0 slow, 1 medium, 2 fast); wait for `status` `data-state` with `Expect` instead.
 - Each test gets a fresh context (empty `localStorage`). For a stored state, set it via `page.EvaluateAsync("localStorage.setItem(...)")` before `GotoAsync`.
 
 ## Screenshot naming
@@ -77,7 +77,7 @@ Capture each new UI state in **de and en** (text lengths differ).
 E2E covers **flows across components**. Single-component logic belongs in bUnit and game rules in xUnit.
 
 - Choose hero → choose level → assemble program → Play → success message
-- Debug step by step: highlighted block moves, status shows pause
+- Debug step by step: highlighted block moves (`data-current`), status shows pause (`RunFlowTests`)
 - Error path: obstacle/edge → kid-friendly message, block and cell marked
 - Reset restores hero and items
 - Language switch keeps hero name and program (no reload!)

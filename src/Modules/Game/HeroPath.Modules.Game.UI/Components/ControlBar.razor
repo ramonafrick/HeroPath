@@ -1,0 +1,68 @@
+<section class="controls" aria-label="@Localizer["Controls_Title"]">
+    <div class="controls-buttons">
+        <button type="button"
+                class="control-button"
+                data-testid="control-play"
+                disabled="@(!CanStart)"
+                @onclick="PlayAsync">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 4 L20 12 L7 20 Z" /></svg>
+            <span>@Localizer["Control_Play"]</span>
+        </button>
+        <button type="button"
+                class="control-button"
+                data-testid="control-debug"
+                disabled="@(!CanStart)"
+                @onclick="Runner.StepOnce">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 4 L14 12 L4 20 Z M17 4 H20 V20 H17 Z" /></svg>
+            <span>@Localizer["Control_Debug"]</span>
+        </button>
+        <button type="button"
+                class="control-button"
+                data-testid="control-reset"
+                @onclick="Runner.Reset">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path class="stroke" d="M5 12 A7 7 0 1 0 8 6.3 M5 4 V9 H10" /></svg>
+            <span>@Localizer["Control_Reset"]</span>
+        </button>
+    </div>
+    <div class="controls-tempo">
+        <label for="control-tempo" class="tempo-label">
+            @Localizer["Tempo_Label"]: <span class="tempo-value" data-testid="tempo-value">@TempoName</span>
+        </label>
+        <input id="control-tempo"
+               type="range"
+               min="0"
+               max="2"
+               step="1"
+               data-testid="control-tempo"
+               value="@((int)Runner.Tempo)"
+               aria-valuetext="@TempoName"
+               @oninput="ChangeTempo" />
+    </div>
+    <p class="status"
+       data-testid="status"
+       data-state="@StateName"
+       data-error="@ErrorName"
+       aria-live="polite">
+        <svg class="status-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            @switch (Session.Status)
+            {
+                case RunStatus.Running:
+                    <path d="M7 4 L20 12 L7 20 Z" />
+                    break;
+                case RunStatus.Paused:
+                    <path d="M6 4 H10 V20 H6 Z M14 4 H18 V20 H14 Z" />
+                    break;
+                case RunStatus.Failed:
+                    <path class="stroke" d="M6 6 L18 18 M18 6 L6 18" />
+                    break;
+                case RunStatus.Succeeded:
+                    <path class="stroke" d="M4 13 L10 19 L20 6" />
+                    break;
+                default:
+                    <circle class="stroke" cx="12" cy="12" r="7" />
+                    break;
+            }
+        </svg>
+        <span class="status-text">@Localizer[$"Status_{Session.Status}"]</span>
+    </p>
+</section>

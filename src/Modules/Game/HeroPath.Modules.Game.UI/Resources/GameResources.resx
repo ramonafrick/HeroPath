@@ -52,4 +52,68 @@
     <value>Baustein {0}: {1}</value>
     <comment>Accessible name of a program block. {0} = block number, starting at 1; {1} = direction name.</comment>
   </data>
+  <data name="Control_Play" xml:space="preserve">
+    <value>Play</value>
+    <comment>Button that runs the whole program.</comment>
+  </data>
+  <data name="Control_Debug" xml:space="preserve">
+    <value>Debug</value>
+    <comment>Button that runs the program one step at a time.</comment>
+  </data>
+  <data name="Control_Reset" xml:space="preserve">
+    <value>Zurücksetzen</value>
+    <comment>Button that stops the run and puts the hero back on the start.</comment>
+  </data>
+  <data name="Controls_Title" xml:space="preserve">
+    <value>Steuerung</value>
+    <comment>Accessible name of the control area.</comment>
+  </data>
+  <data name="Tempo_Label" xml:space="preserve">
+    <value>Tempo</value>
+    <comment>Label of the speed slider.</comment>
+  </data>
+  <data name="Tempo_Slow" xml:space="preserve">
+    <value>Langsam</value>
+    <comment>Slowest speed step.</comment>
+  </data>
+  <data name="Tempo_Medium" xml:space="preserve">
+    <value>Mittel</value>
+    <comment>Middle speed step.</comment>
+  </data>
+  <data name="Tempo_Fast" xml:space="preserve">
+    <value>Schnell</value>
+    <comment>Fastest speed step.</comment>
+  </data>
+  <data name="Status_Label" xml:space="preserve">
+    <value>Status</value>
+    <comment>Accessible prefix of the run status.</comment>
+  </data>
+  <data name="Status_Ready" xml:space="preserve">
+    <value>Bereit</value>
+    <comment>Status: nothing has run yet.</comment>
+  </data>
+  <data name="Status_Running" xml:space="preserve">
+    <value>Läuft</value>
+    <comment>Status: the program runs.</comment>
+  </data>
+  <data name="Status_Paused" xml:space="preserve">
+    <value>Pause</value>
+    <comment>Status: stopped between two debug steps.</comment>
+  </data>
+  <data name="Status_Failed" xml:space="preserve">
+    <value>Fehler</value>
+    <comment>Status: the run ended with an error.</comment>
+  </data>
+  <data name="Status_Succeeded" xml:space="preserve">
+    <value>Ziel erreicht</value>
+    <comment>Status: the hero reached the castle.</comment>
+  </data>
+  <data name="Program_Current" xml:space="preserve">
+    <value>Aktueller Baustein</value>
+    <comment>Accessible hint on the block that runs now.</comment>
+  </data>
+  <data name="Program_Error" xml:space="preserve">
+    <value>Hier ist der Fehler</value>
+    <comment>Accessible hint on the block that caused the error.</comment>
+  </data>
 </root>

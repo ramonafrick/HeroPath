@@ -11,6 +11,7 @@ public static class GameModuleExtensions
     {
         services.TryAddSingleton(TimeProvider.System);
         services.AddScoped<GameSession>();
+        services.AddScoped<ExecutionRunner>();
         return services;
     }
 }

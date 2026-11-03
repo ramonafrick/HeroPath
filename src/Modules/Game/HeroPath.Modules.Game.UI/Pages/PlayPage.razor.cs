@@ -20,6 +20,9 @@ public partial class PlayPage : IDisposable
     private GameSession Session { get; set; } = default!;
 
     [Inject]
+    private ExecutionRunner Runner { get; set; } = default!;
+
+    [Inject]
     private LanguageService Language { get; set; } = default!;
 
     [Inject]

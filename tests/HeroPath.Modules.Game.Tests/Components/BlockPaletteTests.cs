@@ -20,6 +20,13 @@ public class BlockPaletteTests : BunitContext
         _session = Services.GetRequiredService<GameSession>();
     }
 
+    private void LockEditing()
+    {
+        _session.Load(TestLevels.DemoGrid());
+        _session.Add(Direction.Up);
+        Services.GetRequiredService<ExecutionRunner>().StepOnce();
+    }
+
     [Theory]
     [InlineData("up", Direction.Up)]
     [InlineData("down", Direction.Down)]
@@ -48,7 +55,7 @@ public class BlockPaletteTests : BunitContext
     [Fact]
     public void Render_NotEditable_DisablesButtons()
     {
-        _session.SetEditable(false);
+        LockEditing();
 
         var palette = Render<BlockPalette>();
 
@@ -73,7 +80,7 @@ public class BlockPaletteTests : BunitContext
     {
         var palette = Render<BlockPalette>();
 
-        _session.SetEditable(false);
+        LockEditing();
 
         palette.WaitForAssertion(() =>
             Assert.True(palette.Find("[data-testid=palette-up]").HasAttribute("disabled")));

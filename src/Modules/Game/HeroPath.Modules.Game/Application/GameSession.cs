@@ -17,14 +17,32 @@ public sealed class GameSession
     /// <summary>Blocks of the program in execution order.</summary>
     public IReadOnlyList<MoveCommand> Commands => _commands;
 
-    /// <summary>Whether the program may be changed. Driven by the execution runner.</summary>
-    public bool IsEditable { get; private set; } = true;
+    /// <summary>Where the current run stands. Changed only by the <see cref="ExecutionRunner"/>.</summary>
+    public RunStatus Status { get; private set; } = RunStatus.Ready;
+
+    /// <summary>The last executed step of the current run, or <c>null</c> before the first step.</summary>
+    public ExecutionStep? CurrentStep { get; private set; }
+
+    /// <summary>Whether the program may be changed: only while the run is <see cref="RunStatus.Ready"/>.</summary>
+    public bool IsEditable => Status == RunStatus.Ready;
 
     /// <summary>Whether another block fits into the program.</summary>
     public bool CanAdd => _commands.Count < ProgramLimits.MaxProgramCommands;
 
-    /// <summary>Position of the hero on the board: the start cell of the loaded grid.</summary>
-    public Position HeroPosition => Grid?.Start ?? default;
+    /// <summary>Position of the hero on the board: after the current step, else the start cell of the loaded grid.</summary>
+    public Position HeroPosition => CurrentStep?.Position ?? Grid?.Start ?? default;
+
+    /// <summary>
+    /// Cell to mark after a failed move: the obstacle cell for <see cref="ExecutionError.Obstacle"/>, the hero cell for
+    /// <see cref="ExecutionError.OutOfBounds"/>, otherwise <c>null</c>.
+    /// </summary>
+    public Position? MarkedCell => CurrentStep switch
+    {
+        { Error: ExecutionError.OutOfBounds } => HeroPosition,
+        { Error: ExecutionError.Obstacle } step when _commands.Find(command => command.Id == step.CommandId) is { } move =>
+            move.Direction.MoveFrom(HeroPosition),
+        _ => null,
+    };
 
     /// <summary>Loads a level grid and keeps the current program.</summary>
     public void Load(Grid grid)
@@ -76,17 +94,26 @@ public sealed class GameSession
         Changed?.Invoke();
     }
 
-    /// <summary>Locks or unlocks editing. Called by the execution runner.</summary>
-    public void SetEditable(bool isEditable)
+    internal void UpdateRun(RunStatus status, ExecutionStep step)
     {
-        if (IsEditable == isEditable)
+        Status = status;
+        CurrentStep = step;
+        Changed?.Invoke();
+    }
+
+    internal void ResetRun()
+    {
+        if (Status == RunStatus.Ready && CurrentStep is null)
         {
             return;
         }
 
-        IsEditable = isEditable;
+        Status = RunStatus.Ready;
+        CurrentStep = null;
         Changed?.Invoke();
     }
+
+    internal void NotifyChanged() => Changed?.Invoke();
 
     /// <summary>Builds the program the interpreter runs.</summary>
     public ProgramDefinition ToProgram() => new([.. _commands]);

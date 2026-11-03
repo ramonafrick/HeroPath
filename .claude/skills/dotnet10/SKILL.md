@@ -92,7 +92,7 @@ Limits from `Projekt_Kontext.md` live as named constants in the owning module, n
 - I/O methods (storage, JS interop): `async Task`/`ValueTask`, suffix `Async`, last parameter `CancellationToken cancellationToken`.
 - Never `.Result`, `.Wait()`, `async void` (except Blazor event handlers — prefer `Task`-returning handlers anyway).
 - No `ConfigureAwait(false)` (Blazor sync context in UI projects, and services in `Application` are awaited from components). Domain code is synchronous by design (`Interpreter.Step()`).
-- Play loop / tempo (`ExecutionRunner` in `Modules.Game/Application`): use `TimeProvider` + `Task.Delay(delay, timeProvider, cancellationToken)` and a `CancellationTokenSource` for Reset/Stop. Tests use `FakeTimeProvider` (`Microsoft.Extensions.TimeProvider.Testing`, add it to the Testing group when first needed) instead of real delays.
+- Play loop / tempo (`ExecutionRunner` in `Modules.Game/Application`): use `TimeProvider` + `Task.Delay(delay, timeProvider, cancellationToken)` and a `CancellationTokenSource` for Reset/Stop. Tests use `FakeTimeProvider` (`Microsoft.Extensions.TimeProvider.Testing`, already in the Testing group, referenced only by `HeroPath.Modules.Game.Tests`) instead of real delays.
 
 ## DI
 

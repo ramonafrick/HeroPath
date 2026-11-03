@@ -88,8 +88,9 @@ public class ProgramEditorTests : BunitContext
     [Fact]
     public void Render_NotEditable_DisablesRemoveAndClear()
     {
+        _session.Load(TestLevels.DemoGrid());
         _session.Add(Direction.Up);
-        _session.SetEditable(false);
+        Services.GetRequiredService<ExecutionRunner>().StepOnce();
 
         var editor = Render<ProgramEditor>();
 
@@ -118,5 +119,68 @@ public class ProgramEditorTests : BunitContext
         var editor = Render<ProgramEditor>();
 
         Assert.Equal(ProgramLimits.MaxProgramCommands, editor.FindAll("[data-testid=program-block]").Count);
+    }
+
+    [Fact]
+    public void Render_BeforeRun_MarksNoBlock()
+    {
+        _session.Add(Direction.Up);
+
+        var editor = Render<ProgramEditor>();
+
+        Assert.Empty(editor.FindAll("[data-current]"));
+        Assert.Empty(editor.FindAll("[data-error]"));
+    }
+
+    [Fact]
+    public void Debug_MarksCurrentBlockAndMovesWithEachStep()
+    {
+        _session.Load(TestLevels.DemoGrid());
+        TestLevels.Fill(_session, Direction.Up, Direction.Up, Direction.Right);
+        var runner = Services.GetRequiredService<ExecutionRunner>();
+        var editor = Render<ProgramEditor>();
+
+        runner.StepOnce();
+        runner.StepOnce();
+
+        editor.WaitForAssertion(() =>
+        {
+            var current = Assert.Single(editor.FindAll("[data-current=true]"));
+            Assert.Equal("1", current.GetAttribute("data-index"));
+        });
+        Assert.Empty(editor.FindAll("[data-error]"));
+    }
+
+    [Fact]
+    public void Failure_MarksFailedBlockWithError()
+    {
+        _session.Load(TestLevels.DemoGrid());
+        TestLevels.Fill(_session, Direction.Right, Direction.Right);
+        var runner = Services.GetRequiredService<ExecutionRunner>();
+        var editor = Render<ProgramEditor>();
+
+        runner.StepOnce();
+        runner.StepOnce();
+
+        editor.WaitForAssertion(() =>
+        {
+            var failed = Assert.Single(editor.FindAll("[data-error=true]"));
+            Assert.Equal("1", failed.GetAttribute("data-index"));
+            Assert.Equal("true", failed.GetAttribute("data-current"));
+        });
+    }
+
+    [Fact]
+    public void Reset_ClearsMarkers()
+    {
+        _session.Load(TestLevels.DemoGrid());
+        _session.Add(Direction.Up);
+        var runner = Services.GetRequiredService<ExecutionRunner>();
+        var editor = Render<ProgramEditor>();
+        runner.StepOnce();
+
+        runner.Reset();
+
+        editor.WaitForAssertion(() => Assert.Empty(editor.FindAll("[data-current]")));
     }
 }
