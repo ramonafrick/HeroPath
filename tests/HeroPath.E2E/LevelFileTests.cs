@@ -126,4 +126,30 @@ public class LevelFileTests(AppFixture app)
             Directory.Delete(directory, recursive: true);
         }
     }
+
+    [Fact]
+    public async Task Export_WhenTheDownloadCannotStart_ShowsAMessage()
+    {
+        Assert.SkipUnless(E2EEnvironment.Enabled, "Set HEROPATH_E2E=1 to run E2E tests.");
+
+        await using var context = await app.NewContextAsync("de-CH", 1366, 768);
+        var page = await context.NewPageAsync();
+        var errors = BrowserErrors.Track(page);
+        await OpenEditorAsync(page, errors);
+
+        // file-download.js calls URL.createObjectURL when the export runs, so a throwing replacement makes the JS side fail like a locked-down browser.
+        await page.EvaluateAsync("() => { URL.createObjectURL = () => { throw new Error('blocked'); }; }");
+        await page.GetByTestId("custom-level-export-custom-e2efile1").ClickAsync();
+
+        var failed = page.GetByTestId("editor-export-failed");
+        await Expect(failed).ToBeVisibleAsync();
+        await Expect(failed).ToHaveTextAsync("Die Datei konnte nicht gespeichert werden. Probier es noch einmal.");
+        await LayoutAssertions.AssertVisibleInEditorPanelAsync(page, "[data-testid=editor-export-failed]");
+        await Screenshots.CaptureAsync(page, "editor-export-failed.laptop.de");
+        await SwitchLanguageAsync(page, "en");
+        await Expect(failed).ToBeVisibleAsync();
+        await Screenshots.CaptureAsync(page, "editor-export-failed.laptop.en");
+
+        Assert.Empty(errors.Errors);
+    }
 }

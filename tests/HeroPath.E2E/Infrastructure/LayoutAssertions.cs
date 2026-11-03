@@ -82,6 +82,15 @@ public static class LayoutAssertions
                 if (r.top < panel.top - 0.5 || r.bottom > panel.bottom + 0.5) {
                     problems.push(`${selector}: ${Math.round(r.top)}-${Math.round(r.bottom)} outside panel ${Math.round(panel.top)}-${Math.round(panel.bottom)}`);
                 }
+                let column = element;
+                while (column.parentElement && column.parentElement.dataset.testid !== 'editor-panel') {
+                    column = column.parentElement;
+                }
+                const c = column.getBoundingClientRect();
+                const margin = 8;
+                if (r.top < c.top + margin || r.bottom > c.bottom - margin) {
+                    problems.push(`${selector}: block ${Math.round(r.top)}-${Math.round(r.bottom)} is not whole inside its scrolling column ${Math.round(c.top)}-${Math.round(c.bottom)}`);
+                }
                 if (r.top < 0 || r.bottom > window.innerHeight) {
                     problems.push(`${selector}: outside the viewport`);
                 }

@@ -29,6 +29,10 @@
     border-radius: 0.75rem;
 }
 
+.files-message {
+    scroll-margin-block: 1rem;
+}
+
 .files-message[data-state="error"] {
     border-style: dashed;
 }

@@ -206,6 +206,68 @@ public class EditorManageTests(AppFixture app)
         Assert.Empty(errors.Errors);
     }
 
+    [Theory]
+    [InlineData(1366, 768, "laptop", "de")]
+    [InlineData(1366, 768, "laptop", "en")]
+    [InlineData(1920, 1080, "desktop", "de")]
+    [InlineData(1920, 1080, "desktop", "en")]
+    public async Task TryOut_WithoutAHero_ShowsThePreselectedCardInTheViewport(int width, int height, string viewport, string language)
+    {
+        Assert.SkipUnless(E2EEnvironment.Enabled, "Set HEROPATH_E2E=1 to run E2E tests.");
+
+        await using var context = await app.NewContextAsync("de-CH", width, height);
+        var page = await context.NewPageAsync();
+        var errors = BrowserErrors.Track(page);
+        await OpenEditorFromStartPageAsync(page, errors);
+        await SwitchLanguageAsync(page, language);
+        await page.GetByTestId("editor-name").FillAsync(LevelName);
+
+        await page.GetByTestId("editor-try").ClickAsync();
+
+        await page.WaitForRenderedAsync("[data-testid=start-page]", errors);
+        await Expect(page.GetByTestId("custom-levels").Locator("[data-testid^=level-card-]")).ToHaveAttributeAsync("aria-pressed", "true");
+        await Expect(page).ToHaveURLAsync(new System.Text.RegularExpressions.Regex("/#level-card-custom-[0-9a-f]{12}$"));
+        await LayoutAssertions.AssertInViewportAsync(page, "[id^=level-card-custom-]");
+        await Expect(page.GetByTestId("start-go")).ToHaveTextAsync(language == "de" ? "Los!" : "Let's go!");
+        await Screenshots.CaptureViewportAsync(page, $"start-preselected-viewport.{viewport}.{language}");
+
+        Assert.Empty(errors.Errors);
+    }
+
+    [Fact]
+    public async Task Delete_WhenTheBrowserRefusesToStore_ShowsAMessageAndKeepsTheLevel()
+    {
+        Assert.SkipUnless(E2EEnvironment.Enabled, "Set HEROPATH_E2E=1 to run E2E tests.");
+
+        await using var context = await app.NewContextAsync("de-CH", 1366, 768);
+        var page = await context.NewPageAsync();
+        var errors = BrowserErrors.Track(page);
+        const string stored = """[{"schemaVersion":1,"id":"custom-e2edel0001","name":"Mein Weg","width":5,"height":5,"start":{"x":0,"y":4},"goal":{"x":4,"y":0},"requireAllItems":false,"obstacles":[],"items":[]}]""";
+        await page.AddInitScriptAsync(
+            $"if (localStorage.getItem('heropath.levels') === null) localStorage.setItem('heropath.levels', {System.Text.Json.JsonSerializer.Serialize(stored)});");
+        await OpenEditorFromStartPageAsync(page, errors);
+        var deleteButton = page.Locator("[data-testid^=custom-level-delete-]");
+        await Expect(deleteButton).ToHaveCountAsync(1);
+
+        // Observed: an override installed after the app already wrote once is ignored (the interop call keeps the function it resolved first), so the level is seeded by the init script.
+        // Deleting the last level writes an empty list with setItem (removeItem is replaced as well, in case that changes).
+        await page.EvaluateAsync("() => { const fail = () => { throw new DOMException('blocked', 'SecurityError'); }; Storage.prototype.setItem = fail; Storage.prototype.removeItem = fail; }");
+        await deleteButton.ClickAsync();
+        await page.GetByTestId("confirm-yes").ClickAsync();
+
+        var failed = page.GetByTestId("editor-delete-failed");
+        await Expect(failed).ToBeVisibleAsync();
+        await Expect(failed).ToHaveTextAsync("Das Level konnte nicht gelöscht werden. Dein Browser lässt das Speichern gerade nicht zu.");
+        await Expect(deleteButton).ToHaveCountAsync(1);
+        await LayoutAssertions.AssertVisibleInEditorPanelAsync(page, "[data-testid=editor-delete-failed]");
+        await Screenshots.CaptureAsync(page, "editor-delete-failed.laptop.de");
+        await SwitchLanguageAsync(page, "en");
+        await Expect(failed).ToBeVisibleAsync();
+        await Screenshots.CaptureAsync(page, "editor-delete-failed.laptop.en");
+
+        Assert.Empty(errors.Errors);
+    }
+
     [Fact]
     public async Task TryOut_WithAHero_GoesStraightToPlay_AndTheHeroIsKept()
     {

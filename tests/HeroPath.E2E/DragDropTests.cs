@@ -22,7 +22,7 @@ public class DragDropTests(AppFixture app)
         await BeginDragAsync(page, page.GetByTestId("palette-left"), Zone(page, "root:1"));
         await Expect(Zone(page, "root:1")).ToHaveAttributeAsync("data-valid", "true");
         await Expect(Zone(page, "root:1")).ToHaveAttributeAsync("data-hover", "true");
-        await Screenshots.CaptureAsync(page, "drag.insert-line.desktop.de");
+        await Screenshots.CaptureAsync(page, "drag.insert-line.desktop.de", keepMouse: true);
         await page.Mouse.UpAsync();
         await ExpectDirectionsAsync(page, ["up", "left", "down"]);
         await Expect(Zone(page, "root:0")).Not.ToHaveAttributeAsync("data-valid", "true");
@@ -54,7 +54,7 @@ public class DragDropTests(AppFixture app)
         await page.GetByTestId("palette-down").ClickAsync();
         await BeginDragAsync(page, page.GetByTestId("palette-left"), Zone(page, "root:1"));
         await Expect(Zone(page, "root:1")).ToHaveAttributeAsync("data-hover", "true");
-        await Screenshots.CaptureAsync(page, "drag.insert-line.desktop.en");
+        await Screenshots.CaptureAsync(page, "drag.insert-line.desktop.en", keepMouse: true);
         await page.Mouse.UpAsync();
         await ExpectDirectionsAsync(page, ["up", "left", "down"]);
 
@@ -80,7 +80,7 @@ public class DragDropTests(AppFixture app)
         await BeginDragAsync(page, page.GetByTestId("palette-left"), Zone(page, "root:1"));
         await Expect(Zone(page, "root:1")).ToHaveAttributeAsync("data-valid", "true");
         await Expect(Zone(page, "root:1")).ToHaveAttributeAsync("data-hover", "true");
-        await Screenshots.CaptureAsync(page, $"drag.insert-line.laptop.{language}");
+        await Screenshots.CaptureAsync(page, $"drag.insert-line.laptop.{language}", keepMouse: true);
         await page.Mouse.UpAsync();
         await ExpectDirectionsAsync(page, ["up", "left", "down"]);
 
@@ -101,7 +101,7 @@ public class DragDropTests(AppFixture app)
         await page.GetByTestId("palette-down").ClickAsync();
         await BeginDragAsync(page, Row(page, "2"), page.GetByTestId("palette"));
         await Expect(page.GetByTestId("palette-delete")).ToBeVisibleAsync();
-        await Screenshots.CaptureAsync(page, "drag.delete.laptop.de");
+        await Screenshots.CaptureAsync(page, "drag.delete.laptop.de", keepMouse: true);
         await page.Mouse.UpAsync();
         await ExpectPathsAsync(page, ["1"]);
 
@@ -128,7 +128,7 @@ public class DragDropTests(AppFixture app)
         await BeginDragAsync(page, page.GetByTestId("palette-repeat"), Zone(page, "1.1:0"));
         await Expect(Zone(page, "1.1:0")).ToHaveAttributeAsync("data-valid", "false");
         await Expect(Zone(page, "1.1:0")).ToHaveAttributeAsync("data-hover", "true");
-        await Screenshots.CaptureAsync(page, "drag.invalid.desktop.en");
+        await Screenshots.CaptureAsync(page, "drag.invalid.desktop.en", keepMouse: true);
         await page.Mouse.UpAsync();
         await ExpectPathsAsync(page, ["1", "1.1"]);
 
@@ -184,7 +184,7 @@ public class DragDropTests(AppFixture app)
 
         await BeginDragAsync(page, Row(page, "2"), page.GetByTestId("palette"));
         await Expect(page.GetByTestId("palette-delete")).ToBeVisibleAsync();
-        await Screenshots.CaptureAsync(page, "drag.delete.desktop.de");
+        await Screenshots.CaptureAsync(page, "drag.delete.desktop.de", keepMouse: true);
         await page.Mouse.UpAsync();
 
         await ExpectPathsAsync(page, ["1"]);
@@ -212,7 +212,7 @@ public class DragDropTests(AppFixture app)
         await Expect(Zone(page, "1.1:0")).ToHaveAttributeAsync("data-valid", "false");
         await Expect(Zone(page, "1.1:0")).ToHaveAttributeAsync("data-hover", "true");
         await Expect(Zone(page, "root:0")).ToHaveAttributeAsync("data-valid", "true");
-        await Screenshots.CaptureAsync(page, "drag.invalid.desktop.de");
+        await Screenshots.CaptureAsync(page, "drag.invalid.desktop.de", keepMouse: true);
         await page.Mouse.UpAsync();
 
         await ExpectPathsAsync(page, ["1", "1.1"]);

@@ -49,67 +49,69 @@
         </div>
 
         <div class="editor-column">
-            <section class="editor-name">
-                <label class="editor-label" for="editor-name">@Localizer["Editor_NameLabel"]</label>
-                <input id="editor-name"
-                       class="editor-name-input"
-                       data-testid="editor-name"
-                       type="text"
-                       maxlength="@LevelLimits.MaxNameLength"
-                       autocomplete="off"
-                       aria-describedby="editor-name-hint"
-                       value="@_nameText"
-                       @oninput="NameInput" />
-                <span id="editor-name-hint" class="editor-name-hint" data-testid="editor-name-hint">@Localizer["Editor_NameHint"]</span>
-            </section>
+            <div class="editor-group" data-testid="editor-group">
+                <section class="editor-name">
+                    <label class="editor-label" for="editor-name">@Localizer["Editor_NameLabel"]</label>
+                    <input id="editor-name"
+                           class="editor-name-input"
+                           data-testid="editor-name"
+                           type="text"
+                           maxlength="@LevelLimits.MaxNameLength"
+                           autocomplete="off"
+                           aria-describedby="editor-name-hint"
+                           value="@_nameText"
+                           @oninput="NameInput" />
+                    <span id="editor-name-hint" class="editor-name-hint" data-testid="editor-name-hint">@Localizer["Editor_NameHint"]</span>
+                </section>
 
-            <div class="editor-require">
-                <label class="editor-require-label">
-                    <input type="checkbox"
-                           data-testid="editor-require-all"
-                           checked="@State.Draft.RequireAllItems"
-                           disabled="@(!HasStrawberry)"
-                           aria-describedby="@(HasStrawberry ? null : "editor-require-note")"
-                           @onchange="RequireAllChanged" />
-                    <span>@Localizer["Editor_RequireAll"]</span>
-                </label>
-                @if (!HasStrawberry)
-                {
-                    <span id="editor-require-note" class="editor-require-note">@Localizer["Editor_RequireAll_Disabled"]</span>
-                }
-            </div>
+                <div class="editor-require">
+                    <label class="editor-require-label">
+                        <input type="checkbox"
+                               data-testid="editor-require-all"
+                               checked="@State.Draft.RequireAllItems"
+                               disabled="@(!HasStrawberry)"
+                               aria-describedby="@(HasStrawberry ? null : "editor-require-note")"
+                               @onchange="RequireAllChanged" />
+                        <span>@Localizer["Editor_RequireAll"]</span>
+                    </label>
+                    @if (!HasStrawberry)
+                    {
+                        <span id="editor-require-note" class="editor-require-note">@Localizer["Editor_RequireAll_Disabled"]</span>
+                    }
+                </div>
 
-            <EditorStatus Check="State.Check" />
+                <EditorStatus Check="State.Check" />
 
-            <div class="editor-save">
-                <button type="button"
-                        class="editor-save-button"
-                        data-testid="editor-save"
-                        disabled="@(!State.CanSave)"
-                        aria-describedby="@(State.Check.CanSave ? null : "editor-save-reason")"
-                        @onclick="SaveAsync">@Localizer["Editor_Save"]</button>
-                @if (OnTryOut.HasDelegate)
-                {
+                <div class="editor-save">
                     <button type="button"
-                            class="editor-try-button"
-                            data-testid="editor-try"
+                            class="editor-save-button"
+                            data-testid="editor-save"
                             disabled="@(!State.CanSave)"
-                            @onclick="TryOutAsync">@Localizer["Editor_Try"]</button>
-                }
-                @if (!State.Check.CanSave)
+                            aria-describedby="@(State.Check.CanSave ? null : "editor-save-reason")"
+                            @onclick="SaveAsync">@Localizer["Editor_Save"]</button>
+                    @if (OnTryOut.HasDelegate)
+                    {
+                        <button type="button"
+                                class="editor-try-button"
+                                data-testid="editor-try"
+                                disabled="@(!State.CanSave)"
+                                @onclick="TryOutAsync">@Localizer["Editor_Try"]</button>
+                    }
+                    @if (!State.Check.CanSave)
+                    {
+                        <span id="editor-save-reason" class="editor-save-reason" data-testid="editor-save-reason">@Localizer["Editor_Save_Blocked"]</span>
+                    }
+                </div>
+                @if (SavedText is { } saved)
                 {
-                    <span id="editor-save-reason" class="editor-save-reason" data-testid="editor-save-reason">@Localizer["Editor_Save_Blocked"]</span>
+                    <div class="editor-saved" data-testid="editor-saved" data-outcome="@State.LastSave" role="status">@saved</div>
+                }
+
+                @if (_deleteFailed)
+                {
+                    <div class="editor-saved" data-testid="editor-delete-failed" data-outcome="StorageFailed" role="alert">@Localizer["Editor_Delete_Failed"]</div>
                 }
             </div>
-            @if (SavedText is { } saved)
-            {
-                <div class="editor-saved" data-testid="editor-saved" data-outcome="@State.LastSave" role="status">@saved</div>
-            }
-
-            @if (_deleteFailed)
-            {
-                <div class="editor-saved" data-testid="editor-delete-failed" data-outcome="StorageFailed" role="alert">@Localizer["Editor_Delete_Failed"]</div>
-            }
 
             <CustomLevelList Levels="Repository.Custom"
                              OpenId="@State.EditingId"

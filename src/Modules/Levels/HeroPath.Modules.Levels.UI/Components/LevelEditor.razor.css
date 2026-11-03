@@ -36,9 +36,67 @@
     box-sizing: border-box;
     min-width: 0;
     max-height: calc(100dvh - 9rem);
-    padding: 0.5rem 0.75rem 0.75rem 0.5rem;
+    padding: 0.5rem 0.75rem 1.75rem 0.5rem;
     overflow-y: auto;
-    scroll-padding-block: 0.75rem;
+    scroll-padding-block: 2rem;
+    background:
+        linear-gradient(var(--hp-background) 30%, transparent) top / 100% 2rem local no-repeat,
+        linear-gradient(transparent, var(--hp-background) 70%) bottom / 100% 2rem local no-repeat,
+        radial-gradient(farthest-side at 50% 0, rgba(43, 45, 66, 0.45), transparent) top / 100% 0.75rem scroll no-repeat,
+        radial-gradient(farthest-side at 50% 100%, rgba(43, 45, 66, 0.45), transparent) bottom / 100% 0.75rem scroll no-repeat;
+}
+
+@property --edge-top {
+    syntax: "<length>";
+    inherits: false;
+    initial-value: 0px;
+}
+
+@property --edge-bottom {
+    syntax: "<length>";
+    inherits: false;
+    initial-value: 0px;
+}
+
+@keyframes edge-fade {
+    0% {
+        --edge-top: 0px;
+        --edge-bottom: 2rem;
+    }
+
+    4% {
+        --edge-top: 2rem;
+        --edge-bottom: 2rem;
+    }
+
+    96% {
+        --edge-top: 2rem;
+        --edge-bottom: 2rem;
+    }
+
+    100% {
+        --edge-top: 2rem;
+        --edge-bottom: 0px;
+    }
+}
+
+@supports (animation-timeline: scroll()) {
+    .editor-column {
+        background: none;
+        mask-image: linear-gradient(to bottom, transparent, #000 var(--edge-top), #000 calc(100% - var(--edge-bottom)), transparent);
+        animation: edge-fade linear both;
+        animation-timeline: scroll(self block);
+    }
+}
+
+.editor-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.editor-saved {
+    scroll-margin-block: 1rem;
 }
 
 .editor-section-title {
