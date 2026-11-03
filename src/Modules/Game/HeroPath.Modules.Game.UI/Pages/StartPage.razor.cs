@@ -84,6 +84,8 @@ public partial class StartPage : LocalizedComponentBase
 
     private void SelectLevel(string id) => _levelId = id;
 
+    private void Build() => Navigation.NavigateTo("editor");
+
     private void Go()
     {
         Choice.Choose(_avatar, _name, _levelId);

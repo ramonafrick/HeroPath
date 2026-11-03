@@ -1,0 +1,93 @@
+@using HeroPath.Modules.Levels.Application
+@using HeroPath.Shared.UI.Components
+@inherits LocalizedComponentBase
+
+<div class="editor" data-testid="level-editor">
+    <section class="editor-board" aria-labelledby="editor-intro" style="--board-cols: @State.Draft.Width; --board-rows: @State.Draft.Height;">
+        <p id="editor-intro" class="editor-intro">@Localizer["Editor_Intro"]</p>
+        <GameBoard Grid="BoardGrid" CellClicked="CellClicked" CellLabel="CellLabel" />
+    </section>
+
+    <div class="editor-panel">
+        <div class="editor-column">
+            <section aria-labelledby="editor-tools-title">
+                <h3 id="editor-tools-title" class="editor-section-title">@Localizer["Editor_Tools_Title"]</h3>
+                <EditorToolbar Tool="State.Tool" ToolChanged="State.SelectTool" />
+            </section>
+
+            <section class="editor-size" aria-labelledby="editor-size-title">
+                <h3 id="editor-size-title" class="editor-section-title">@Localizer["Editor_Size_Title"]</h3>
+                <EditorSizeControl Name="width"
+                                   Label="@Localizer["Editor_Width"]"
+                                   DecreaseLabel="@Localizer["Editor_Width_Decrease"]"
+                                   IncreaseLabel="@Localizer["Editor_Width_Increase"]"
+                                   Value="State.Draft.Width"
+                                   ValueChanged="width => State.Resize(width, State.Draft.Height)" />
+                <EditorSizeControl Name="height"
+                                   Label="@Localizer["Editor_Height"]"
+                                   DecreaseLabel="@Localizer["Editor_Height_Decrease"]"
+                                   IncreaseLabel="@Localizer["Editor_Height_Increase"]"
+                                   Value="State.Draft.Height"
+                                   ValueChanged="height => State.Resize(State.Draft.Width, height)" />
+            </section>
+
+            <div class="editor-message" data-testid="editor-hint" aria-live="polite">@HintText</div>
+        </div>
+
+        <div class="editor-column">
+            <section class="editor-name">
+                <label class="editor-label" for="editor-name">@Localizer["Editor_NameLabel"]</label>
+                <input id="editor-name"
+                       class="editor-name-input"
+                       data-testid="editor-name"
+                       type="text"
+                       maxlength="@LevelLimits.MaxNameLength"
+                       autocomplete="off"
+                       aria-describedby="editor-name-hint"
+                       value="@_nameText"
+                       @oninput="NameInput" />
+                <span id="editor-name-hint" class="editor-name-hint" data-testid="editor-name-hint">@Localizer["Editor_NameHint"]</span>
+            </section>
+
+            <div class="editor-require">
+                <label class="editor-require-label">
+                    <input type="checkbox"
+                           data-testid="editor-require-all"
+                           checked="@State.Draft.RequireAllItems"
+                           disabled="@(!HasStrawberry)"
+                           aria-describedby="@(HasStrawberry ? null : "editor-require-note")"
+                           @onchange="RequireAllChanged" />
+                    <span>@Localizer["Editor_RequireAll"]</span>
+                </label>
+                @if (!HasStrawberry)
+                {
+                    <span id="editor-require-note" class="editor-require-note">@Localizer["Editor_RequireAll_Disabled"]</span>
+                }
+            </div>
+
+            <EditorStatus Check="State.Check" />
+
+            <div class="editor-save">
+                <button type="button"
+                        class="editor-save-button"
+                        data-testid="editor-save"
+                        disabled="@(!State.CanSave)"
+                        aria-describedby="@(State.Check.CanSave ? null : "editor-save-reason")"
+                        @onclick="SaveAsync">@Localizer["Editor_Save"]</button>
+                @if (!State.Check.CanSave)
+                {
+                    <span id="editor-save-reason" class="editor-save-reason" data-testid="editor-save-reason">@Localizer["Editor_Save_Blocked"]</span>
+                }
+            </div>
+            @if (SavedText is { } saved)
+            {
+                <div class="editor-saved" data-testid="editor-saved" data-outcome="@State.LastSave" role="status">@saved</div>
+            }
+
+            <CustomLevelList Levels="Repository.Custom"
+                             OpenId="@State.EditingId"
+                             LevelOpened="OpenLevel"
+                             NewRequested="NewLevel" />
+        </div>
+    </div>
+</div>

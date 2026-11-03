@@ -1,0 +1,39 @@
+@using HeroPath.Shared.UI.Graphics
+@using HeroPath.Shared.UI.Components
+@inherits LocalizedComponentBase
+
+<div class="toolbar" role="group" aria-label="@Localizer["Editor_Tools_Title"]" data-testid="editor-tools">
+    @foreach (var tool in Tools)
+    {
+        <button type="button"
+                class="tool"
+                @key="tool"
+                data-testid="@($"editor-tool-{tool.ToString().ToLowerInvariant()}")"
+                aria-pressed="@(tool == Tool ? "true" : "false")"
+                @onclick="() => ToolChanged.InvokeAsync(tool)">
+            <span class="tool-icon" aria-hidden="true">@ToolIcon(tool)</span>
+            <span class="tool-name">@Localizer[$"Editor_Tool_{tool}"]</span>
+            @if (tool == Tool)
+            {
+                <svg class="tool-mark" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <circle class="mark-shape" cx="12" cy="12" r="10.5" />
+                    <path class="mark-glyph" d="M6.5 12.5 L10.5 16.5 L17.5 8" />
+                </svg>
+            }
+        </button>
+    }
+</div>
+
+@code {
+    private static RenderFragment ToolIcon(EditorTool tool) => tool switch
+    {
+        EditorTool.Start => @<StartField />,
+        EditorTool.Goal => @<GoalCastle />,
+        EditorTool.Tree => @<ObstacleTree />,
+        EditorTool.Rock => @<ObstacleRock />,
+        EditorTool.Pond => @<ObstaclePond />,
+        EditorTool.Strawberry => @<ItemStrawberry />,
+        EditorTool.Pizza => @<ItemPizza />,
+        _ => @<ToolEraser />,
+    };
+}

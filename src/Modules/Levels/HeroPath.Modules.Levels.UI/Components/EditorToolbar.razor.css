@@ -1,0 +1,75 @@
+.toolbar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem 0.5rem;
+    padding-top: 0.5rem;
+}
+
+.tool {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-sizing: border-box;
+    min-height: 3.25rem;
+    padding: 0.25rem 0.5rem;
+    font: inherit;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    text-align: left;
+    color: var(--hp-text);
+    background: var(--hp-surface);
+    border: 3px solid var(--hp-outline);
+    border-radius: 0.75rem;
+    cursor: pointer;
+}
+
+.tool:hover {
+    background: var(--hp-cell);
+}
+
+.tool[aria-pressed="true"] {
+    background: var(--hp-cell);
+    border-width: 5px;
+    padding: calc(0.25rem - 2px) calc(0.5rem - 2px);
+    box-shadow: 0 0 0 3px var(--hp-surface), 0 0 0 6px var(--hp-outline);
+}
+
+.tool-icon {
+    flex: none;
+    width: 2rem;
+    height: 2rem;
+}
+
+.tool-icon ::deep svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.tool-name {
+    min-width: 0;
+    overflow-wrap: break-word;
+}
+
+.tool-mark {
+    position: absolute;
+    top: -0.75rem;
+    right: -0.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.mark-shape {
+    fill: var(--hp-outline);
+    stroke: var(--hp-surface);
+    stroke-width: 1.5;
+}
+
+.mark-glyph {
+    fill: none;
+    stroke: var(--hp-surface);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}

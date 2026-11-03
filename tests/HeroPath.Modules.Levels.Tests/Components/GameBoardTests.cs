@@ -230,6 +230,70 @@ public class GameBoardTests : CultureBunitContext
         Assert.Equal(3, cut.FindAll("[data-item]").Count);
     }
 
+    [Fact]
+    public void Render_WithoutCellClicked_HasNoButtonsAndKeepsTheHero()
+    {
+        var cut = RenderBoard();
+
+        Assert.Empty(cut.FindAll("button"));
+        Assert.Empty(cut.FindAll("[data-testid^=edit-cell-]"));
+        Assert.NotNull(cut.Find("[data-testid=hero]"));
+        Assert.Null(cut.Find("[data-testid=game-board]").GetAttribute("data-editable"));
+    }
+
+    [Fact]
+    public void Render_WithCellClicked_EveryCellIsAButtonWithLabelAndNoHero()
+    {
+        var cut = RenderBoard(p => p
+            .Add(b => b.CellClicked, EventCallback.Factory.Create<Position>(this, _ => { }))
+            .Add(b => b.CellLabel, position => $"label {position.X},{position.Y}"));
+
+        var cells = cut.FindAll("[data-testid^=edit-cell-]");
+        Assert.Equal(_grid.Width * _grid.Height, cells.Count);
+        Assert.All(cells, cell =>
+        {
+            Assert.Equal("button", cell.TagName.ToLowerInvariant());
+            Assert.Equal("button", cell.GetAttribute("type"));
+        });
+        Assert.Equal("label 2,1", cut.Find("[data-testid=edit-cell-2-1]").GetAttribute("aria-label"));
+        Assert.Empty(cut.FindAll("[data-testid=hero]"));
+        Assert.Empty(cut.FindAll("[data-testid^=cell-]"));
+        Assert.Equal("true", cut.Find("[data-testid=game-board]").GetAttribute("data-editable"));
+    }
+
+    [Fact]
+    public void Render_WithCellClicked_KeepsKindsItemsAndGraphics()
+    {
+        var cut = RenderBoard(p => p.Add(b => b.CellClicked, EventCallback.Factory.Create<Position>(this, _ => { })));
+
+        Assert.Equal("tree", cut.Find("[data-testid=edit-cell-1-1]").GetAttribute("data-kind"));
+        Assert.Equal("start", cut.Find("[data-testid=edit-cell-0-3]").GetAttribute("data-kind"));
+        Assert.Equal("strawberry", cut.Find("[data-testid=edit-cell-4-0]").GetAttribute("data-item"));
+        Assert.Equal("goal", cut.Find("[data-testid=edit-cell-4-0]").GetAttribute("data-kind"));
+        Assert.NotNull(cut.Find("[data-testid=edit-cell-1-1] [data-testid=graphic-obstacle-tree]"));
+    }
+
+    [Fact]
+    public void Click_OnACell_ReportsItsPosition()
+    {
+        Position? clicked = null;
+        var cut = RenderBoard(p => p.Add(b => b.CellClicked, EventCallback.Factory.Create<Position>(this, position => clicked = position)));
+
+        cut.Find("[data-testid=edit-cell-3-2]").Click();
+
+        Assert.Equal(new Position(3, 2), clicked);
+    }
+
+    [Fact]
+    public void Render_PreviewWithCellClicked_StaysAPlainPreview()
+    {
+        var cut = RenderBoard(p => p
+            .Add(b => b.Preview, true)
+            .Add(b => b.CellClicked, EventCallback.Factory.Create<Position>(this, _ => { })));
+
+        Assert.Empty(cut.FindAll("button"));
+    }
+
     private IRenderedComponent<GameBoard> RenderBoard(Action<ComponentParameterCollectionBuilder<GameBoard>>? configure = null) =>
         Render<GameBoard>(p =>
         {

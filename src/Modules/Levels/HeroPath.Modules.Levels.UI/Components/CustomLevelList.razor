@@ -1,0 +1,29 @@
+@using HeroPath.Shared.UI.Components
+@inherits LocalizedComponentBase
+
+<section class="level-list" data-testid="custom-level-list" aria-labelledby="custom-level-list-title">
+    <div class="list-head">
+        <h3 id="custom-level-list-title" class="list-title">@Localizer["Editor_List_Title"]</h3>
+        <button type="button" class="new-level" data-testid="editor-new" @onclick="() => NewRequested.InvokeAsync()">@Localizer["Editor_New"]</button>
+    </div>
+    @if (Levels.Count == 0)
+    {
+        <p class="list-empty">@Localizer["Editor_List_Empty"]</p>
+    }
+    else
+    {
+        <ul class="list-items">
+            @foreach (var level in Levels)
+            {
+                <li @key="level.Id">
+                    <button type="button"
+                            class="list-entry"
+                            data-testid="@($"custom-level-{level.Id}")"
+                            aria-current="@(level.Id == OpenId ? "true" : null)"
+                            aria-label="@Localizer["Editor_List_Open", level.Name ?? string.Empty]"
+                            @onclick="() => LevelOpened.InvokeAsync(level.Id)">@level.Name</button>
+                </li>
+            }
+        </ul>
+    }
+</section>

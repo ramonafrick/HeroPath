@@ -1,0 +1,42 @@
+.status {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    box-sizing: border-box;
+    padding: 0.5rem 0.75rem;
+    font-size: 1rem;
+    font-weight: 700;
+    background: var(--hp-surface);
+    border: 4px solid var(--hp-outline);
+    border-radius: 0.75rem;
+}
+
+.status[data-state="unsolvable"] {
+    border-style: dashed;
+}
+
+.status[data-state="invalid"] {
+    border-style: dotted;
+}
+
+.status-glyph {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    font-size: 1rem;
+    line-height: 1;
+    color: var(--hp-on-accent);
+    background: var(--hp-outline);
+    border-radius: 50%;
+}
+
+.status[data-state="unsolvable"] .status-glyph {
+    border-radius: 0.25rem;
+}
+
+.status-text {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}

@@ -1,0 +1,16 @@
+<div class="size-control">
+    <span class="size-label" id="@LabelId">@Label</span>
+    <button type="button"
+            class="size-button"
+            data-testid="@($"editor-{Name}-minus")"
+            aria-label="@DecreaseLabel"
+            disabled="@(Value <= LevelLimits.MinGridSize)"
+            @onclick="() => ValueChanged.InvokeAsync(Value - 1)">−</button>
+    <output class="size-value" data-testid="@($"editor-{Name}")" aria-labelledby="@LabelId">@Value</output>
+    <button type="button"
+            class="size-button"
+            data-testid="@($"editor-{Name}-plus")"
+            aria-label="@IncreaseLabel"
+            disabled="@(Value >= LevelLimits.MaxGridSize)"
+            @onclick="() => ValueChanged.InvokeAsync(Value + 1)">+</button>
+</div>

@@ -35,11 +35,24 @@ public partial class GameBoard : LocalizedComponentBase
     [Parameter]
     public bool Preview { get; set; }
 
+    /// <summary>
+    /// Edit mode: with a handler every cell is a <c>&lt;button&gt;</c> (<c>edit-cell-x-y</c>) that reports its position, and the board has no hero.
+    /// Without it the board is a plain, non-interactive view.
+    /// </summary>
+    [Parameter]
+    public EventCallback<Position> CellClicked { get; set; }
+
+    /// <summary>The accessible name of a cell in edit mode.</summary>
+    [Parameter]
+    public Func<Position, string>? CellLabel { get; set; }
+
     [Parameter]
     public RenderFragment? HeroContent { get; set; }
 
     [Inject]
     private IStringLocalizer<LevelsResources> Localizer { get; set; } = default!;
+
+    private bool IsEditable => !Preview && CellClicked.HasDelegate;
 
     protected override void OnParametersSet()
     {

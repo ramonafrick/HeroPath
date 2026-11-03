@@ -5,6 +5,7 @@
 <div class="game-board"
      data-testid="@(Preview ? "board-preview" : "game-board")"
      data-preview="@(Preview ? "true" : null)"
+     data-editable="@(IsEditable ? "true" : null)"
      role="@(Preview ? null : "group")"
      aria-label="@(Preview ? null : Localizer["Board_Label"].Value)"
      aria-hidden="@(Preview ? "true" : null)"
@@ -16,51 +17,33 @@
             var position = new Position(x, y);
             var kind = KindAt(position);
             var item = ItemAt(position);
-            <div class="cell"
-                 @key="position"
-                 data-testid="@(Preview ? null : $"cell-{x}-{y}")"
-                 data-kind="@kind"
-                 data-item="@item"
-                 data-marked="@(IsMarked(position) ? "true" : null)">
-                @switch (kind)
-                {
-                    case "start":
-                        <StartField />
-                        break;
-                    case "goal":
-                        <GoalCastle />
-                        break;
-                    case "tree":
-                        <ObstacleTree />
-                        break;
-                    case "rock":
-                        <ObstacleRock />
-                        break;
-                    case "pond":
-                        <ObstaclePond />
-                        break;
-                }
-                @if (item is { } itemKind)
-                {
-                    var collected = !Preview && CollectedItems?.Contains(position) == true;
-                    <span class="item"
-                          @key="itemKind"
-                          data-testid="@(Preview ? null : $"item-{x}-{y}")"
-                          data-collected="@(collected ? "true" : null)">
-                        @if (itemKind == "pizza")
-                        {
-                            <ItemPizza />
-                        }
-                        else
-                        {
-                            <ItemStrawberry />
-                        }
-                    </span>
-                }
-            </div>
+            @if (IsEditable)
+            {
+                <button type="button"
+                        class="cell"
+                        @key="position"
+                        data-testid="@($"edit-cell-{x}-{y}")"
+                        data-kind="@kind"
+                        data-item="@item"
+                        aria-label="@CellLabel?.Invoke(position)"
+                        @onclick="() => CellClicked.InvokeAsync(position)">
+                    @CellContent(position, kind, item)
+                </button>
+            }
+            else
+            {
+                <div class="cell"
+                     @key="position"
+                     data-testid="@(Preview ? null : $"cell-{x}-{y}")"
+                     data-kind="@kind"
+                     data-item="@item"
+                     data-marked="@(IsMarked(position) ? "true" : null)">
+                    @CellContent(position, kind, item)
+                </div>
+            }
         }
     }
-    @if (!Preview)
+    @if (!Preview && !IsEditable)
     {
         <div class="hero"
              data-testid="hero"
@@ -71,3 +54,43 @@
         </div>
     }
 </div>
+
+@code {
+    private RenderFragment CellContent(Position position, string kind, string? item) => @<text>
+        @switch (kind)
+        {
+            case "start":
+                <StartField />
+                break;
+            case "goal":
+                <GoalCastle />
+                break;
+            case "tree":
+                <ObstacleTree />
+                break;
+            case "rock":
+                <ObstacleRock />
+                break;
+            case "pond":
+                <ObstaclePond />
+                break;
+        }
+        @if (item is { } itemKind)
+        {
+            var collected = !Preview && CollectedItems?.Contains(position) == true;
+            <span class="item"
+                  @key="itemKind"
+                  data-testid="@(Preview || IsEditable ? null : $"item-{position.X}-{position.Y}")"
+                  data-collected="@(collected ? "true" : null)">
+                @if (itemKind == "pizza")
+                {
+                    <ItemPizza />
+                }
+                else
+                {
+                    <ItemStrawberry />
+                }
+            </span>
+        }
+    </text>;
+}

@@ -42,6 +42,20 @@ public class StartPageTests : CultureBunitContext
     }
 
     [Fact]
+    public void Render_HasABuildButtonThatOpensTheEditor()
+    {
+        var page = Render<StartPage>();
+
+        var button = page.Find("[data-testid=start-build]");
+        Assert.Equal("Level bauen", button.TextContent);
+
+        button.Click();
+
+        var navigation = Services.GetRequiredService<NavigationManager>();
+        Assert.Equal(navigation.BaseUri + "editor", navigation.Uri);
+    }
+
+    [Fact]
     public void Render_UsesTheLevelsOfLevelProgress_AndPreselectsTheFirst()
     {
         var levels = new[]

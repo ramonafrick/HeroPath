@@ -28,6 +28,7 @@ public class GraphicsTests : BunitContext
         { typeof(ObstaclePond), "Teich", "Pond" },
         { typeof(ItemStrawberry), "Erdbeere", "Strawberry" },
         { typeof(ItemPizza), "Pizza-Stück", "Pizza slice" },
+        { typeof(ToolEraser), "Radiergummi", "Eraser" },
     };
 
     protected override void Dispose(bool disposing)

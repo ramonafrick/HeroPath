@@ -72,4 +72,8 @@
     <value>Pizza-Stück</value>
     <comment>Accessible name of the pizza item.</comment>
   </data>
+  <data name="Graphic_ToolEraser" xml:space="preserve">
+    <value>Radiergummi</value>
+    <comment>Accessible name of the eraser tool graphic.</comment>
+  </data>
 </root>

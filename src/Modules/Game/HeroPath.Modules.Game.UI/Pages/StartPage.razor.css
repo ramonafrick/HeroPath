@@ -234,3 +234,19 @@
     flex-direction: column;
     gap: 1.5rem;
 }
+
+.start-build {
+    min-height: 2.75rem;
+    font: inherit;
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--hp-text);
+    background: var(--hp-surface);
+    border: 3px solid var(--hp-outline);
+    border-radius: 0.75rem;
+    cursor: pointer;
+}
+
+.start-build:hover {
+    background: var(--hp-cell);
+}

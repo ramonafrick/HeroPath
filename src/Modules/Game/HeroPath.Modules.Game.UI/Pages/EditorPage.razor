@@ -1,0 +1,15 @@
+@page "/editor"
+@page "/editor/{LevelId}"
+@inherits LocalizedComponentBase
+@using HeroPath.Modules.Levels.UI.Components
+@using HeroPath.Shared.UI.Components
+
+<PageTitle>@LevelsLocalizer["Editor_Title"] - @SharedLocalizer["App_Title"]</PageTitle>
+
+<main class="editor-page" data-testid="editor-page">
+    <div class="editor-head">
+        <h2 class="editor-title">@LevelsLocalizer["Editor_Title"]</h2>
+        <a class="editor-back" href="" data-testid="editor-back">@GameLocalizer["Editor_Back"]</a>
+    </div>
+    <LevelEditor LevelId="@LevelId" />
+</main>

@@ -1,0 +1,13 @@
+@using HeroPath.Modules.Levels.Application
+@using HeroPath.Shared.UI.Components
+@inherits LocalizedComponentBase
+
+<div class="status"
+     data-testid="editor-status"
+     data-state="@StateName"
+     data-min-steps="@(Check.Status == LevelCheckStatus.Valid ? Check.MinimumSteps : null)"
+     role="status"
+     aria-label="@Localizer["Editor_Status_Label"]">
+    <span class="status-glyph" aria-hidden="true">@Glyph</span>
+    <span class="status-text">@Text</span>
+</div>

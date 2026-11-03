@@ -52,4 +52,248 @@
     <value>My levels</value>
     <comment>Label of the dropdown group that holds the child's own levels.</comment>
   </data>
+  <data name="Editor_Title" xml:space="preserve">
+    <value>Build a level</value>
+    <comment>Heading of the editor page.</comment>
+  </data>
+  <data name="Editor_Intro" xml:space="preserve">
+    <value>Pick a tool and click a cell.</value>
+    <comment>Short instruction above the board.</comment>
+  </data>
+  <data name="Editor_Tools_Title" xml:space="preserve">
+    <value>Tools</value>
+    <comment>Heading and accessible name of the tool bar.</comment>
+  </data>
+  <data name="Editor_Tool_Start" xml:space="preserve">
+    <value>Start</value>
+    <comment>Tool: place the start field.</comment>
+  </data>
+  <data name="Editor_Tool_Goal" xml:space="preserve">
+    <value>Goal</value>
+    <comment>Tool: place the castle.</comment>
+  </data>
+  <data name="Editor_Tool_Tree" xml:space="preserve">
+    <value>Tree</value>
+    <comment>Tool: place a tree.</comment>
+  </data>
+  <data name="Editor_Tool_Rock" xml:space="preserve">
+    <value>Rock</value>
+    <comment>Tool: place a rock.</comment>
+  </data>
+  <data name="Editor_Tool_Pond" xml:space="preserve">
+    <value>Pond</value>
+    <comment>Tool: place a pond.</comment>
+  </data>
+  <data name="Editor_Tool_Strawberry" xml:space="preserve">
+    <value>Strawberry</value>
+    <comment>Tool: place a strawberry.</comment>
+  </data>
+  <data name="Editor_Tool_Pizza" xml:space="preserve">
+    <value>Pizza</value>
+    <comment>Tool: place a pizza slice.</comment>
+  </data>
+  <data name="Editor_Tool_Eraser" xml:space="preserve">
+    <value>Eraser</value>
+    <comment>Tool: remove a tree, rock, pond or item.</comment>
+  </data>
+  <data name="Editor_Size_Title" xml:space="preserve">
+    <value>Size</value>
+    <comment>Heading of the size controls.</comment>
+  </data>
+  <data name="Editor_Width" xml:space="preserve">
+    <value>Width</value>
+    <comment>Label of the width control.</comment>
+  </data>
+  <data name="Editor_Height" xml:space="preserve">
+    <value>Height</value>
+    <comment>Label of the height control.</comment>
+  </data>
+  <data name="Editor_Width_Decrease" xml:space="preserve">
+    <value>Make narrower</value>
+    <comment>Accessible name of the minus button of the width.</comment>
+  </data>
+  <data name="Editor_Width_Increase" xml:space="preserve">
+    <value>Make wider</value>
+    <comment>Accessible name of the plus button of the width.</comment>
+  </data>
+  <data name="Editor_Height_Decrease" xml:space="preserve">
+    <value>Make shorter</value>
+    <comment>Accessible name of the minus button of the height.</comment>
+  </data>
+  <data name="Editor_Height_Increase" xml:space="preserve">
+    <value>Make taller</value>
+    <comment>Accessible name of the plus button of the height.</comment>
+  </data>
+  <data name="Editor_NameLabel" xml:space="preserve">
+    <value>Name of your level</value>
+    <comment>Label of the level name field.</comment>
+  </data>
+  <data name="Editor_NameHint" xml:space="preserve">
+    <value>Please do not use your real name.</value>
+    <comment>Privacy hint under the level name field.</comment>
+  </data>
+  <data name="Editor_RequireAll" xml:space="preserve">
+    <value>All strawberries needed</value>
+    <comment>Switch: the goal only counts after all strawberries.</comment>
+  </data>
+  <data name="Editor_RequireAll_Disabled" xml:space="preserve">
+    <value>Put a strawberry on the board first.</value>
+    <comment>Explains why the switch is disabled.</comment>
+  </data>
+  <data name="Editor_Status_Label" xml:space="preserve">
+    <value>Check of your level</value>
+    <comment>Accessible name of the status area.</comment>
+  </data>
+  <data name="Editor_Status_Solvable_One" xml:space="preserve">
+    <value>Your level needs at least {0} step.</value>
+    <comment>{0} = shortest solution, exactly 1.</comment>
+  </data>
+  <data name="Editor_Status_Solvable_Other" xml:space="preserve">
+    <value>Your level needs at least {0} steps.</value>
+    <comment>{0} = shortest solution, not 1.</comment>
+  </data>
+  <data name="Editor_Status_GoalUnreachable" xml:space="preserve">
+    <value>The hero cannot reach the castle. Clear a path.</value>
+    <comment>Status: no path from start to goal.</comment>
+  </data>
+  <data name="Editor_Status_StrawberriesUnreachable" xml:space="preserve">
+    <value>The hero cannot reach all strawberries. Clear a path or switch off «All strawberries needed».</value>
+    <comment>Status: some strawberry cannot be collected.</comment>
+  </data>
+  <data name="Editor_Status_TooManySteps" xml:space="preserve">
+    <value>The path is too long. The hero may take {0} steps at most. Make the path shorter.</value>
+    <comment>{0} = step limit.</comment>
+  </data>
+  <data name="Editor_Status_NameMissing" xml:space="preserve">
+    <value>Give your level a name.</value>
+    <comment>Status: the name field is empty.</comment>
+  </data>
+  <data name="Editor_Status_Invalid" xml:space="preserve">
+    <value>Something is not right with your level yet.</value>
+    <comment>Status: some other rule is broken.</comment>
+  </data>
+  <data name="Editor_Save" xml:space="preserve">
+    <value>Save</value>
+    <comment>Save button.</comment>
+  </data>
+  <data name="Editor_Save_Blocked" xml:space="preserve">
+    <value>You can save once your level is fine.</value>
+    <comment>Reason next to the disabled save button.</comment>
+  </data>
+  <data name="Editor_Save_Saved" xml:space="preserve">
+    <value>Saved! You can find your level under «My levels».</value>
+    <comment>Message after a successful save.</comment>
+  </data>
+  <data name="Editor_Save_LimitReached" xml:space="preserve">
+    <value>You already have {0} levels. Delete one first.</value>
+    <comment>{0} = maximum number of custom levels.</comment>
+  </data>
+  <data name="Editor_Save_StorageFailed" xml:space="preserve">
+    <value>Saving did not work. You can export your level.</value>
+    <comment>Message when the browser storage refuses the write.</comment>
+  </data>
+  <data name="Editor_Save_Invalid" xml:space="preserve">
+    <value>This level cannot be saved.</value>
+    <comment>Message when the repository refuses an invalid level.</comment>
+  </data>
+  <data name="Editor_Hint_StartOnGoal" xml:space="preserve">
+    <value>The castle is here. The start needs another cell.</value>
+    <comment>Click refused: start on the goal.</comment>
+  </data>
+  <data name="Editor_Hint_GoalOnStart" xml:space="preserve">
+    <value>The start is here. The castle needs another cell.</value>
+    <comment>Click refused: goal on the start.</comment>
+  </data>
+  <data name="Editor_Hint_ObstacleOnStart" xml:space="preserve">
+    <value>Nothing may block the start.</value>
+    <comment>Click refused: obstacle on the start.</comment>
+  </data>
+  <data name="Editor_Hint_ObstacleOnGoal" xml:space="preserve">
+    <value>Nothing may block the castle.</value>
+    <comment>Click refused: obstacle on the goal.</comment>
+  </data>
+  <data name="Editor_Hint_ItemOnStart" xml:space="preserve">
+    <value>Nothing can lie on the start. Pick another cell.</value>
+    <comment>Click refused: item on the start.</comment>
+  </data>
+  <data name="Editor_Hint_TooManyStrawberries" xml:space="preserve">
+    <value>A level holds {0} strawberries at most.</value>
+    <comment>{0} = maximum strawberries.</comment>
+  </data>
+  <data name="Editor_Hint_TooManyPizzas" xml:space="preserve">
+    <value>A level holds {0} pizza slices at most.</value>
+    <comment>{0} = maximum pizza slices.</comment>
+  </data>
+  <data name="Editor_Removed_One" xml:space="preserve">
+    <value>{0} thing was removed.</value>
+    <comment>After shrinking: exactly one thing removed.</comment>
+  </data>
+  <data name="Editor_Removed_Other" xml:space="preserve">
+    <value>{0} things were removed.</value>
+    <comment>After shrinking: {0} things removed.</comment>
+  </data>
+  <data name="Editor_List_Title" xml:space="preserve">
+    <value>My levels</value>
+    <comment>Heading of the list of own levels.</comment>
+  </data>
+  <data name="Editor_List_Empty" xml:space="preserve">
+    <value>You do not have any levels of your own yet.</value>
+    <comment>Shown when the list is empty.</comment>
+  </data>
+  <data name="Editor_List_Open" xml:space="preserve">
+    <value>Edit {0}</value>
+    <comment>{0} = level name. Accessible name of the button that opens a level.</comment>
+  </data>
+  <data name="Editor_New" xml:space="preserve">
+    <value>New level</value>
+    <comment>Button that starts a new level.</comment>
+  </data>
+  <data name="Editor_DefaultName" xml:space="preserve">
+    <value>My level {0}</value>
+    <comment>{0} = number. Default name of a new level.</comment>
+  </data>
+  <data name="Cell_Label" xml:space="preserve">
+    <value>Cell {0}, {1}: {2}</value>
+    <comment>{0} = column, {1} = row (both counted from 1), {2} = what is on the cell.</comment>
+  </data>
+  <data name="Cell_Empty" xml:space="preserve">
+    <value>empty</value>
+    <comment>Content of an empty cell.</comment>
+  </data>
+  <data name="Cell_Start" xml:space="preserve">
+    <value>Start</value>
+    <comment>Content of the start cell.</comment>
+  </data>
+  <data name="Cell_Goal" xml:space="preserve">
+    <value>Goal</value>
+    <comment>Content of the goal cell.</comment>
+  </data>
+  <data name="Cell_Goal_Strawberry" xml:space="preserve">
+    <value>Goal with strawberry</value>
+    <comment>Goal cell that also holds a strawberry.</comment>
+  </data>
+  <data name="Cell_Goal_Pizza" xml:space="preserve">
+    <value>Goal with pizza</value>
+    <comment>Goal cell that also holds a pizza slice.</comment>
+  </data>
+  <data name="Cell_Tree" xml:space="preserve">
+    <value>Tree</value>
+    <comment>Content of a cell with a tree.</comment>
+  </data>
+  <data name="Cell_Rock" xml:space="preserve">
+    <value>Rock</value>
+    <comment>Content of a cell with a rock.</comment>
+  </data>
+  <data name="Cell_Pond" xml:space="preserve">
+    <value>Pond</value>
+    <comment>Content of a cell with a pond.</comment>
+  </data>
+  <data name="Cell_Strawberry" xml:space="preserve">
+    <value>Strawberry</value>
+    <comment>Content of a cell with a strawberry.</comment>
+  </data>
+  <data name="Cell_Pizza" xml:space="preserve">
+    <value>Pizza</value>
+    <comment>Content of a cell with a pizza slice.</comment>
+  </data>
 </root>

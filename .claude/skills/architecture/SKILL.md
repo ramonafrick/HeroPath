@@ -17,14 +17,14 @@ src/
   Modules/
     Levels/
       HeroPath.Modules.Levels/       pure C#: Domain/ (Position, Grid, ObstacleKind, ItemKind, LevelDefinition, LevelLimits, LevelSolver, EditorTool, LevelEditing)
-                                               Application/ (LevelValidator, LevelReadResult, LevelCheck, LevelIdGenerator, LevelRepository, SaveOutcome, ImportResult, Contracts/ICustomLevelStore)
+                                               Application/ (LevelValidator, LevelReadResult, LevelCheck, LevelIdGenerator, LevelRepository, SaveOutcome, LevelEditorState, ImportResult, Contracts/ICustomLevelStore)
                                                Infrastructure/ (embedded Levels/*.json, JSON context, StorageCustomLevelStore)
-      HeroPath.Modules.Levels.UI/    RCL: board view, LevelPicker, LevelEditor, LevelsModuleExtensions (AddLevelsModule, LoadCustomLevelsAsync), LevelDisplayExtensions (NameOf), Resources/
+      HeroPath.Modules.Levels.UI/    RCL: board view (GameBoard, also the clickable edit board), LevelPicker, LevelEditor (+ EditorToolbar, EditorSizeControl, EditorStatus, CustomLevelList), LevelsModuleExtensions (AddLevelsModule, LoadCustomLevelsAsync), LevelDisplayExtensions (NameOf), Resources/
     Game/
       HeroPath.Modules.Game/         pure C#: Domain/ (Direction, Person, MoveResult, commands, ProgramDefinition, BlockSlot, ProgramEditing,
                                                Interpreter, ExecutionStep, ProgramLimits)
                                                Application/ (GameSession, ExecutionRunner, HeroChoice, LevelProgress)
-      HeroPath.Modules.Game.UI/      RCL: StartPage, PlayPage, HeroBadge, HeroFigure, BlockPalette, ProgramEditor, BlockList, ProgramBlock, DropZone, ControlBar, MessageBox, ItemCounter, GameModuleExtensions, Services/ (ProgramDragState), Resources/
+      HeroPath.Modules.Game.UI/      RCL: StartPage, PlayPage, EditorPage (routes /editor and /editor/{LevelId}, hosts LevelEditor from Levels.UI, decision D3 of M5), HeroBadge, HeroFigure, BlockPalette, ProgramEditor, BlockList, ProgramBlock, DropZone, ControlBar, MessageBox, ItemCounter, GameModuleExtensions, Services/ (ProgramDragState), Resources/
   Hosts/
     HeroPath.Web/                    Blazor WASM host: Program.cs, App.razor (router), index.html, web platform services
     HeroPath.Maui/                   (later, do not create)
@@ -66,6 +66,7 @@ When you add a project-level rule, add it to `DependencyRuleTests.Rules`.
 | Texts of one module | `Modules.<X>.UI/Resources/<X>Resources.resx` (+ `.en.resx`) |
 | Component base classes (language / session / drag subscription) | `Shared.UI/Components` (`LocalizedComponentBase`), `Modules.Game.UI/Components` (`SessionComponentBase`, `DragAwareComponentBase`) |
 | UI-only state shared by components (drag state) | `Modules.<X>.UI/Services` (`ProgramDragState`) |
+| Routable page that needs both modules (EditorPage hosts the Levels.UI `LevelEditor`, later «Try it» needs `HeroChoice`) | `Modules.Game.UI/Pages`; the reusable component stays in `Modules.Levels.UI/Components` |
 | Layout, theme, SVG graphics, app title, LanguageSwitcher | `Shared.UI` |
 | Platform contract (storage, files) | `Shared/Application/Contracts` |
 | Platform implementation (localStorage via JS interop) | `Hosts/HeroPath.Web/Services` |

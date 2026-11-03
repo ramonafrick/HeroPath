@@ -9,7 +9,7 @@ namespace HeroPath.Modules.Levels.UI;
 public static class LevelsModuleExtensions
 {
     /// <summary>
-    /// Registers the Levels module: the storage-backed custom level store and the scoped level repository (standard levels plus custom levels).
+    /// Registers the Levels module: the storage-backed custom level store and the scoped level repository (standard levels plus custom levels) and the scoped editor state.
     /// Needs an <c>IAppStorage</c> from the host. Safe to call more than once.
     /// </summary>
     public static IServiceCollection AddLevelsModule(this IServiceCollection services)
@@ -19,6 +19,7 @@ public static class LevelsModuleExtensions
             provider.GetRequiredService<ICustomLevelStore>(),
             StandardLevels.All,
             LevelJson.Read));
+        services.TryAddScoped<LevelEditorState>();
         return services;
     }
 
