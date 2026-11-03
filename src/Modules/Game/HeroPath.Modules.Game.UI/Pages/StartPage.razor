@@ -8,19 +8,19 @@
 
 <main class="start-page" data-testid="start-page">
     <section class="start-intro">
-        <h2 class="start-title">@Localizer["Start_Title"]</h2>
-        <p class="start-text">@Localizer["Start_Intro"]</p>
+        <h2 class="start-title">@GameLocalizer["Start_Title"]</h2>
+        <p class="start-text">@GameLocalizer["Start_Intro"]</p>
     </section>
 
     <div class="start-setup">
         <section class="start-heroes" aria-labelledby="start-hero-title">
-            <h3 id="start-hero-title" class="start-section-title">@Localizer["Start_HeroGroup"]</h3>
+            <h3 id="start-hero-title" class="start-section-title">@GameLocalizer["Start_HeroGroup"]</h3>
             <div class="hero-cards">
                 @foreach (var avatar in Avatars)
                 {
                     <button type="button"
                             class="hero-card"
-                            data-testid="@($"hero-{avatar.ToString().ToLowerInvariant()}")"
+                            data-testid="@($"hero-{avatar.ToSlug()}")"
                             aria-pressed="@(_avatar == avatar ? "true" : "false")"
                             @onclick="() => SelectAvatar(avatar)">
                         <span class="hero-card-figure">
@@ -33,7 +33,7 @@
         </section>
 
         <section class="start-name">
-            <label class="start-name-label" for="hero-name">@Localizer["Start_NameLabel"]</label>
+            <label class="start-name-label" for="hero-name">@GameLocalizer["Start_NameLabel"]</label>
             <input id="hero-name"
                    class="start-name-input"
                    data-testid="hero-name"
@@ -43,30 +43,35 @@
                    aria-describedby="hero-name-hint"
                    @bind="_name"
                    @bind:event="oninput" />
-            <span id="hero-name-hint" class="start-name-hint">@Localizer["Start_NameHint"]</span>
+            <span id="hero-name-hint" class="start-name-hint">@GameLocalizer["Start_NameHint"]</span>
         </section>
 
-        <button type="button" class="start-go" data-testid="start-go" @onclick="Go">@Localizer["Start_Go"]</button>
+        <button type="button" class="start-go" data-testid="start-go" @onclick="Go">@GameLocalizer["Start_Go"]</button>
     </div>
 
     <section class="start-levels" aria-labelledby="start-levels-title">
-        <h3 id="start-levels-title" class="start-section-title">@Localizer["Start_LevelsTitle"]</h3>
+        <h3 id="start-levels-title" class="start-section-title">@GameLocalizer["Start_LevelsTitle"]</h3>
         <div class="level-cards">
-            @foreach (var level in Levels)
+            @foreach (var level in Progress.Levels)
             {
                 var solved = Progress.IsSolved(level.Id);
-                <button type="button"
-                        class="level-card"
-                        @key="level.Id"
-                        data-testid="@($"level-card-{level.Id}")"
-                        data-solved="@(solved ? "true" : "false")"
-                        aria-label="@(solved ? $"{LevelsLocalizer[$"Level_{level.Id}"]}, {Localizer["Level_Solved"]}" : null)"
-                        aria-pressed="@(_levelId == level.Id ? "true" : "false")"
-                        @onclick="() => SelectLevel(level.Id)">
+                var levelName = LevelsLocalizer[$"Level_{level.Id}"];
+                <div class="level-card"
+                     @key="level.Id"
+                     data-solved="@(solved ? "true" : "false")"
+                     data-selected="@(_levelId == level.Id ? "true" : "false")">
                     <span class="level-preview" data-testid="@($"level-preview-{level.Id}")" aria-hidden="true">
                         <GameBoard Grid="GridOf(level)" Preview="true" />
                     </span>
-                    <span class="level-card-name">@LevelsLocalizer[$"Level_{level.Id}"]</span>
+                    <button type="button"
+                            class="level-card-button"
+                            data-testid="@($"level-card-{level.Id}")"
+                            data-solved="@(solved ? "true" : "false")"
+                            aria-label="@(solved ? $"{levelName}, {GameLocalizer["Level_Solved"]}" : null)"
+                            aria-pressed="@(_levelId == level.Id ? "true" : "false")"
+                            @onclick="() => SelectLevel(level.Id)">
+                        <span class="level-card-name">@levelName</span>
+                    </button>
                     @if (solved)
                     {
                         <svg class="level-solved-badge" data-testid="@($"level-solved-{level.Id}")" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -74,7 +79,7 @@
                             <path class="badge-glyph" d="M6.5 12.5 L10.5 16.5 L17.5 8" />
                         </svg>
                     }
-                </button>
+                </div>
             }
         </div>
     </section>

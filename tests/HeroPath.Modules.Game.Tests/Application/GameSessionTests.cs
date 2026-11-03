@@ -307,6 +307,18 @@ public class GameSessionTests
     }
 
     [Fact]
+    public void Load_SameContentInNewLists_KeepsGridAndProgram()
+    {
+        var (session, _) = Started(Direction.Up);
+        var grid = session.Grid;
+
+        session.Load(TestLevels.Demo with { Obstacles = [.. TestLevels.Demo.Obstacles], Items = [] });
+
+        Assert.Same(grid, session.Grid);
+        Assert.Single(session.Program.Commands);
+    }
+
+    [Fact]
     public void Load_SameIdButDifferentGrid_IsADifferentLevel()
     {
         var (session, _) = Started(Direction.Up);

@@ -3,7 +3,6 @@ using HeroPath.Modules.Game.UI.Components;
 using HeroPath.Modules.Game.UI.Resources;
 using HeroPath.Modules.Game.UI.Services;
 using HeroPath.Modules.Levels.Domain;
-using HeroPath.Modules.Levels.Infrastructure;
 using HeroPath.Modules.Levels.UI.Resources;
 using HeroPath.Shared.UI.Resources;
 using Microsoft.AspNetCore.Components;
@@ -31,7 +30,7 @@ public partial class PlayPage : SessionComponentBase
     private ProgramDragState Drag { get; set; } = default!;
 
     [Inject]
-    private IStringLocalizer<SharedResources> Localizer { get; set; } = default!;
+    private IStringLocalizer<SharedResources> SharedLocalizer { get; set; } = default!;
 
     [Inject]
     private IStringLocalizer<LevelsResources> LevelsLocalizer { get; set; } = default!;
@@ -44,9 +43,9 @@ public partial class PlayPage : SessionComponentBase
 
     protected override void OnInitialized()
     {
-        if (Choice.IsChosen)
+        if (Choice.IsChosen && Choice.LevelId is { } id && Progress.Find(id) is { } chosen)
         {
-            Session.Load(StandardLevels.Get(Choice.LevelId));
+            Session.Load(chosen);
         }
         else
         {
@@ -74,7 +73,7 @@ public partial class PlayPage : SessionComponentBase
 
     private void SwitchLevel(string id)
     {
-        if (Progress.Levels.FirstOrDefault(level => level.Id == id) is { } level)
+        if (Progress.Find(id) is { } level)
         {
             LoadLevel(level);
         }

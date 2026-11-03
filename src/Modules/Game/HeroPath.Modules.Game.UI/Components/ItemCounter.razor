@@ -15,7 +15,7 @@
 
             var collected = Session.CollectedCount(kind);
             <span class="item-counter-entry"
-                  data-testid="@($"item-counter-{kind.ToString().ToLowerInvariant()}")"
+                  data-testid="@($"item-counter-{kind.ToSlug()}")"
                   data-collected="@collected"
                   data-total="@total">
                 <span class="item-counter-icon" aria-hidden="true">

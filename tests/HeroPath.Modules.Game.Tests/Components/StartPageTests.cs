@@ -2,6 +2,7 @@ using HeroPath.Modules.Game.Application;
 using HeroPath.Modules.Game.Domain;
 using HeroPath.Modules.Game.UI;
 using HeroPath.Modules.Game.UI.Pages;
+using HeroPath.Modules.Levels.Domain;
 using HeroPath.Modules.Levels.Infrastructure;
 using HeroPath.Shared.Application.Contracts;
 using HeroPath.Shared.UI;
@@ -40,6 +41,22 @@ public class StartPageTests : CultureBunitContext
     }
 
     [Fact]
+    public void Render_UsesTheLevelsOfLevelProgress_AndPreselectsTheFirst()
+    {
+        var levels = new[]
+        {
+            TestLevels.Empty("synthetic-a", 4, 4, new Position(0, 0), new Position(3, 3)),
+            TestLevels.Empty("synthetic-b", 4, 4, new Position(0, 0), new Position(3, 0)),
+        };
+        Services.AddScoped(_ => new LevelProgress(levels));
+
+        var page = Render<StartPage>();
+
+        Assert.Equal(["level-card-synthetic-a", "level-card-synthetic-b"], page.FindAll("[data-testid^=level-card-]").Select(c => c.GetAttribute("data-testid")));
+        Assert.Equal("true", page.Find("[data-testid=level-card-synthetic-a]").GetAttribute("aria-pressed"));
+    }
+
+    [Fact]
     public void Render_ShowsACardWithPreviewForEveryStandardLevelInOrder()
     {
         var page = Render<StartPage>();
@@ -48,7 +65,7 @@ public class StartPageTests : CultureBunitContext
         Assert.Equal(StandardLevels.All.Select(l => $"level-card-{l.Id}"), cards.Select(c => c.GetAttribute("data-testid")));
         foreach (var level in StandardLevels.All)
         {
-            Assert.NotNull(page.Find($"[data-testid=level-card-{level.Id}] [data-testid=level-preview-{level.Id}]"));
+            Assert.NotNull(page.Find($"[data-testid=level-preview-{level.Id}]"));
         }
 
         Assert.Equal("Einfach 2", page.Find("[data-testid=level-card-easy-2] .level-card-name").TextContent);
@@ -105,7 +122,6 @@ public class StartPageTests : CultureBunitContext
         Assert.Equal(HeroAvatar.Lisa, Choice.Avatar);
         Assert.Equal("Zoe", Choice.Name);
         Assert.Equal("easy-1", Choice.LevelId);
-        Assert.Equal("easy-1", Session.Level!.Id);
         Assert.Equal(new Uri(new Uri(navigation.BaseUri), "play").ToString(), navigation.Uri);
     }
 
@@ -122,7 +138,7 @@ public class StartPageTests : CultureBunitContext
     }
 
     [Fact]
-    public void Go_SameLevelAgain_KeepsProgram()
+    public void Go_ThenPlayPage_SameLevelAgain_KeepsProgram()
     {
         Choice.Choose(HeroAvatar.Max, null, "easy-2");
         Session.Load(StandardLevels.Get("easy-2"));
@@ -130,12 +146,13 @@ public class StartPageTests : CultureBunitContext
         var page = Render<StartPage>();
 
         page.Find("[data-testid=start-go]").Click();
+        Render<PlayPage>();
 
         Assert.Single(Session.Program.Commands);
     }
 
     [Fact]
-    public void Go_OtherLevel_ClearsProgram()
+    public void Go_ThenPlayPage_OtherLevel_ClearsProgram()
     {
         Choice.Choose(HeroAvatar.Max, null, "easy-2");
         Session.Load(StandardLevels.Get("easy-2"));
@@ -144,9 +161,9 @@ public class StartPageTests : CultureBunitContext
 
         page.Find("[data-testid=level-card-easy-1]").Click();
         page.Find("[data-testid=start-go]").Click();
+        Render<PlayPage>();
 
         Assert.Empty(Session.Program.Commands);
-        Assert.Equal("easy-1", Session.Level!.Id);
     }
 
     [Fact]

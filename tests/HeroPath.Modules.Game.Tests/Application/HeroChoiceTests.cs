@@ -1,5 +1,4 @@
 using HeroPath.Modules.Game.Application;
-using HeroPath.Modules.Levels.Infrastructure;
 
 namespace HeroPath.Modules.Game.Tests.Application;
 
@@ -16,8 +15,8 @@ public class HeroChoiceTests
     }
 
     [Fact]
-    public void New_LevelIdIsTheFirstStandardLevel() =>
-        Assert.Equal("free-field", new HeroChoice().LevelId);
+    public void New_HasNoLevelId() =>
+        Assert.Null(new HeroChoice().LevelId);
 
     [Fact]
     public void Choose_StoresAvatarNormalizedNameAndLevel()
@@ -65,6 +64,9 @@ public class HeroChoiceTests
     [InlineData("   ")]
     [InlineData("\t\n")]
     [InlineData("\u0000\u0001")]
+    [InlineData("\u200B\u200D\uFEFF")]
+    [InlineData("\u202E\u2066\u2069")]
+    [InlineData(" \u2028\u2029 \u200B ")]
     public void NormalizeName_EmptyOrWhitespaceOnly_FallsBackToDefaultOfTheAvatar(string? raw)
     {
         Assert.Equal("Max", HeroChoice.NormalizeName(raw, HeroAvatar.Max));
@@ -181,6 +183,15 @@ public class HeroChoiceTests
         choice.SelectLevel("easy-2");
 
         Assert.False(choice.IsChosen);
-        Assert.Equal(StandardLevels.All[0].Id, choice.LevelId);
+        Assert.Null(choice.LevelId);
     }
+
+    [Theory]
+    [InlineData("Z\u200Bo\u200De\uFEFF", "Zoe")]
+    [InlineData("\u202EeoZ\u202C", "eoZ")]
+    [InlineData("Zoe\u2066x\u2069", "Zoex")]
+    [InlineData("Zo\u2028e\u2029", "Zoe")]
+    [InlineData("\u200E\u200FZoe\u2060", "Zoe")]
+    public void NormalizeName_InvisibleFormatAndSeparatorCharacters_AreRemoved(string raw, string expected) =>
+        Assert.Equal(expected, HeroChoice.NormalizeName(raw, HeroAvatar.Max));
 }

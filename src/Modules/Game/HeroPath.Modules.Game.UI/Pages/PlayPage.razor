@@ -4,7 +4,7 @@
 @using HeroPath.Modules.Game.UI.Components
 @using HeroPath.Modules.Levels.UI.Components
 
-<PageTitle>@Localizer["App_Title"]</PageTitle>
+<PageTitle>@SharedLocalizer["App_Title"]</PageTitle>
 
 @if (Choice.IsChosen && Session.Grid is { } grid && Session.Level is { } level)
 {

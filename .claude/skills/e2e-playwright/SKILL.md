@@ -24,7 +24,7 @@ HEROPATH_E2E=1 HEROPATH_BASE_URL=http://127.0.0.1:5198 dotnet test --project tes
 |---|---|
 | `AppFixture` (assembly fixture) | starts the host and browser, `NewContextAsync(locale, width, height)` with `ReducedMotion.Reduce` |
 | `E2EEnvironment` | `Enabled`, `BaseUrl`, repository root, screenshot directory |
-| `LayoutAssertions` | geometry checks: `AssertRepeatHeadersOnOneLineAsync` (select, minus, count, plus, trailing text of every repeat on one line, no overlap, inside the row). Call it in laptop and desktop flows, in DE and EN, with a selected and a nested repeat |
+| `LayoutAssertions` | geometry checks: `AssertNoPageScrollAsync` (no page scroll), `AssertRepeatHeadersOnOneLineAsync` (select, minus, count, plus, trailing text of every repeat on one line, no overlap, inside the row). Call it in laptop and desktop flows, in DE and EN, with a selected and a nested repeat |
 | `BrowserErrors.Track(page)` | collects console errors + uncaught exceptions. **Every test ends with `Assert.Empty(errors.Errors)`** |
 | `page.StartGameAsync(errors, levelId = "easy-2", hero = null, name = null)` | opens the start page, optionally picks hero (`max`/`lisa`) and name, picks the level, clicks `start-go` and waits for the play board. Every test that needs the play page starts here (most rely on the `easy-2` layout) |
 | `page.WaitForRenderedAsync(selector, errors)` | waits for Blazor rendering; on timeout writes `failure.png` and puts browser errors into the message |
@@ -81,6 +81,7 @@ E2E covers **flows across components**. Single-component logic belongs in bUnit 
 
 - Start page (`StartPageTests`): choose hero, name and level, `/play` redirect without a choice, language switch keeps the form
 - Items (`ItemTests`, `strawberries` level at 1366x768 in DE and EN): all items and counters visible at the start, Debug collects a strawberry (`item-x-y` `data-collected`, counter 1 von 3, hidden under reduced motion), Reset brings it back, a pizza detour ends in the pizza success text with the hero name, a straight run to the goal gives `ItemsMissing`. Switch the app language with the `language-en` button, the browser locale does not change it. Screenshots `items-start|collected|success.laptop.<lang>`, `items-missing.desktop.de`
+- Coverage (`LevelCoverageTests`, helper `LevelSolutions.SolveAsync` plays the known solutions of all 7 levels with palette clicks): all levels solved gives «Du hast alle Level geschafft!» (`all-solved.laptop.de|en`), start page EN laptop (`start-page.laptop.en`, castle preview at least 150 px, «Los!» in the viewport), play page of `castle-maze`, `long-road`, `small-maze` at laptop and desktop in DE and EN without page scroll (`play-<id>.<viewport>.<lang>`, `LayoutAssertions.AssertNoPageScrollAsync`), solved level picker not clipped (`level-picker-solved.laptop.de|en`)
 - Level switching (`LevelSwitchTests`): solve `easy-1`, next level, picker switch clears the program, solved check mark on the start page
 - Choose hero → choose level → assemble program → Play → success message
 - Debug step by step: highlighted block moves (`data-current`), status shows pause (`RunFlowTests`)

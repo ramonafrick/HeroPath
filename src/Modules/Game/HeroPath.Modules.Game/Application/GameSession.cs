@@ -126,8 +126,13 @@ public sealed class GameSession
     public void Load(LevelDefinition level)
     {
         ArgumentNullException.ThrowIfNull(level);
+        if (Level is { } current && current.Id == level.Id && (ReferenceEquals(current, level) || current == level))
+        {
+            return;
+        }
+
         var grid = level.ToGrid();
-        if (Level is { } current && current.Id == level.Id && grid.Equals(Grid))
+        if (Level is { } loaded && loaded.Id == level.Id && grid.Equals(Grid))
         {
             return;
         }

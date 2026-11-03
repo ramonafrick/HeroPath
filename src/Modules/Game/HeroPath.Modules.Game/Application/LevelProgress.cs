@@ -25,6 +25,9 @@ public sealed class LevelProgress
     /// <summary>Whether every level is solved.</summary>
     public bool AllSolved => Levels.Count > 0 && Levels.All(level => _solved.Contains(level.Id));
 
+    /// <summary>The level with <paramref name="id"/>, or <see langword="null"/> when there is none.</summary>
+    public LevelDefinition? Find(string id) => Levels.FirstOrDefault(level => level.Id == id);
+
     public bool IsSolved(string id) => _solved.Contains(id);
 
     /// <summary>The level after <paramref name="id"/>, or <see langword="null"/> for the last or an unknown level.</summary>
@@ -44,7 +47,7 @@ public sealed class LevelProgress
     /// <summary>Marks a level solved. Unknown ids and repeated calls change nothing and raise no event.</summary>
     public void MarkSolved(string id)
     {
-        if (Levels.Any(level => level.Id == id) && _solved.Add(id))
+        if (Find(id) is not null && _solved.Add(id))
         {
             Changed?.Invoke();
         }

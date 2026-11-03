@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Text;
-using HeroPath.Modules.Levels.Infrastructure;
 
 namespace HeroPath.Modules.Game.Application;
 
@@ -29,8 +28,8 @@ public sealed class HeroChoice
     /// <summary>Whether the child confirmed a choice on the start page.</summary>
     public bool IsChosen { get; private set; }
 
-    /// <summary>Id of the chosen level; the first standard level until something is chosen.</summary>
-    public string LevelId => _levelId ?? StandardLevels.All[0].Id;
+    /// <summary>Id of the chosen level; <see langword="null"/> until something is chosen.</summary>
+    public string? LevelId => _levelId;
 
     /// <summary>Confirms the choice. The raw name is normalized (see <see cref="NormalizeName"/>).</summary>
     public void Choose(HeroAvatar avatar, string? rawName, string levelId)
@@ -72,7 +71,7 @@ public sealed class HeroChoice
     };
 
     /// <summary>
-    /// Removes control characters, trims, cuts to <see cref="MaxNameLength"/> text elements (never inside a surrogate pair or a
+    /// Removes control characters, invisible format characters (zero-width, bidi overrides), line and paragraph separators, trims, cuts to <see cref="MaxNameLength"/> text elements (never inside a surrogate pair or a
     /// combining sequence) and falls back to the default name of <paramref name="avatar"/> when nothing is left.
     /// </summary>
     public static string NormalizeName(string? raw, HeroAvatar avatar)
@@ -82,26 +81,21 @@ public sealed class HeroChoice
             return DefaultName(avatar);
         }
 
-        var builder = new StringBuilder(raw.Length);
-        foreach (var character in raw)
-        {
-            if (!char.IsControl(character))
-            {
-                builder.Append(character);
-            }
-        }
-
-        var cleaned = builder.ToString().Trim();
-        var cut = new StringBuilder();
+        var cleaned = string.Concat(raw.Where(character => !IsHidden(character))).Trim();
+        var builder = new StringBuilder();
         var enumerator = StringInfo.GetTextElementEnumerator(cleaned);
         for (var count = 0; count < MaxNameLength && enumerator.MoveNext(); count++)
         {
-            cut.Append(enumerator.GetTextElement());
+            builder.Append(enumerator.GetTextElement());
         }
 
-        var result = cut.ToString().Trim();
+        var result = builder.ToString().Trim();
         return result.Length == 0 ? DefaultName(avatar) : result;
     }
+
+    private static bool IsHidden(char character) =>
+        char.IsControl(character)
+        || CharUnicodeInfo.GetUnicodeCategory(character) is UnicodeCategory.Format or UnicodeCategory.LineSeparator or UnicodeCategory.ParagraphSeparator;
 
     /// <summary>
     /// The name field after the child switched hero: an empty field or the previous hero's default name becomes the new

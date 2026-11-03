@@ -35,6 +35,14 @@ public static class LayoutAssertions
         Assert.Empty(problems);
     }
 
+    /// <summary>The page itself must not scroll: board and panels fit the viewport.</summary>
+    public static async Task AssertNoPageScrollAsync(IPage page)
+    {
+        var scrolls = await page.EvaluateAsync<bool>(
+            "document.documentElement.scrollHeight > window.innerHeight || document.documentElement.scrollWidth > window.innerWidth");
+        Assert.False(scrolls, "The play page must fit the viewport without page scrolling.");
+    }
+
     /// <summary>Program rows keep at least 44 px height and do not touch each other, also while the list scrolls.</summary>
     public static async Task AssertRowsKeepSizeAsync(IPage page)
     {

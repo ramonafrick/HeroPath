@@ -24,6 +24,7 @@
     font-weight: 700;
     text-overflow: ellipsis;
     white-space: nowrap;
+    unicode-bidi: isolate;
 }
 
 .hero-change {

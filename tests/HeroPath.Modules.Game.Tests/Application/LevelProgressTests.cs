@@ -1,16 +1,35 @@
 using HeroPath.Modules.Game.Application;
-using HeroPath.Modules.Levels.Infrastructure;
+using HeroPath.Modules.Levels.Domain;
 
 namespace HeroPath.Modules.Game.Tests.Application;
 
 public class LevelProgressTests
 {
-    private readonly LevelProgress _progress = new(StandardLevels.All);
+    private static readonly LevelDefinition[] _levels =
+    [
+        TestLevels.Empty("level-a", 5, 5, new Position(0, 0), new Position(4, 4)),
+        TestLevels.Empty("level-b", 5, 5, new Position(0, 0), new Position(4, 0)),
+        TestLevels.Empty("level-c", 5, 5, new Position(0, 4), new Position(4, 0)),
+    ];
+
+    private readonly LevelProgress _progress = new(_levels);
 
     [Fact]
     public void Levels_KeepTheGivenOrder()
     {
-        Assert.Equal(StandardLevels.All.Select(l => l.Id), _progress.Levels.Select(l => l.Id));
+        Assert.Equal(_levels.Select(l => l.Id), _progress.Levels.Select(l => l.Id));
+    }
+
+    [Fact]
+    public void Find_KnownId_ReturnsLevel()
+    {
+        Assert.Same(_levels[1], _progress.Find("level-b"));
+    }
+
+    [Fact]
+    public void Find_UnknownId_ReturnsNull()
+    {
+        Assert.Null(_progress.Find("nope"));
     }
 
     [Fact]
@@ -23,14 +42,14 @@ public class LevelProgressTests
     [Fact]
     public void NextAfter_MiddleLevel_ReturnsFollowingLevel()
     {
-        Assert.Equal("easy-2", _progress.NextAfter("easy-1")!.Id);
-        Assert.Equal("easy-1", _progress.NextAfter("free-field")!.Id);
+        Assert.Equal("level-c", _progress.NextAfter("level-b")!.Id);
+        Assert.Equal("level-b", _progress.NextAfter("level-a")!.Id);
     }
 
     [Fact]
     public void NextAfter_LastLevel_ReturnsNull()
     {
-        Assert.Null(_progress.NextAfter(StandardLevels.All[^1].Id));
+        Assert.Null(_progress.NextAfter("level-c"));
     }
 
     [Fact]
@@ -45,11 +64,11 @@ public class LevelProgressTests
         var changes = 0;
         _progress.Changed += () => changes++;
 
-        _progress.MarkSolved("easy-1");
-        _progress.MarkSolved("easy-1");
+        _progress.MarkSolved("level-a");
+        _progress.MarkSolved("level-a");
 
-        Assert.True(_progress.IsSolved("easy-1"));
-        Assert.False(_progress.IsSolved("easy-2"));
+        Assert.True(_progress.IsSolved("level-a"));
+        Assert.False(_progress.IsSolved("level-b"));
         Assert.Equal(1, changes);
     }
 
@@ -68,14 +87,14 @@ public class LevelProgressTests
     [Fact]
     public void AllSolved_OnlyAfterEveryLevelIsMarked()
     {
-        foreach (var level in StandardLevels.All.SkipLast(1))
+        foreach (var level in _levels.SkipLast(1))
         {
             _progress.MarkSolved(level.Id);
         }
 
         Assert.False(_progress.AllSolved);
 
-        _progress.MarkSolved(StandardLevels.All[^1].Id);
+        _progress.MarkSolved(_levels[^1].Id);
 
         Assert.True(_progress.AllSolved);
     }
