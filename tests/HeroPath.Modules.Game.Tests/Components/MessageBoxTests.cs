@@ -289,4 +289,52 @@ public class MessageBoxTests : CultureBunitContext
 
         Assert.Equal(3, new[] { error, hint, success }.Distinct().Count());
     }
+
+    private void SetupPizzaRun(int pizzas)
+    {
+        LevelItem[] items = [new(1, 0, ItemKind.Pizza), new(2, 0, ItemKind.Pizza)];
+        _session.Load(new LevelDefinition
+        {
+            Id = "test-pizza",
+            Width = 5,
+            Height = 3,
+            Start = new Position(0, 0),
+            Goal = new Position(2, 0),
+            Items = [.. items.Take(pizzas)],
+        });
+        TestLevels.Fill(_session, Direction.Right, Direction.Right);
+        RunToEnd();
+    }
+
+    [Theory]
+    [InlineData(1, "de-CH", "Geschafft, Max! Du hast die Burg erreicht und 1 Pizza-Stück gefunden.")]
+    [InlineData(1, "en", "You did it, Max! You reached the castle and found 1 slice of pizza.")]
+    [InlineData(2, "de-CH", "Geschafft, Max! Du hast die Burg erreicht und 2 Pizza-Stücke gefunden.")]
+    [InlineData(2, "en", "You did it, Max! You reached the castle and found 2 slices of pizza.")]
+    public async Task Render_SuccessWithPizzas_MentionsThem(int pizzas, string culture, string text)
+    {
+        SetupPizzaRun(pizzas);
+        var box = Render<MessageBox>();
+
+        await Services.GetRequiredService<LanguageService>().SetAsync(culture, Xunit.TestContext.Current.CancellationToken);
+
+        box.WaitForAssertion(() => Assert.Equal(text, box.Find("[data-testid=message]").TextContent.Trim()));
+    }
+
+    [Fact]
+    public void Render_SuccessWithPizzasWhenAllLevelsSolved_AppendsTheAllSolvedSentence()
+    {
+        var progress = Services.GetRequiredService<LevelProgress>();
+        foreach (var level in StandardLevels.All)
+        {
+            progress.MarkSolved(level.Id);
+        }
+
+        SetupPizzaRun(1);
+        var box = Render<MessageBox>();
+
+        Assert.Equal(
+            "Geschafft, Max! Du hast die Burg erreicht und 1 Pizza-Stück gefunden. Du hast alle Level geschafft!",
+            box.Find("[data-testid=message]").TextContent.Trim());
+    }
 }

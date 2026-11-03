@@ -17,6 +17,13 @@ public class GameBoardTests : CultureBunitContext
         Height = 4,
         Start = new Position(0, 3),
         Goal = new Position(4, 0),
+        RequireAllItems = false,
+        Items =
+        [
+            new LevelItem(0, 0, ItemKind.Strawberry),
+            new LevelItem(4, 1, ItemKind.Pizza),
+            new LevelItem(4, 0, ItemKind.Strawberry),
+        ],
         Obstacles =
         [
             new LevelObstacle(1, 1, ObstacleKind.Tree),
@@ -46,7 +53,7 @@ public class GameBoardTests : CultureBunitContext
     [InlineData(1, 1, "tree")]
     [InlineData(2, 2, "rock")]
     [InlineData(3, 1, "pond")]
-    [InlineData(0, 0, "empty")]
+    [InlineData(1, 0, "empty")]
     [InlineData(4, 3, "empty")]
     public void Render_CellKinds_AreAtTheRightCells(int x, int y, string kind)
     {
@@ -65,7 +72,7 @@ public class GameBoardTests : CultureBunitContext
         Assert.NotNull(cut.Find("[data-testid=cell-3-1] [data-testid=graphic-obstacle-pond]"));
         Assert.NotNull(cut.Find("[data-testid=cell-0-3] [data-testid=graphic-start-field]"));
         Assert.NotNull(cut.Find("[data-testid=cell-4-0] [data-testid=graphic-goal-castle]"));
-        Assert.Empty(cut.FindAll("[data-testid=cell-0-0] svg"));
+        Assert.Empty(cut.FindAll("[data-testid=cell-1-0] svg"));
     }
 
     [Fact]
@@ -151,6 +158,76 @@ public class GameBoardTests : CultureBunitContext
         Assert.Null(cut.Find("[data-testid=game-board]").GetAttribute("aria-hidden"));
         Assert.Equal("group", cut.Find("[data-testid=game-board]").GetAttribute("role"));
         Assert.NotNull(cut.Find("[data-testid=hero]"));
+    }
+
+    [Fact]
+    public void Render_Items_AreDrawnInTheirCellsWithKindAndItemAttributes()
+    {
+        var cut = RenderBoard();
+
+        var strawberry = cut.Find("[data-testid=cell-0-0]");
+        Assert.Equal("strawberry", strawberry.GetAttribute("data-kind"));
+        Assert.Equal("strawberry", strawberry.GetAttribute("data-item"));
+        Assert.NotNull(cut.Find("[data-testid=cell-0-0] [data-testid=item-0-0] [data-testid=graphic-item-strawberry]"));
+        Assert.Equal("pizza", cut.Find("[data-testid=cell-4-1]").GetAttribute("data-kind"));
+        Assert.NotNull(cut.Find("[data-testid=cell-4-1] [data-testid=graphic-item-pizza]"));
+        Assert.Equal(3, cut.FindAll("[data-item]").Count);
+        Assert.Null(cut.Find("[data-testid=cell-1-1]").GetAttribute("data-item"));
+    }
+
+    [Fact]
+    public void Render_ItemOnTheGoal_KeepsTheGoalKindAndAddsTheItemAttribute()
+    {
+        var cut = RenderBoard();
+
+        var goal = cut.Find("[data-testid=cell-4-0]");
+        Assert.Equal("goal", goal.GetAttribute("data-kind"));
+        Assert.Equal("strawberry", goal.GetAttribute("data-item"));
+        Assert.NotNull(goal.QuerySelector("[data-testid=graphic-goal-castle]"));
+        Assert.NotNull(goal.QuerySelector("[data-testid=graphic-item-strawberry]"));
+    }
+
+    [Fact]
+    public void Render_WithoutCollectedItems_MarksNoItemAsCollected()
+    {
+        var cut = RenderBoard();
+
+        Assert.Empty(cut.FindAll("[data-collected]"));
+    }
+
+    [Fact]
+    public void Render_CollectedItems_StayInTheDomMarkedAsCollected()
+    {
+        var cut = RenderBoard(p => p.Add(b => b.CollectedItems, new HashSet<Position> { new(4, 1) }));
+
+        Assert.Equal("true", cut.Find("[data-testid=item-4-1]").GetAttribute("data-collected"));
+        Assert.Single(cut.FindAll("[data-collected]"));
+        Assert.NotNull(cut.Find("[data-testid=item-4-1] [data-testid=graphic-item-pizza]"));
+    }
+
+    [Fact]
+    public void Render_CollectedItemsEmptiedAgain_ShowsTheItemsAsUncollected()
+    {
+        var cut = RenderBoard(p => p.Add(b => b.CollectedItems, new HashSet<Position> { new(0, 0) }));
+        Assert.Single(cut.FindAll("[data-collected]"));
+
+        cut.Render(p => p.Add(b => b.Grid, _grid).Add(b => b.CollectedItems, new HashSet<Position>()));
+
+        Assert.Empty(cut.FindAll("[data-collected]"));
+        Assert.Equal(3, cut.FindAll("[data-testid^=item-]").Count);
+    }
+
+    [Fact]
+    public void Render_Preview_ShowsItemsWithoutCollectedStateOrTestIds()
+    {
+        var cut = RenderBoard(p => p
+            .Add(b => b.Preview, true)
+            .Add(b => b.CollectedItems, new HashSet<Position> { new(0, 0) }));
+
+        Assert.Equal(3, cut.FindAll(".item").Count);
+        Assert.Empty(cut.FindAll("[data-collected]"));
+        Assert.Empty(cut.FindAll("[data-testid^=item-]"));
+        Assert.Equal(3, cut.FindAll("[data-item]").Count);
     }
 
     private IRenderedComponent<GameBoard> RenderBoard(Action<ComponentParameterCollectionBuilder<GameBoard>>? configure = null) =>

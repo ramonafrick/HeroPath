@@ -9,14 +9,16 @@
 @if (Choice.IsChosen && Session.Grid is { } grid && Session.Level is { } level)
 {
     <main class="play-page">
-        <section class="board-area" style="--board-cols: @grid.Width; --board-rows: @grid.Height;">
+        <section class="board-area" data-has-items="@(grid.Items.Count > 0 ? "true" : null)" style="--board-cols: @grid.Width; --board-rows: @grid.Height;">
             <div class="board-head">
                 <h2 class="level-name" data-testid="level-name">@LevelsLocalizer[$"Level_{level.Id}"]</h2>
                 <HeroBadge />
             </div>
+            <ItemCounter />
             <GameBoard Grid="grid"
                        HeroPosition="Session.HeroPosition"
                        MarkedCell="Session.MarkedCell"
+                       CollectedItems="Session.CollectedItems"
                        StepDuration="Session.Tempo.Duration">
                 <HeroContent>
                     <HeroFigure Avatar="Choice.Avatar" />

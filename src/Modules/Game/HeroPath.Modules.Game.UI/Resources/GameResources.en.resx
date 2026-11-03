@@ -266,4 +266,24 @@
     <value>You've solved all the levels!</value>
     <comment>Second sentence of the success message once every level is solved.</comment>
   </data>
+  <data name="Message_Succeeded_Pizza_One" xml:space="preserve">
+    <value>You did it, {0}! You reached the castle and found 1 slice of pizza.</value>
+    <comment>{0} = hero name. Success with exactly one pizza slice collected.</comment>
+  </data>
+  <data name="Message_Succeeded_Pizza_Other" xml:space="preserve">
+    <value>You did it, {0}! You reached the castle and found {1} slices of pizza.</value>
+    <comment>{0} = hero name, {1} = number of collected pizza slices (2 or more).</comment>
+  </data>
+  <data name="ItemCounter_Strawberry_One" xml:space="preserve">
+    <value>Strawberry {0} of {1}</value>
+    <comment>{0} = collected, {1} = total (total is 1).</comment>
+  </data>
+  <data name="ItemCounter_Strawberry_Other" xml:space="preserve">
+    <value>Strawberries {0} of {1}</value>
+    <comment>{0} = collected, {1} = total (2 or more).</comment>
+  </data>
+  <data name="ItemCounter_Pizza" xml:space="preserve">
+    <value>Pizza {0} of {1}</value>
+    <comment>{0} = collected, {1} = total.</comment>
+  </data>
 </root>

@@ -15,10 +15,12 @@
         {
             var position = new Position(x, y);
             var kind = KindAt(position);
+            var item = ItemAt(position);
             <div class="cell"
                  @key="position"
                  data-testid="@(Preview ? null : $"cell-{x}-{y}")"
                  data-kind="@kind"
+                 data-item="@item"
                  data-marked="@(IsMarked(position) ? "true" : null)">
                 @switch (kind)
                 {
@@ -37,6 +39,23 @@
                     case "pond":
                         <ObstaclePond />
                         break;
+                }
+                @if (item is { } itemKind)
+                {
+                    var collected = !Preview && CollectedItems?.Contains(position) == true;
+                    <span class="item"
+                          @key="itemKind"
+                          data-testid="@(Preview ? null : $"item-{x}-{y}")"
+                          data-collected="@(collected ? "true" : null)">
+                        @if (itemKind == "pizza")
+                        {
+                            <ItemPizza />
+                        }
+                        else
+                        {
+                            <ItemStrawberry />
+                        }
+                    </span>
                 }
             </div>
         }

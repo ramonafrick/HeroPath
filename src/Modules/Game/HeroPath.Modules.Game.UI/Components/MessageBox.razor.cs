@@ -46,9 +46,16 @@ public partial class MessageBox : SessionComponentBase
             GameMessageCode.ItemsMissing when message.Count == 1 => Localizer["Message_ItemsMissing_One"],
             GameMessageCode.ItemsMissing => Localizer["Message_ItemsMissing_Other", message.Count],
             GameMessageCode.StepLimitExceeded => Localizer["Message_StepLimitExceeded", ProgramLimits.MaxExecutedSteps],
-            GameMessageCode.Succeeded when Progress.AllSolved => $"{Localizer["Message_Succeeded", Choice.Name]} {Localizer["Message_AllSolved"]}",
-            GameMessageCode.Succeeded => Localizer["Message_Succeeded", Choice.Name],
+            GameMessageCode.Succeeded when Progress.AllSolved => $"{SucceededText(message)} {Localizer["Message_AllSolved"]}",
+            GameMessageCode.Succeeded => SucceededText(message),
             _ => Localizer[$"Message_{message.Code}"],
         };
     }
+
+    private string SucceededText(GameMessage message) => message.PizzaCount switch
+    {
+        0 => Localizer["Message_Succeeded", Choice.Name],
+        1 => Localizer["Message_Succeeded_Pizza_One", Choice.Name],
+        _ => Localizer["Message_Succeeded_Pizza_Other", Choice.Name, message.PizzaCount],
+    };
 }

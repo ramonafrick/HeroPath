@@ -11,6 +11,7 @@ public partial class GameBoard : LocalizedComponentBase
 {
     private Grid? _kindsGrid;
     private string[] _kinds = [];
+    private string?[] _items = [];
     private string _boardStyle = string.Empty;
     private string _heroStyle = string.Empty;
 
@@ -22,6 +23,10 @@ public partial class GameBoard : LocalizedComponentBase
 
     [Parameter]
     public Position? MarkedCell { get; set; }
+
+    /// <summary>Cells whose item was collected in the current run. Their items stay in the DOM with <c>data-collected="true"</c> and fade out.</summary>
+    [Parameter]
+    public IReadOnlySet<Position>? CollectedItems { get; set; }
 
     [Parameter]
     public TimeSpan StepDuration { get; set; } = TimeSpan.FromMilliseconds(500);
@@ -41,7 +46,9 @@ public partial class GameBoard : LocalizedComponentBase
         if (!ReferenceEquals(_kindsGrid, Grid))
         {
             _kindsGrid = Grid;
-            _kinds = [.. Enumerable.Range(0, Grid.Width * Grid.Height).Select(index => KindOf(new Position(index % Grid.Width, index / Grid.Width)))];
+            var itemKinds = Enumerable.Range(0, Grid.Width * Grid.Height).Select(index => Grid.GetItem(new Position(index % Grid.Width, index / Grid.Width))).ToArray();
+            _items = [.. itemKinds.Select(kind => kind?.ToString().ToLowerInvariant())];
+            _kinds = [.. Enumerable.Range(0, Grid.Width * Grid.Height).Select(index => KindOf(new Position(index % Grid.Width, index / Grid.Width), _items[index]))];
             _boardStyle = string.Create(CultureInfo.InvariantCulture, $"--cols: {Grid.Width}; --rows: {Grid.Height};");
         }
 
@@ -52,9 +59,11 @@ public partial class GameBoard : LocalizedComponentBase
 
     private string KindAt(Position position) => _kinds[position.Y * Grid.Width + position.X];
 
+    private string? ItemAt(Position position) => _items[position.Y * Grid.Width + position.X];
+
     private bool IsMarked(Position position) => MarkedCell == position;
 
-    private string KindOf(Position position)
+    private string KindOf(Position position, string? item)
     {
         if (position == Grid.Start)
         {
@@ -71,7 +80,7 @@ public partial class GameBoard : LocalizedComponentBase
             ObstacleKind.Tree => "tree",
             ObstacleKind.Rock => "rock",
             ObstacleKind.Pond => "pond",
-            _ => "empty",
+            _ => item ?? "empty",
         };
     }
 }

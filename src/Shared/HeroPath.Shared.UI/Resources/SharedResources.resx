@@ -64,4 +64,12 @@
     <value>Lisa, die Heldin</value>
     <comment>Accessible name of the hero graphic.</comment>
   </data>
+  <data name="Graphic_ItemStrawberry" xml:space="preserve">
+    <value>Erdbeere</value>
+    <comment>Accessible name of the strawberry item.</comment>
+  </data>
+  <data name="Graphic_ItemPizza" xml:space="preserve">
+    <value>Pizza-Stück</value>
+    <comment>Accessible name of the pizza item.</comment>
+  </data>
 </root>

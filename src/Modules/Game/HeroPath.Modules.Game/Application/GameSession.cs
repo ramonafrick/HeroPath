@@ -17,6 +17,7 @@ public sealed class GameSession
     private Tempo _tempo = Tempo.Medium;
     private GameMessage? _runMessage;
     private GameMessage? _hint;
+    private readonly HashSet<Position> _collectedItems = [];
 
     /// <summary>Raised after every change of the session.</summary>
     public event Action? Changed;
@@ -100,6 +101,12 @@ public sealed class GameSession
     /// </summary>
     public Position? MarkedCell { get; private set; }
 
+    /// <summary>Cells whose item the hero has collected in the current run. Cleared by Reset and by loading a different level.</summary>
+    public IReadOnlySet<Position> CollectedItems => _collectedItems;
+
+    /// <summary>Number of items of <paramref name="kind"/> collected in the current run.</summary>
+    public int CollectedCount(ItemKind kind) => Grid is { } grid ? _collectedItems.Count(cell => grid.GetItem(cell) == kind) : 0;
+
     /// <summary>Id of the empty repeat block the last refused start pointed at, or <c>null</c>. Cleared by the next program edit and by Reset.</summary>
     public Guid? HintedId { get; private set; }
 
@@ -132,6 +139,7 @@ public sealed class GameSession
         Status = RunStatus.Ready;
         CurrentStep = null;
         MarkedCell = null;
+        _collectedItems.Clear();
         _runMessage = null;
         _hint = null;
         HintedId = null;
@@ -217,7 +225,12 @@ public sealed class GameSession
         CurrentStep = step;
         SelectedId = null;
         MarkedCell = MarkedCellOf(step);
-        _runMessage = GameMessage.FromStep(step, _program);
+        if (step.CollectedItem is not null)
+        {
+            _collectedItems.Add(step.Position);
+        }
+
+        _runMessage = GameMessage.FromStep(step, _program, CollectedCount(ItemKind.Pizza));
         _hint = null;
         HintedId = null;
         Changed?.Invoke();
@@ -261,6 +274,7 @@ public sealed class GameSession
         Status = RunStatus.Ready;
         CurrentStep = null;
         MarkedCell = null;
+        _collectedItems.Clear();
         _runMessage = null;
         _hint = null;
         HintedId = null;

@@ -266,4 +266,24 @@
     <value>Du hast alle Level geschafft!</value>
     <comment>Second sentence of the success message once every level is solved.</comment>
   </data>
+  <data name="Message_Succeeded_Pizza_One" xml:space="preserve">
+    <value>Geschafft, {0}! Du hast die Burg erreicht und 1 Pizza-Stück gefunden.</value>
+    <comment>{0} = hero name. Success with exactly one pizza slice collected.</comment>
+  </data>
+  <data name="Message_Succeeded_Pizza_Other" xml:space="preserve">
+    <value>Geschafft, {0}! Du hast die Burg erreicht und {1} Pizza-Stücke gefunden.</value>
+    <comment>{0} = hero name, {1} = number of collected pizza slices (2 or more).</comment>
+  </data>
+  <data name="ItemCounter_Strawberry_One" xml:space="preserve">
+    <value>Erdbeere {0} von {1}</value>
+    <comment>{0} = collected, {1} = total (total is 1).</comment>
+  </data>
+  <data name="ItemCounter_Strawberry_Other" xml:space="preserve">
+    <value>Erdbeeren {0} von {1}</value>
+    <comment>{0} = collected, {1} = total (2 or more).</comment>
+  </data>
+  <data name="ItemCounter_Pizza" xml:space="preserve">
+    <value>Pizza {0} von {1}</value>
+    <comment>{0} = collected, {1} = total.</comment>
+  </data>
 </root>

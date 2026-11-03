@@ -26,6 +26,8 @@ public class GraphicsTests : BunitContext
         { typeof(ObstacleTree), "Baum", "Tree" },
         { typeof(ObstacleRock), "Felsen", "Rock" },
         { typeof(ObstaclePond), "Teich", "Pond" },
+        { typeof(ItemStrawberry), "Erdbeere", "Strawberry" },
+        { typeof(ItemPizza), "Pizza-Stück", "Pizza slice" },
     };
 
     protected override void Dispose(bool disposing)
@@ -91,5 +93,20 @@ public class GraphicsTests : BunitContext
         Assert.Contains("--hp-lisa-dress", lisa.Markup);
         Assert.DoesNotContain("--hp-max-shirt", lisa.Markup);
         Assert.NotEqual(max.Find("svg > g").InnerHtml, lisa.Find("svg > g").InnerHtml);
+    }
+
+    [Fact]
+    public void Items_HaveTheirTestIdsPaletteAndDifferInShape()
+    {
+        var strawberry = RenderGraphic(typeof(ItemStrawberry));
+        var pizza = RenderGraphic(typeof(ItemPizza));
+
+        Assert.NotNull(strawberry.Find("[data-testid=graphic-item-strawberry]"));
+        Assert.NotNull(pizza.Find("[data-testid=graphic-item-pizza]"));
+        Assert.Contains("--hp-strawberry)", strawberry.Markup);
+        Assert.Contains("--hp-pizza)", pizza.Markup);
+        Assert.Contains("--hp-outline", strawberry.Markup);
+        Assert.Contains("--hp-outline", pizza.Markup);
+        Assert.NotEqual(strawberry.Find("svg > g").InnerHtml, pizza.Find("svg > g").InnerHtml);
     }
 }

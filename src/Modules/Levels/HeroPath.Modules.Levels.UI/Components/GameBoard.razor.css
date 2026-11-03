@@ -1,5 +1,5 @@
 .game-board {
-    --hp-board-reserved: 10.25rem;
+    --hp-board-reserved: var(--hp-reserved, 10.25rem);
     position: relative;
     box-sizing: border-box;
     display: grid;
@@ -70,4 +70,39 @@
 
 .game-board[data-preview="true"] .cell {
     border-width: 0;
+}
+
+.item {
+    position: absolute;
+    inset: 15%;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.item[data-collected="true"] {
+    animation: item-collected 400ms ease-out forwards;
+}
+
+@keyframes item-collected {
+    0% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+
+    40% {
+        opacity: 1;
+        transform: translateY(-30%) scale(1.2);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(-10%) scale(0.8);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .item[data-collected="true"] {
+        animation: none;
+        visibility: hidden;
+    }
 }

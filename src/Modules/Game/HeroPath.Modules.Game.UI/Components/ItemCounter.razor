@@ -1,0 +1,35 @@
+@inherits SessionComponentBase
+@using HeroPath.Modules.Levels.Domain
+@using HeroPath.Shared.UI.Graphics
+
+@if (Session.Grid is { } grid)
+{
+    <div class="item-counter" aria-live="polite">
+        @foreach (var kind in Enum.GetValues<ItemKind>())
+        {
+            var total = grid.Items.Count(item => item.Kind == kind);
+            if (total == 0)
+            {
+                continue;
+            }
+
+            var collected = Session.CollectedCount(kind);
+            <span class="item-counter-entry"
+                  data-testid="@($"item-counter-{kind.ToString().ToLowerInvariant()}")"
+                  data-collected="@collected"
+                  data-total="@total">
+                <span class="item-counter-icon" aria-hidden="true">
+                    @if (kind == ItemKind.Pizza)
+                    {
+                        <ItemPizza />
+                    }
+                    else
+                    {
+                        <ItemStrawberry />
+                    }
+                </span>
+                <span class="item-counter-text">@Text(kind, collected, total)</span>
+            </span>
+        }
+    </div>
+}

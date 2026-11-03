@@ -1,0 +1,14 @@
+@inherits GraphicBase
+
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" data-testid="graphic-item-pizza">
+    <title>@Title</title>
+    <g style="stroke: var(--hp-outline); stroke-width: 4; stroke-linejoin: round; stroke-linecap: round">
+        <path d="M50 92 L8 22 L92 22 Z" style="fill: var(--hp-pizza)" />
+        <path d="M6 22 Q50 8 94 22 L92 32 Q50 20 8 32 Z" style="fill: var(--hp-pizza-crust)" />
+        <g style="fill: var(--hp-pizza-salami)">
+            <circle cx="36" cy="44" r="6.5" />
+            <circle cx="62" cy="46" r="6.5" />
+            <circle cx="50" cy="66" r="5.5" />
+        </g>
+    </g>
+</svg>

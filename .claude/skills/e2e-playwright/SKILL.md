@@ -80,6 +80,7 @@ Capture each new UI state in **de and en** (text lengths differ).
 E2E covers **flows across components**. Single-component logic belongs in bUnit and game rules in xUnit.
 
 - Start page (`StartPageTests`): choose hero, name and level, `/play` redirect without a choice, language switch keeps the form
+- Items (`ItemTests`, `strawberries` level at 1366x768 in DE and EN): all items and counters visible at the start, Debug collects a strawberry (`item-x-y` `data-collected`, counter 1 von 3, hidden under reduced motion), Reset brings it back, a pizza detour ends in the pizza success text with the hero name, a straight run to the goal gives `ItemsMissing`. Switch the app language with the `language-en` button, the browser locale does not change it. Screenshots `items-start|collected|success.laptop.<lang>`, `items-missing.desktop.de`
 - Level switching (`LevelSwitchTests`): solve `easy-1`, next level, picker switch clears the program, solved check mark on the start page
 - Choose hero → choose level → assemble program → Play → success message
 - Debug step by step: highlighted block moves (`data-current`), status shows pause (`RunFlowTests`)
