@@ -1,0 +1,25 @@
+@inherits GraphicBase
+
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" data-testid="graphic-goal-castle">
+    <title>@Title</title>
+    <defs>
+        <pattern id="@PatternId" x="0" y="0" width="25" height="25" patternUnits="userSpaceOnUse">
+            <rect width="25" height="25" style="fill: var(--hp-goal)" />
+            <rect width="12.5" height="12.5" style="fill: var(--hp-goal-dark)" />
+            <rect x="12.5" y="12.5" width="12.5" height="12.5" style="fill: var(--hp-goal-dark)" />
+        </pattern>
+    </defs>
+    <rect x="3" y="3" width="94" height="94" rx="10" fill="url(#@PatternId)" />
+    <rect x="3" y="3" width="94" height="94" rx="10" fill="none" style="stroke: var(--hp-outline); stroke-width: 4" />
+    <g style="stroke: var(--hp-outline); stroke-width: 3.5; stroke-linejoin: round">
+        <path d="M50 30 L50 12" fill="none" />
+        <path d="M50 12 L66 17 L50 22 Z" style="fill: var(--hp-flag)" />
+        <rect x="18" y="36" width="16" height="46" style="fill: var(--hp-castle-wall)" />
+        <rect x="66" y="36" width="16" height="46" style="fill: var(--hp-castle-wall)" />
+        <path d="M16 36 L16 28 L22 28 L22 32 L27 32 L27 28 L36 28 L36 36 Z" style="fill: var(--hp-castle-wall)" />
+        <path d="M64 36 L64 28 L73 28 L73 32 L78 32 L78 28 L84 28 L84 36 Z" style="fill: var(--hp-castle-wall)" />
+        <rect x="32" y="42" width="36" height="40" style="fill: var(--hp-castle-wall)" />
+        <path d="M30 42 L30 34 L38 34 L38 38 L44 38 L44 34 L56 34 L56 38 L62 38 L62 34 L70 34 L70 42 Z" style="fill: var(--hp-castle-wall)" />
+        <path d="M42 82 L42 66 A8 8 0 0 1 58 66 L58 82 Z" style="fill: var(--hp-castle-door)" />
+    </g>
+</svg>

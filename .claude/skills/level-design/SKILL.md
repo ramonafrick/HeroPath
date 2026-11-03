@@ -36,6 +36,7 @@ Must-have: at least 4 levels (1–4). Levels 5–7 are a bonus.
 - `src/Modules/Levels/HeroPath.Modules.Levels/Infrastructure/Levels/<nn>-<id>.json` (e.g. `01-free-field.json`). The order comes from the file prefix.
 - Embedded via `<EmbeddedResource Include="Infrastructure\Levels\*.json" />` (already a wildcard in the csproj, so no change per level).
 - Add the display name as `Level_<id>` in **both** `LevelsResources` resx files (see the `localization` skill).
+- `00-demo.json` (id `demo`, 10×10, start (1,6), goal (6,3), tree/rock/pond, no items, shortest solution 8 moves) is the M2 demo level shown on the play page. It is not one of the 7 templates below; `StandardLevelsTests` still validates and solves it.
 
 ## Mandatory check (test in HeroPath.Modules.Levels.Tests)
 

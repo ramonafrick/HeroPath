@@ -79,7 +79,8 @@ await host.RunAsync();
 
 ## Board and animation
 
-- `GameBoard`: CSS Grid `grid-template-columns: repeat(var(--cols), 1fr)`, square cells via `aspect-ratio: 1`.
+- `GameBoard` (Levels.UI, no Game types): parameters `Grid` (required), `HeroPosition` (`Position`), `MarkedCell` (`Position?`), `StepDuration` (default 500 ms), `HeroContent` (`RenderFragment?`, e.g. `<HeroMax />`). CSS Grid `grid-template-columns: repeat(var(--cols), 1fr)`, square cells via `aspect-ratio: 1`; the width follows the available height (`--hp-board-reserved`).
+- Board test ids: `game-board`, `cell-{x}-{y}` with `data-kind` (`start|goal|tree|rock|pond|empty`) and `data-marked="true"` (dashed outline plus hatching, readable in greyscale), `hero` with `data-x`/`data-y`. `PlayPage` has `side-panel` (palette, program and controls follow) and `level-name`.
 - The hero is an absolutely positioned layer that moves with `transform: translate(...)` and `transition` (duration bound to the tempo). Don't re-render the hero inside different cells; that breaks the animation.
 - Highlight the current block via `ExecutionStep.CommandId`. On an error, mark both the block and the board cell.
 - Respect `@media (prefers-reduced-motion: reduce)` (no transitions or confetti).

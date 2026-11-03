@@ -36,4 +36,28 @@
     <value>EN</value>
     <comment>Visible text of the English button.</comment>
   </data>
+  <data name="Graphic_HeroMax" xml:space="preserve">
+    <value>Max, the hero</value>
+    <comment>Accessible name of the hero graphic.</comment>
+  </data>
+  <data name="Graphic_StartField" xml:space="preserve">
+    <value>Start field</value>
+    <comment>Accessible name of the start field graphic.</comment>
+  </data>
+  <data name="Graphic_GoalCastle" xml:space="preserve">
+    <value>Castle, the goal</value>
+    <comment>Accessible name of the goal castle graphic.</comment>
+  </data>
+  <data name="Graphic_ObstacleTree" xml:space="preserve">
+    <value>Tree</value>
+    <comment>Accessible name of the tree obstacle.</comment>
+  </data>
+  <data name="Graphic_ObstacleRock" xml:space="preserve">
+    <value>Rock</value>
+    <comment>Accessible name of the rock obstacle.</comment>
+  </data>
+  <data name="Graphic_ObstaclePond" xml:space="preserve">
+    <value>Pond</value>
+    <comment>Accessible name of the pond obstacle.</comment>
+  </data>
 </root>

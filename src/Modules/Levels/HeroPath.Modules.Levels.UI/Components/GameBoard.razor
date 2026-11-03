@@ -1,0 +1,47 @@
+@using HeroPath.Shared.UI.Graphics
+
+<div class="game-board"
+     data-testid="game-board"
+     role="group"
+     aria-label="@Localizer["Board_Label"]"
+     style="@BoardStyle">
+    @for (var y = 0; y < Grid.Height; y++)
+    {
+        for (var x = 0; x < Grid.Width; x++)
+        {
+            var position = new Position(x, y);
+            var kind = KindOf(position);
+            <div class="cell"
+                 @key="position"
+                 data-testid="@($"cell-{x}-{y}")"
+                 data-kind="@kind"
+                 data-marked="@(IsMarked(position) ? "true" : null)">
+                @switch (kind)
+                {
+                    case "start":
+                        <StartField />
+                        break;
+                    case "goal":
+                        <GoalCastle />
+                        break;
+                    case "tree":
+                        <ObstacleTree />
+                        break;
+                    case "rock":
+                        <ObstacleRock />
+                        break;
+                    case "pond":
+                        <ObstaclePond />
+                        break;
+                }
+            </div>
+        }
+    }
+    <div class="hero"
+         data-testid="hero"
+         data-x="@HeroPosition.X"
+         data-y="@HeroPosition.Y"
+         style="@HeroStyle">
+        @HeroContent
+    </div>
+</div>

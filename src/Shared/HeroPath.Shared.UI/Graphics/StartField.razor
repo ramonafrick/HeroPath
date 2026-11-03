@@ -1,0 +1,22 @@
+@inherits GraphicBase
+
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" role="img" data-testid="graphic-start-field">
+    <title>@Title</title>
+    <defs>
+        <pattern id="@PatternId" x="0" y="0" width="50" height="50" patternUnits="userSpaceOnUse">
+            <g style="fill: var(--hp-start-dark)">
+                <ellipse cx="14" cy="32" rx="6" ry="9" transform="rotate(-12 14 32)" />
+                <circle cx="9" cy="19" r="2.2" />
+                <circle cx="14" cy="17" r="2.2" />
+                <circle cx="19" cy="18" r="2.2" />
+                <ellipse cx="36" cy="16" rx="6" ry="9" transform="rotate(12 36 16)" />
+                <circle cx="31" cy="3" r="2.2" />
+                <circle cx="36" cy="1" r="2.2" />
+                <circle cx="41" cy="2" r="2.2" />
+            </g>
+        </pattern>
+    </defs>
+    <rect x="3" y="3" width="94" height="94" rx="10" style="fill: var(--hp-start)" />
+    <rect x="3" y="3" width="94" height="94" rx="10" fill="url(#@PatternId)" />
+    <rect x="3" y="3" width="94" height="94" rx="10" fill="none" style="stroke: var(--hp-outline); stroke-width: 4" />
+</svg>

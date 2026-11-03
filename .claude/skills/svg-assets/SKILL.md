@@ -27,7 +27,9 @@ Docs: `docs/Projektidee.md` («Spielelemente»), `docs/Architektur C4.md` decisi
 | `--hp-strawberry`, `--hp-pizza` | items |
 | `--hp-outline` | dark outline for all figures |
 
-SVGs use `fill="var(--hp-...)"` so the theme can change in one place (themes such as «Fussballplatz» later).
+SVGs use `style="fill: var(--hp-...)"` (a presentation attribute would also work, `style` is the safe form) so the theme can change in one place (themes such as «Fussballplatz» later). Extra palette entries used so far: `--hp-start-dark`, `--hp-goal-dark`, `--hp-flag`, `--hp-castle-wall`, `--hp-castle-door`, `--hp-skin`, `--hp-hair`, `--hp-trunk`, `--hp-tree-light`, `--hp-pond-light`, `--hp-cell`, `--hp-cell-border`.
+
+Implemented: `HeroMax`, `StartField`, `GoalCastle`, `ObstacleTree`, `ObstacleRock`, `ObstaclePond` in `Shared.UI/Graphics`, all deriving from `GraphicBase` (localized `<title>` from `Graphic_<TypeName>`, `InstanceId` for pattern ids). Test ids on the root: `graphic-hero-max`, `graphic-start-field`, `graphic-goal-castle`, `graphic-obstacle-tree|rock|pond`. A board cell draws its own graphic (start, goal, obstacle); the hero floats above.
 
 ## Elements
 

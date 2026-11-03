@@ -1,0 +1,54 @@
+.game-board {
+    --hp-board-reserved: 9rem;
+    position: relative;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: repeat(var(--cols), 1fr);
+    grid-template-rows: repeat(var(--rows), 1fr);
+    width: min(100%, calc((100dvh - var(--hp-board-reserved)) * var(--cols) / var(--rows)));
+    aspect-ratio: var(--cols) / var(--rows);
+    background: var(--hp-cell);
+    box-shadow: 0 0 0 4px var(--hp-outline);
+    border-radius: 2px;
+}
+
+.cell {
+    position: relative;
+    box-sizing: border-box;
+    aspect-ratio: 1;
+    min-width: 0;
+    min-height: 0;
+    border: 1px solid var(--hp-cell-border);
+}
+
+.cell[data-marked="true"] {
+    outline: 5px dashed var(--hp-outline);
+    outline-offset: -5px;
+    background-image: repeating-linear-gradient(45deg, rgba(217, 69, 90, 0.35) 0 6px, transparent 6px 12px);
+    z-index: 1;
+}
+
+.cell ::deep svg,
+.hero ::deep svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.hero {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: calc(100% / var(--cols));
+    height: calc(100% / var(--rows));
+    transform: translate(calc(var(--x) * 100%), calc(var(--y) * 100%));
+    transition: transform var(--hp-step-duration, 500ms) linear;
+    pointer-events: none;
+    z-index: 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hero {
+        transition: none;
+    }
+}

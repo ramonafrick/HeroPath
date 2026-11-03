@@ -1,7 +1,17 @@
 @page "/"
+@using HeroPath.Modules.Levels.UI.Components
+@using HeroPath.Shared.UI.Graphics
 
 <PageTitle>@Localizer["App_Title"]</PageTitle>
 
 <main class="play-page">
-    @* GameBoard, BlockPalette, ProgramEditor and ControlBar follow in M2 (docs/Architektur C4.md, 4.1). *@
+    <section class="board-area">
+        <h2 class="level-name" data-testid="level-name">@LevelsLocalizer[$"Level_{_level.Id}"]</h2>
+        <GameBoard Grid="_grid" HeroPosition="_grid.Start">
+            <HeroContent>
+                <HeroMax />
+            </HeroContent>
+        </GameBoard>
+    </section>
+    <aside class="side-panel" data-testid="side-panel"></aside>
 </main>
