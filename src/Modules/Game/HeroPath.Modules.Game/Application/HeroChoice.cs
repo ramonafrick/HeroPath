@@ -50,6 +50,19 @@ public sealed class HeroChoice
         }
     }
 
+    /// <summary>Switches the level while keeping hero and name. Does nothing before a choice was confirmed or for the same level.</summary>
+    public void SelectLevel(string levelId)
+    {
+        ArgumentNullException.ThrowIfNull(levelId);
+        if (!IsChosen || levelId == _levelId)
+        {
+            return;
+        }
+
+        _levelId = levelId;
+        Changed?.Invoke();
+    }
+
     /// <summary>The name a hero has when the child types nothing.</summary>
     public static string DefaultName(HeroAvatar avatar) => avatar switch
     {

@@ -17,7 +17,7 @@ public class GameSessionDragTests
         var session = new GameSession();
         session.Load(TestLevels.Demo);
         session.Add(Direction.Up);
-        new ExecutionRunner(session, TimeProvider.System).StepOnce();
+        new ExecutionRunner(session, TestLevels.NewProgress(), TimeProvider.System).StepOnce();
         return session;
     }
 

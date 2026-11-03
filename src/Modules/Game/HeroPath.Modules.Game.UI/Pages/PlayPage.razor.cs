@@ -1,6 +1,8 @@
 using HeroPath.Modules.Game.Application;
 using HeroPath.Modules.Game.UI.Components;
+using HeroPath.Modules.Game.UI.Resources;
 using HeroPath.Modules.Game.UI.Services;
+using HeroPath.Modules.Levels.Domain;
 using HeroPath.Modules.Levels.Infrastructure;
 using HeroPath.Modules.Levels.UI.Resources;
 using HeroPath.Shared.UI.Resources;
@@ -34,6 +36,12 @@ public partial class PlayPage : SessionComponentBase
     [Inject]
     private IStringLocalizer<LevelsResources> LevelsLocalizer { get; set; } = default!;
 
+    [Inject]
+    private LevelProgress Progress { get; set; } = default!;
+
+    [Inject]
+    private IStringLocalizer<GameResources> GameLocalizer { get; set; } = default!;
+
     protected override void OnInitialized()
     {
         if (Choice.IsChosen)
@@ -46,15 +54,35 @@ public partial class PlayPage : SessionComponentBase
         }
 
         base.OnInitialized();
+        Progress.Changed += HandleChanged;
     }
 
     protected override void Dispose(bool disposing)
     {
+        if (disposing)
+        {
+            Progress.Changed -= HandleChanged;
+        }
+
         base.Dispose(disposing);
         if (disposing)
         {
             Runner.Stop();
             Drag.End();
         }
+    }
+
+    private void SwitchLevel(string id)
+    {
+        if (Progress.Levels.FirstOrDefault(level => level.Id == id) is { } level)
+        {
+            LoadLevel(level);
+        }
+    }
+
+    private void LoadLevel(LevelDefinition level)
+    {
+        Choice.SelectLevel(level.Id);
+        Session.Load(level);
     }
 }

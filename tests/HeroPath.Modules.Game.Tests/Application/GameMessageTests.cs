@@ -13,7 +13,7 @@ public class GameMessageTests
     public GameMessageTests()
     {
         _session.Load(TestLevels.Demo);
-        _runner = new ExecutionRunner(_session, new FakeTimeProvider());
+        _runner = new ExecutionRunner(_session, TestLevels.NewProgress(), new FakeTimeProvider());
     }
 
     private void Fill(params Direction[] directions) => TestLevels.Fill(_session, directions);

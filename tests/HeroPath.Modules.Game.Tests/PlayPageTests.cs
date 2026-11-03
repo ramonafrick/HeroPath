@@ -4,6 +4,7 @@ using HeroPath.Modules.Game.UI;
 using HeroPath.Modules.Game.UI.Pages;
 using HeroPath.Modules.Game.UI.Services;
 using HeroPath.Modules.Levels.Domain;
+using HeroPath.Modules.Levels.Infrastructure;
 using HeroPath.Shared.Application.Contracts;
 using HeroPath.Shared.UI;
 using Microsoft.AspNetCore.Components;
@@ -181,5 +182,119 @@ public class PlayPageTests : CultureBunitContext
         }
 
         Assert.Contains("Zoe", page.Find("[data-testid=message]").TextContent);
+    }
+
+    private void SolveEasy2()
+    {
+        TestLevels.Fill(Session, TestLevels.DemoSolution);
+        for (var i = 0; i < TestLevels.DemoSolution.Length; i++)
+        {
+            Runner.StepOnce();
+        }
+    }
+
+    [Fact]
+    public void Picker_ListsAllLevelsAndSelectsTheCurrentOne()
+    {
+        var page = Render<PlayPage>();
+
+        var options = page.FindAll("[data-testid=level-picker] option");
+        Assert.Equal(7, options.Count);
+        Assert.Equal("easy-2", page.Find("[data-testid=level-picker]").GetAttribute("value"));
+    }
+
+    [Fact]
+    public void Picker_Change_LoadsOtherLevelAndClearsProgram()
+    {
+        var page = Render<PlayPage>();
+        TestLevels.Fill(Session, Direction.Up, Direction.Up);
+
+        page.Find("[data-testid=level-picker]").Change("easy-1");
+
+        Assert.Equal("easy-1", Session.Level!.Id);
+        Assert.Equal("easy-1", Choice.LevelId);
+        Assert.Equal(HeroAvatar.Max, Choice.Avatar);
+        Assert.Empty(page.FindAll("[data-testid=program-block]"));
+        Assert.Equal("Einfach 1", page.Find("[data-testid=level-name]").TextContent);
+        Assert.Equal("2", page.Find("[data-testid=hero]").GetAttribute("data-x"));
+    }
+
+    [Fact]
+    public async Task Picker_Change_DuringPlay_CancelsTheRun()
+    {
+        var page = Render<PlayPage>();
+        TestLevels.Fill(Session, TestLevels.DemoSolution);
+        var play = Runner.PlayAsync();
+        Assert.Equal(RunStatus.Running, Session.Status);
+
+        page.Find("[data-testid=level-picker]").Change("easy-1");
+        _time.Advance(TimeSpan.FromSeconds(10));
+        await play;
+
+        Assert.Equal(RunStatus.Ready, Session.Status);
+        Assert.Equal("ready", page.Find("[data-testid=status]").GetAttribute("data-state"));
+    }
+
+    [Fact]
+    public void Picker_MarksSolvedLevelsWithCheck()
+    {
+        var page = Render<PlayPage>();
+
+        SolveEasy2();
+
+        var option = page.Find("[data-testid=level-picker-option-easy-2]");
+        Assert.Equal("true", option.GetAttribute("data-solved"));
+        Assert.StartsWith("✓", option.TextContent.Trim());
+    }
+
+    [Fact]
+    public void NextLevel_OnlyAfterSuccess()
+    {
+        var page = Render<PlayPage>();
+        Assert.Empty(page.FindAll("[data-testid=next-level]"));
+
+        TestLevels.Fill(Session, Direction.Up);
+        Runner.StepOnce();
+        Runner.StepOnce();
+
+        Assert.Equal(RunStatus.Failed, Session.Status);
+        Assert.Empty(page.FindAll("[data-testid=next-level]"));
+
+        SolveAfterReset(page);
+        Assert.Equal("Nächstes Level", page.Find("[data-testid=next-level]").TextContent.Trim());
+    }
+
+    private void SolveAfterReset(IRenderedComponent<PlayPage> page)
+    {
+        Runner.Reset();
+        Session.Clear();
+        SolveEasy2();
+        Assert.NotNull(page.Find("[data-testid=next-level]"));
+    }
+
+    [Fact]
+    public void NextLevel_Click_LoadsNextLevelWithEmptyProgram()
+    {
+        var page = Render<PlayPage>();
+        SolveEasy2();
+
+        page.Find("[data-testid=next-level]").Click();
+
+        Assert.Equal("strawberries", Session.Level!.Id);
+        Assert.Equal("strawberries", Choice.LevelId);
+        Assert.Empty(page.FindAll("[data-testid=program-block]"));
+        Assert.Empty(page.FindAll("[data-testid=next-level]"));
+        Assert.Equal("ready", page.Find("[data-testid=status]").GetAttribute("data-state"));
+    }
+
+    [Fact]
+    public void NextLevel_OnLastLevel_IsNotShown()
+    {
+        var last = StandardLevels.All[^1];
+        Choice.Choose(HeroAvatar.Max, null, last.Id);
+        var page = Render<PlayPage>();
+        Services.GetRequiredService<LevelProgress>().MarkSolved(last.Id);
+
+        Assert.Empty(page.FindAll("[data-testid=next-level]"));
     }
 }

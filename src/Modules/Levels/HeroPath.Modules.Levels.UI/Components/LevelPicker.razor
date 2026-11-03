@@ -1,0 +1,21 @@
+@using HeroPath.Shared.UI.Components
+@inherits LocalizedComponentBase
+
+<div class="level-picker">
+    <label class="level-picker-label" for="@_selectId">@Localizer["LevelPicker_Label"]</label>
+    <select id="@_selectId"
+            class="level-picker-select"
+            data-testid="level-picker"
+            value="@SelectedId"
+            @onchange="HandleChange">
+        @foreach (var level in Levels)
+        {
+            var solved = IsSolved?.Invoke(level.Id) == true;
+            <option @key="level.Id"
+                    value="@level.Id"
+                    selected="@(level.Id == SelectedId)"
+                    data-testid="@($"level-picker-option-{level.Id}")"
+                    data-solved="@(solved ? "true" : "false")">@(solved ? "✓ " : string.Empty)@Localizer[$"Level_{level.Id}"]</option>
+        }
+    </select>
+</div>

@@ -6,18 +6,20 @@ namespace HeroPath.Modules.Game.Application;
 /// Runs the program of a <see cref="GameSession"/> for Play and Debug with one shared <see cref="Interpreter"/>.
 /// The first step locks editing; <see cref="Reset"/> unlocks it again. Play executes the first step immediately and
 /// waits for the <see cref="GameSession.Tempo"/> duration between steps. The runner lives as long as its session and
-/// drops its run whenever the session loads a different level.
+/// drops its run whenever the session loads a different level. A succeeding step marks the level solved in the <see cref="LevelProgress"/> before the session announces it.
 /// </summary>
 public sealed class ExecutionRunner
 {
     private readonly GameSession _session;
+    private readonly LevelProgress _progress;
     private readonly TimeProvider _timeProvider;
     private Interpreter? _interpreter;
     private CancellationTokenSource? _cancellation;
 
-    public ExecutionRunner(GameSession session, TimeProvider timeProvider)
+    public ExecutionRunner(GameSession session, LevelProgress progress, TimeProvider timeProvider)
     {
         _session = session;
+        _progress = progress;
         _timeProvider = timeProvider;
         _session.RunDiscarded += DiscardRun;
     }
@@ -54,7 +56,7 @@ public sealed class ExecutionRunner
             {
                 var step = interpreter.Step();
                 var status = StatusOf(step, RunStatus.Running);
-                _session.UpdateRun(status, step);
+                ApplyStep(status, step);
                 if (status != RunStatus.Running)
                 {
                     return;
@@ -87,7 +89,7 @@ public sealed class ExecutionRunner
         }
 
         var step = (_interpreter ??= CreateInterpreter()).Step();
-        _session.UpdateRun(StatusOf(step, RunStatus.Paused), step);
+        ApplyStep(StatusOf(step, RunStatus.Paused), step);
     }
 
     /// <summary>Stops a running Play and leaves the run <see cref="RunStatus.Paused"/>: program, position and interpreter stay. Does nothing when not running.</summary>
@@ -132,6 +134,16 @@ public sealed class ExecutionRunner
 
         _session.ShowEmptyRepeatHint(repeat);
         return true;
+    }
+
+    private void ApplyStep(RunStatus status, ExecutionStep step)
+    {
+        if (step.State == ExecutionState.Succeeded && _session.Level is { } level)
+        {
+            _progress.MarkSolved(level.Id);
+        }
+
+        _session.UpdateRun(status, step);
     }
 
     private Interpreter CreateInterpreter() => new(_session.ToProgram(), _session.Grid!);

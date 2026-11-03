@@ -14,7 +14,26 @@ public partial class MessageBox : SessionComponentBase
     private HeroChoice Choice { get; set; } = default!;
 
     [Inject]
+    private LevelProgress Progress { get; set; } = default!;
+
+    [Inject]
     private IStringLocalizer<GameResources> Localizer { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        Progress.Changed += HandleChanged;
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            Progress.Changed -= HandleChanged;
+        }
+
+        base.Dispose(disposing);
+    }
 
     private string Text(GameMessage message)
     {
@@ -27,6 +46,7 @@ public partial class MessageBox : SessionComponentBase
             GameMessageCode.ItemsMissing when message.Count == 1 => Localizer["Message_ItemsMissing_One"],
             GameMessageCode.ItemsMissing => Localizer["Message_ItemsMissing_Other", message.Count],
             GameMessageCode.StepLimitExceeded => Localizer["Message_StepLimitExceeded", ProgramLimits.MaxExecutedSteps],
+            GameMessageCode.Succeeded when Progress.AllSolved => $"{Localizer["Message_Succeeded", Choice.Name]} {Localizer["Message_AllSolved"]}",
             GameMessageCode.Succeeded => Localizer["Message_Succeeded", Choice.Name],
             _ => Localizer[$"Message_{message.Code}"],
         };

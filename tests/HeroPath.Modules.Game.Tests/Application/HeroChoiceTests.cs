@@ -1,4 +1,5 @@
 using HeroPath.Modules.Game.Application;
+using HeroPath.Modules.Levels.Infrastructure;
 
 namespace HeroPath.Modules.Game.Tests.Application;
 
@@ -153,5 +154,33 @@ public class HeroChoiceTests
         choice.Choose(HeroAvatar.Lisa, "Zoe", "easy-1");
 
         Assert.DoesNotContain("Zoe", choice.ToString());
+    }
+
+    [Fact]
+    public void SelectLevel_AfterChoice_ChangesOnlyTheLevelAndRaisesChanged()
+    {
+        var choice = new HeroChoice();
+        choice.Choose(HeroAvatar.Lisa, "Zoe", "easy-1");
+        var changes = 0;
+        choice.Changed += () => changes++;
+
+        choice.SelectLevel("easy-2");
+        choice.SelectLevel("easy-2");
+
+        Assert.Equal("easy-2", choice.LevelId);
+        Assert.Equal(HeroAvatar.Lisa, choice.Avatar);
+        Assert.Equal("Zoe", choice.Name);
+        Assert.Equal(1, changes);
+    }
+
+    [Fact]
+    public void SelectLevel_BeforeChoice_DoesNothing()
+    {
+        var choice = new HeroChoice();
+
+        choice.SelectLevel("easy-2");
+
+        Assert.False(choice.IsChosen);
+        Assert.Equal(StandardLevels.All[0].Id, choice.LevelId);
     }
 }

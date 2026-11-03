@@ -145,7 +145,7 @@ public class InterpreterRepeatProgressTests
         var debugSession = BuildSession();
         var expected = Rounds(RunToEnd(debugSession.ToProgram(), debugSession.Grid!));
 
-        var debugRunner = new ExecutionRunner(debugSession, new FakeTimeProvider());
+        var debugRunner = new ExecutionRunner(debugSession, TestLevels.NewProgress(), new FakeTimeProvider());
         var debug = new List<ExecutionStep>();
         while (debugRunner.CanStart)
         {
@@ -163,7 +163,7 @@ public class InterpreterRepeatProgressTests
                 played.Add(step);
             }
         };
-        var play = new ExecutionRunner(playSession, time).PlayAsync();
+        var play = new ExecutionRunner(playSession, TestLevels.NewProgress(), time).PlayAsync();
         for (var i = 0; i < 100 && !play.IsCompleted; i++)
         {
             time.Advance(TimeSpan.FromMilliseconds(500));

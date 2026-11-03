@@ -15,7 +15,7 @@ public class GameSessionTests
         var session = new GameSession();
         session.Load(DemoLevel());
         TestLevels.Fill(session, directions);
-        return (session, new ExecutionRunner(session, TimeProvider.System));
+        return (session, new ExecutionRunner(session, TestLevels.NewProgress(), TimeProvider.System));
     }
 
     private static GameSession SessionWith(params Direction[] directions)

@@ -32,6 +32,9 @@ public partial class StartPage : LocalizedComponentBase
     private GameSession Session { get; set; } = default!;
 
     [Inject]
+    private LevelProgress Progress { get; set; } = default!;
+
+    [Inject]
     private NavigationManager Navigation { get; set; } = default!;
 
     [Inject]

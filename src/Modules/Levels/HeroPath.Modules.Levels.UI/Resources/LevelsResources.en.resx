@@ -44,4 +44,8 @@
     <value>Castle maze</value>
     <comment>Name of a standard level shown above the board.</comment>
   </data>
+  <data name="LevelPicker_Label" xml:space="preserve">
+    <value>Choose level</value>
+    <comment>Label of the level dropdown on the play page.</comment>
+  </data>
 </root>

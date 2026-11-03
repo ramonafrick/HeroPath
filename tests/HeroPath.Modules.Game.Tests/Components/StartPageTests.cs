@@ -189,4 +189,21 @@ public class StartPageTests : CultureBunitContext
 
         Assert.DoesNotContain(storage.Values.Values, value => value.Contains("Zoe", StringComparison.Ordinal));
     }
+
+    [Fact]
+    public void Render_SolvedLevel_ShowsBadgeAndAccessibleName()
+    {
+        Services.GetRequiredService<LevelProgress>().MarkSolved("easy-1");
+
+        var page = Render<StartPage>();
+
+        var solved = page.Find("[data-testid=level-card-easy-1]");
+        Assert.Equal("true", solved.GetAttribute("data-solved"));
+        Assert.Equal("Einfach 1, gelöst", solved.GetAttribute("aria-label"));
+        Assert.NotNull(page.Find("[data-testid=level-solved-easy-1]"));
+        var open = page.Find("[data-testid=level-card-easy-2]");
+        Assert.Equal("false", open.GetAttribute("data-solved"));
+        Assert.Null(open.GetAttribute("aria-label"));
+        Assert.Empty(page.FindAll("[data-testid=level-solved-easy-2]"));
+    }
 }

@@ -1,5 +1,6 @@
 @page "/play"
 @inherits SessionComponentBase
+@using HeroPath.Modules.Game.Application
 @using HeroPath.Modules.Game.UI.Components
 @using HeroPath.Modules.Levels.UI.Components
 
@@ -24,9 +25,17 @@
         </section>
         <aside class="side-panel" data-testid="side-panel">
             <div class="side-tools">
+                <LevelPicker Levels="Progress.Levels"
+                             SelectedId="@level.Id"
+                             IsSolved="Progress.IsSolved"
+                             SelectedIdChanged="SwitchLevel" />
                 <BlockPalette />
                 <ControlBar />
                 <MessageBox />
+                @if (Session.Status == RunStatus.Succeeded && Progress.NextAfter(level.Id) is { } next)
+                {
+                    <button type="button" class="next-level" data-testid="next-level" @onclick="() => LoadLevel(next)">@GameLocalizer["Level_Next"]</button>
+                }
             </div>
             <ProgramEditor />
         </aside>

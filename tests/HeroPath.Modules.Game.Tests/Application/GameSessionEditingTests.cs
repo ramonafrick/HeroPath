@@ -274,7 +274,7 @@ public class GameSessionEditingTests
         session.Select(repeat.Id);
         session.Add(Direction.Up);
         session.Add(Direction.Up);
-        var runner = new ExecutionRunner(session, TimeProvider.System);
+        var runner = new ExecutionRunner(session, TestLevels.NewProgress(), TimeProvider.System);
         var program = session.Program;
         runner.StepOnce();
         var changes = 0;
@@ -305,7 +305,7 @@ public class GameSessionEditingTests
         TestLevels.Fill(session, Direction.Up);
         session.Select(session.Program.Commands[0].Id);
 
-        new ExecutionRunner(session, TimeProvider.System).StepOnce();
+        new ExecutionRunner(session, TestLevels.NewProgress(), TimeProvider.System).StepOnce();
 
         Assert.Null(session.SelectedId);
     }
@@ -328,7 +328,7 @@ public class GameSessionEditingTests
         session.AddRepeat();
         session.Select(RepeatAt(session, 1).Id);
         session.Add(Direction.Right);
-        var runner = new ExecutionRunner(session, TimeProvider.System);
+        var runner = new ExecutionRunner(session, TestLevels.NewProgress(), TimeProvider.System);
 
         runner.StepOnce();
         runner.StepOnce();

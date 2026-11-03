@@ -80,6 +80,7 @@ Capture each new UI state in **de and en** (text lengths differ).
 E2E covers **flows across components**. Single-component logic belongs in bUnit and game rules in xUnit.
 
 - Start page (`StartPageTests`): choose hero, name and level, `/play` redirect without a choice, language switch keeps the form
+- Level switching (`LevelSwitchTests`): solve `easy-1`, next level, picker switch clears the program, solved check mark on the start page
 - Choose hero → choose level → assemble program → Play → success message
 - Debug step by step: highlighted block moves (`data-current`), status shows pause (`RunFlowTests`)
 - Error path: obstacle/edge → kid-friendly message, block and cell marked

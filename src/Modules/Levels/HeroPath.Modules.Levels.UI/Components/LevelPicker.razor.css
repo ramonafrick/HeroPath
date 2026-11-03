@@ -1,0 +1,23 @@
+.level-picker {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.level-picker-label {
+    flex: none;
+    font-weight: 700;
+}
+
+.level-picker-select {
+    min-width: 0;
+    min-height: 2.75rem;
+    padding: 0.25rem 0.5rem;
+    font: inherit;
+    color: var(--hp-text);
+    background: var(--hp-surface);
+    border: 3px solid var(--hp-outline);
+    border-radius: 0.75rem;
+    cursor: pointer;
+}

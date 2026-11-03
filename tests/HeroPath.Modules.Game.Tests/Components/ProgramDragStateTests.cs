@@ -13,7 +13,7 @@ public class ProgramDragStateTests
     public ProgramDragStateTests()
     {
         _session.Load(TestLevels.Demo);
-        _runner = new ExecutionRunner(_session, TimeProvider.System);
+        _runner = new ExecutionRunner(_session, TestLevels.NewProgress(), TimeProvider.System);
         _drag = new ProgramDragState(_session);
     }
 

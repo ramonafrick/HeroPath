@@ -114,6 +114,14 @@ await host.RunAsync();
 - `StartPage` (`Game.UI/Pages`, a `LocalizedComponentBase`): test ids `start-page`, `hero-max`, `hero-lisa` (hero cards, `aria-pressed`), `hero-name` (text input, `maxlength` 20, label, bound on `oninput`), `level-card-{id}` (`aria-pressed`) with `level-preview-{id}` (a `GameBoard` with `Preview`), `start-go`. The form state (avatar, name, level id) is component state, initialised from `HeroChoice`, so it survives a language switch and a return from the play page. Switching hero uses `HeroChoice.NameAfterSwitch`. «Los!» calls `HeroChoice.Choose`, `GameSession.Load(StandardLevels.Get(id))` and navigates to `play`. No Fluent UI components (own cards). Layout: two columns from 60 rem (hero, name, go left; level cards in an auto-fill grid right), one column below; no horizontal scrolling at 1366x768 and 1920x1080.
 - `HeroFigure` (`Game.UI/Components`, parameter `Avatar`) draws `HeroMax` or `HeroLisa`. `HeroBadge` (`hero-badge`, `hero-badge-name`, `hero-change`) shows the figure, `HeroChoice.Name` and a button back to `""`; `PlayPage` shows it right of the level name above the board (`board-head`), and `--hp-board-reserved` (GameBoard css) plus the board width in `PlayPage.razor.css` reserve `10.25rem` for that row.
 
+## Level switching and progress (M4 S3)
+
+- `LevelPicker` (`Levels.UI/Components`, no Game types): a native `<select>` with a visible label (`LevelPicker_Label`). Parameters `Levels`, `SelectedId`, `IsSolved` (`Func<string,bool>`), `SelectedIdChanged` (`EventCallback<string>`). Test ids `level-picker` (the select), `level-picker-option-{id}` with `data-solved`; solved options start with «✓ ». At least 2.75rem high.
+- `PlayPage` shows it at the top of `side-tools` (first element of the tools column, so the board head keeps its one-row height). Choosing a level calls `HeroChoice.SelectLevel` and `GameSession.Load` (program cleared, running Play cancelled via `RunDiscarded`), the page stays on `/play`.
+- `next-level` («Nächstes Level») sits below `MessageBox` in the tools column, only while `Status == Succeeded` and `LevelProgress.NextAfter(current)` is not null. It loads the next level the same way.
+- `StartPage` level cards carry `data-solved` and, when solved, a check-mark badge `level-solved-{id}` (circle plus tick, not only colour) and an `aria-label` «{name}, gelöst» / «{name}, solved» (`Level_Solved`).
+- `PlayPage` and `MessageBox` subscribe to `LevelProgress.Changed` (unsubscribe in `Dispose`).
+
 ## Play page components (Game.UI)
 
 - Program editing (M3 S1):

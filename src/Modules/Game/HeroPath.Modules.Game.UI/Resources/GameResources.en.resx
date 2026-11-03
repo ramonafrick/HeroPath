@@ -254,4 +254,16 @@
     <value>Your hero</value>
     <comment>Accessible name of the hero badge on the play page.</comment>
   </data>
+  <data name="Level_Next" xml:space="preserve">
+    <value>Next level</value>
+    <comment>Button on the play page after a success: load the next level.</comment>
+  </data>
+  <data name="Level_Solved" xml:space="preserve">
+    <value>solved</value>
+    <comment>Appended to the accessible name of a solved level card.</comment>
+  </data>
+  <data name="Message_AllSolved" xml:space="preserve">
+    <value>You've solved all the levels!</value>
+    <comment>Second sentence of the success message once every level is solved.</comment>
+  </data>
 </root>

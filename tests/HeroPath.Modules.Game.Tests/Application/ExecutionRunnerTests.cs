@@ -14,7 +14,7 @@ public class ExecutionRunnerTests
     public ExecutionRunnerTests()
     {
         _session.Load(TestLevels.Demo);
-        _runner = new ExecutionRunner(_session, _time);
+        _runner = new ExecutionRunner(_session, TestLevels.NewProgress(), _time);
     }
 
     private void Program(params Direction[] directions) => TestLevels.Fill(_session, directions);
@@ -347,7 +347,7 @@ public class ExecutionRunnerTests
         var debugSession = new GameSession();
         debugSession.Load(TestLevels.Demo);
         TestLevels.Fill(debugSession, moves);
-        var debugRunner = new ExecutionRunner(debugSession, _time);
+        var debugRunner = new ExecutionRunner(debugSession, TestLevels.NewProgress(), _time);
 
         await FinishAsync(_runner.PlayAsync());
         for (var i = 0; i < moves.Length; i++)
@@ -366,7 +366,7 @@ public class ExecutionRunnerTests
         var session = new GameSession();
         session.Add(Direction.Up);
 
-        Assert.False(new ExecutionRunner(session, _time).CanStart);
+        Assert.False(new ExecutionRunner(session, TestLevels.NewProgress(), _time).CanStart);
     }
 
     [Fact]

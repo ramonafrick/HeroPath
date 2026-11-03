@@ -63,3 +63,21 @@
         column-gap: 1rem;
     }
 }
+
+.next-level {
+    box-sizing: border-box;
+    min-height: 2.75rem;
+    padding: 0 1rem;
+    font: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--hp-text);
+    background: var(--hp-goal);
+    border: 3px solid var(--hp-outline);
+    border-radius: 0.75rem;
+    cursor: pointer;
+}
+
+.next-level:hover {
+    background: var(--hp-surface);
+}

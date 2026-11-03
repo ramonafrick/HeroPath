@@ -54,16 +54,26 @@
         <div class="level-cards">
             @foreach (var level in Levels)
             {
+                var solved = Progress.IsSolved(level.Id);
                 <button type="button"
                         class="level-card"
                         @key="level.Id"
                         data-testid="@($"level-card-{level.Id}")"
+                        data-solved="@(solved ? "true" : "false")"
+                        aria-label="@(solved ? $"{LevelsLocalizer[$"Level_{level.Id}"]}, {Localizer["Level_Solved"]}" : null)"
                         aria-pressed="@(_levelId == level.Id ? "true" : "false")"
                         @onclick="() => SelectLevel(level.Id)">
                     <span class="level-preview" data-testid="@($"level-preview-{level.Id}")" aria-hidden="true">
                         <GameBoard Grid="GridOf(level)" Preview="true" />
                     </span>
                     <span class="level-card-name">@LevelsLocalizer[$"Level_{level.Id}"]</span>
+                    @if (solved)
+                    {
+                        <svg class="level-solved-badge" data-testid="@($"level-solved-{level.Id}")" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <circle class="badge-shape" cx="12" cy="12" r="10.5" />
+                            <path class="badge-glyph" d="M6.5 12.5 L10.5 16.5 L17.5 8" />
+                        </svg>
+                    }
                 </button>
             }
         </div>

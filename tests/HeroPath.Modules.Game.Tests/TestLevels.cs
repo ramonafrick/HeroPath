@@ -1,6 +1,7 @@
 using HeroPath.Modules.Game.Application;
 using HeroPath.Modules.Game.Domain;
 using HeroPath.Modules.Levels.Domain;
+using HeroPath.Modules.Levels.Infrastructure;
 
 namespace HeroPath.Modules.Game.Tests;
 
@@ -35,6 +36,8 @@ internal static class TestLevels
         RequireAllItems = true,
         Items = items,
     };
+
+    public static LevelProgress NewProgress() => new([Demo, .. StandardLevels.All]);
 
     public static Direction[] Directions(GameSession session) =>
         [.. session.Program.Commands.OfType<MoveCommand>().Select(c => c.Direction)];

@@ -3,6 +3,7 @@ using HeroPath.Modules.Game.Domain;
 using HeroPath.Modules.Game.UI;
 using HeroPath.Modules.Game.UI.Components;
 using HeroPath.Modules.Levels.Domain;
+using HeroPath.Modules.Levels.Infrastructure;
 using HeroPath.Shared.Application.Contracts;
 using HeroPath.Shared.UI;
 using HeroPath.Shared.UI.Localization;
@@ -160,6 +161,52 @@ public class MessageBoxTests : CultureBunitContext
         await Services.GetRequiredService<LanguageService>().SetAsync(culture, Xunit.TestContext.Current.CancellationToken);
 
         box.WaitForAssertion(() => Assert.Equal(text, box.Find("[data-testid=message]").TextContent.Trim()));
+    }
+
+    [Theory]
+    [InlineData("de-CH", "Geschafft, Max! Du hast die Burg erreicht. Du hast alle Level geschafft!")]
+    [InlineData("en", "You did it, Max! You reached the castle. You've solved all the levels!")]
+    public async Task Render_SuccessWhenAllLevelsSolved_AddsSecondSentence(string culture, string text)
+    {
+        var progress = Services.GetRequiredService<LevelProgress>();
+        foreach (var level in StandardLevels.All)
+        {
+            progress.MarkSolved(level.Id);
+        }
+
+        Setup("Succeeded");
+        var box = Render<MessageBox>();
+        await Services.GetRequiredService<LanguageService>().SetAsync(culture, Xunit.TestContext.Current.CancellationToken);
+
+        box.WaitForAssertion(() => Assert.Equal(text, box.Find("[data-testid=message]").TextContent.Trim()));
+    }
+
+    [Fact]
+    public void Render_SuccessWithLevelsLeft_HasNoAllSolvedSentence()
+    {
+        Setup("Succeeded");
+
+        var box = Render<MessageBox>();
+
+        Assert.DoesNotContain("alle Level", box.Find("[data-testid=message]").TextContent);
+    }
+
+    [Fact]
+    public void Render_SuccessMessage_UpdatesWhenTheLastLevelGetsSolved()
+    {
+        var progress = Services.GetRequiredService<LevelProgress>();
+        foreach (var level in StandardLevels.All.SkipLast(1))
+        {
+            progress.MarkSolved(level.Id);
+        }
+
+        Setup("Succeeded");
+        var box = Render<MessageBox>();
+        Assert.DoesNotContain("alle Level", box.Find("[data-testid=message]").TextContent);
+
+        progress.MarkSolved(StandardLevels.All[^1].Id);
+
+        box.WaitForAssertion(() => Assert.Contains("alle Level", box.Find("[data-testid=message]").TextContent));
     }
 
     [Fact]
