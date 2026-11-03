@@ -18,7 +18,18 @@
     <p class="insert-target" data-testid="insert-target" data-target="@(targetNumber ?? "root")">
         @(targetNumber is null ? Localizer["InsertTarget_Root"] : Localizer["InsertTarget_Repeat", targetNumber])
     </p>
-    <ol class="program-list" data-testid="program">
+    <ol class="program-list" data-testid="program" data-empty="@(Session.Program.Commands.Count == 0 ? "true" : null)">
         <BlockList ParentNumber="root" Commands="Session.Program.Commands" />
+        @if (Session.Program.Commands.Count == 0)
+        {
+            <li class="program-placeholder" data-testid="program-placeholder" aria-hidden="true">
+                <svg viewBox="0 0 96 72" focusable="false">
+                    <rect x="14" y="6" width="68" height="16" rx="6" />
+                    <rect x="14" y="28" width="68" height="16" rx="6" />
+                    <rect x="14" y="50" width="68" height="16" rx="6" />
+                    <path d="M48 12 V16 M48 34 V38 M48 56 V60" />
+                </svg>
+            </li>
+        }
     </ol>
 </section>

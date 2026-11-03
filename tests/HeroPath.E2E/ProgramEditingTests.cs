@@ -47,6 +47,15 @@ public class ProgramEditingTests(AppFixture app)
         await Screenshots.CaptureAsync(page, namePrefix + ".en");
 
         await page.GetByTestId("program-select-2").ClickAsync();
+        await Expect(page.GetByTestId("program-remove")).ToBeVisibleAsync();
+        if (viewport == "laptop")
+        {
+            await Screenshots.CaptureAsync(page, "program.selected-move.laptop.en");
+            await page.GetByTestId("language-de").ClickAsync();
+            await Expect(page.GetByTestId("language-de")).ToHaveAttributeAsync("aria-pressed", "true");
+            await Screenshots.CaptureAsync(page, "program.selected-move.laptop.de");
+        }
+
         await page.GetByTestId("program-remove").ClickAsync();
         await ExpectOrderAsync(page, ["up", "right", "right"]);
 

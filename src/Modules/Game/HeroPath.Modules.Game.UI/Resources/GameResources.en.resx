@@ -201,7 +201,7 @@
     <comment>Hint when Play or Debug is pressed with an empty repeat block.</comment>
   </data>
   <data name="Message_EmptyProgram" xml:space="preserve">
-    <value>Drag a few blocks into your program first.</value>
+    <value>Drag blocks into your program or click them.</value>
     <comment>Hint while the program has no blocks.</comment>
   </data>
   <data name="Message_ProgramFull" xml:space="preserve">

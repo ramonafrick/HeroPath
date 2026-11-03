@@ -46,9 +46,49 @@
     flex: 0 1 auto;
     min-height: 0;
     margin: 0;
-    padding: 0 0.5rem 0.5rem;
+    padding: 0.5rem 0.5rem 0.5rem;
     list-style: none;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
+}
+
+.program-list[data-empty="true"] {
+    position: relative;
+    flex: 1 1 auto;
+    margin: 0 0.5rem 0.5rem;
+    padding: 0;
+    min-height: 8rem;
+    border: 3px dashed var(--hp-outline);
+    border-radius: 0.75rem;
+    background: repeating-linear-gradient(135deg, transparent 0 0.75rem, var(--hp-cell) 0.75rem 1.5rem);
+}
+
+.program-list[data-empty="true"] ::deep .drop-zone[data-valid] {
+    flex: 1 1 auto;
+    z-index: 1;
+}
+
+.program-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    list-style: none;
+    pointer-events: none;
+}
+
+.program-placeholder svg {
+    width: 7rem;
+    height: 5.25rem;
+    fill: var(--hp-surface);
+    stroke: var(--hp-outline);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-dasharray: 1 0;
+}
+
+.program-placeholder rect {
+    stroke-dasharray: 6 5;
 }

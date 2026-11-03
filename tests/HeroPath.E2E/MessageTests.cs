@@ -17,6 +17,67 @@ public class MessageTests(AppFixture app)
         await RunAsync(await laptop.NewPageAsync(), "laptop");
     }
 
+    [Fact]
+    public async Task StepLimit_ShowsMessageInGermanAndEnglish()
+    {
+        Assert.SkipUnless(E2EEnvironment.Enabled, "Set HEROPATH_E2E=1 to run E2E tests.");
+
+        await using var desktop = await app.NewContextAsync();
+        await RunStepLimitAsync(await desktop.NewPageAsync(), "desktop");
+
+        await using var laptop = await app.NewContextAsync("de-CH", 1366, 768);
+        await RunStepLimitAsync(await laptop.NewPageAsync(), "laptop");
+    }
+
+    private static async Task RunStepLimitAsync(IPage page, string viewport)
+    {
+        var errors = BrowserErrors.Track(page);
+        await page.Clock.InstallAsync();
+        await page.GotoAsync("/");
+        await page.WaitForRenderedAsync("[data-testid=game-board]", errors);
+        await page.GetByTestId("control-tempo").FillAsync("2");
+
+        await page.GetByTestId("palette-repeat").ClickAsync();
+        await page.GetByTestId("program-select-1").ClickAsync();
+        await page.GetByTestId("palette-repeat").ClickAsync();
+        await page.GetByTestId("program-select-1.1").ClickAsync();
+        foreach (var path in new[] { "1", "1.1" })
+        {
+            for (var index = 0; index < 17; index++)
+            {
+                await page.GetByTestId($"repeat-plus-{path}").ClickAsync();
+            }
+
+            await Expect(page.GetByTestId($"repeat-count-{path}")).ToHaveTextAsync("20");
+        }
+
+        await page.GetByTestId("palette-up").ClickAsync();
+        await page.GetByTestId("palette-down").ClickAsync();
+        await page.GetByTestId("palette-up").ClickAsync();
+        await page.GetByTestId("palette-down").ClickAsync();
+        await page.GetByTestId("control-play").ClickAsync();
+
+        // The 1001st move needs about 200 s of tempo delays. The fake browser clock plays them back at once.
+        var status = page.GetByTestId("status");
+        for (var tick = 0; tick < 1500 && await status.GetAttributeAsync("data-state") == "running"; tick++)
+        {
+            await page.Clock.RunForAsync(250);
+        }
+
+        await Expect(status).ToHaveAttributeAsync("data-state", "failed");
+        await Expect(status).ToHaveAttributeAsync("data-error", "StepLimitExceeded");
+        var message = page.GetByTestId("message");
+        await Expect(message).ToHaveAttributeAsync("data-code", "StepLimitExceeded");
+        await Expect(message).ToHaveTextAsync("Puh! Dein Programm macht mehr als 1000 Schritte. Brauchst du wirklich so viele Wiederholungen?");
+        await AssertFitsAsync(page, viewport);
+        await Screenshots.CaptureAsync(page, $"message.step-limit.{viewport}.de");
+        await SwitchToEnglishAsync(page);
+        await Expect(message).ToHaveTextAsync("Phew! Your program takes more than 1000 steps. Do you really need that many repeats?");
+        await Screenshots.CaptureAsync(page, $"message.step-limit.{viewport}.en");
+
+        Assert.Empty(errors.Errors);
+    }
+
     private static async Task RunAsync(IPage page, string viewport)
     {
         var errors = BrowserErrors.Track(page);
@@ -26,7 +87,7 @@ public class MessageTests(AppFixture app)
 
         var message = page.GetByTestId("message");
         await Expect(message).ToHaveAttributeAsync("data-code", "EmptyProgram");
-        await Expect(message).ToHaveTextAsync("Zieh zuerst ein paar Bausteine ins Programm.");
+        await Expect(message).ToHaveTextAsync("Zieh Bausteine ins Programm oder klick sie an.");
         await Expect(message).ToHaveAttributeAsync("data-kind", "hint");
 
         await BuildAsync(page, "right", "right");
@@ -126,8 +187,24 @@ public class MessageTests(AppFixture app)
         await Expect(message).ToHaveAttributeAsync("data-code", "NestingTooDeep");
         await Expect(message).ToHaveTextAsync("Hier passt kein weiterer Wiederhole-Block hinein.");
         await AssertFitsAsync(page, viewport);
+        await Screenshots.CaptureAsync(page, $"message.nesting-too-deep.{viewport}.de");
         await SwitchToEnglishAsync(page);
         await Expect(message).ToHaveTextAsync("There's no room for another repeat block in here.");
+        await Screenshots.CaptureAsync(page, $"message.nesting-too-deep.{viewport}.en");
+        await SwitchToGermanAsync(page);
+
+        await page.GetByTestId("program-clear").ClickAsync();
+        await Expect(page.GetByTestId("program-block")).ToHaveCountAsync(0);
+        await page.GetByTestId("palette-up").EvaluateAsync("button => { for (let i = 0; i < 200; i++) { button.click(); } }");
+        await Expect(page.GetByTestId("program-block")).ToHaveCountAsync(200);
+        await Expect(message).ToHaveAttributeAsync("data-code", "ProgramFull");
+        await Expect(message).ToHaveTextAsync("Dein Programm ist voll. Lösch zuerst einen Baustein.");
+        await Expect(page.GetByTestId("palette-up")).ToBeDisabledAsync();
+        await AssertFitsAsync(page, viewport);
+        await Screenshots.CaptureAsync(page, $"message.program-full.{viewport}.de");
+        await SwitchToEnglishAsync(page);
+        await Expect(message).ToHaveTextAsync("Your program is full. Delete a block first.");
+        await Screenshots.CaptureAsync(page, $"message.program-full.{viewport}.en");
 
         Assert.Empty(errors.Errors);
     }

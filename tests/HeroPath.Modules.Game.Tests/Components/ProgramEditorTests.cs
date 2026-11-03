@@ -36,6 +36,33 @@ public class ProgramEditorTests : CultureBunitContext
         var editor = Render<ProgramEditor>();
 
         Assert.Empty(editor.FindAll("[data-testid=program-block]"));
+        Assert.NotNull(editor.Find("[data-testid=program-placeholder]"));
+        Assert.Equal("true", editor.Find("[data-testid=program]").GetAttribute("data-empty"));
+        Assert.Equal(string.Empty, editor.Find("[data-testid=program-placeholder]").TextContent.Trim());
+    }
+
+    [Fact]
+    public void Render_WithBlock_HidesPlaceholder()
+    {
+        _session.Add(Direction.Up);
+
+        var editor = Render<ProgramEditor>();
+
+        Assert.Empty(editor.FindAll("[data-testid=program-placeholder]"));
+        Assert.Null(editor.Find("[data-testid=program]").GetAttribute("data-empty"));
+    }
+
+    [Fact]
+    public void Render_RepeatHeader_ShowsRepeatIconOnlyOnTopLevel()
+    {
+        _session.AddRepeat();
+        _session.Select(_session.Program.Commands[0].Id);
+        _session.AddRepeat();
+
+        var editor = Render<ProgramEditor>();
+
+        Assert.Single(editor.Find("[data-testid=program-select-1]").QuerySelectorAll(".program-icon"));
+        Assert.Empty(editor.Find("[data-testid='program-select-1.1']").QuerySelectorAll(".program-icon"));
     }
 
     [Fact]

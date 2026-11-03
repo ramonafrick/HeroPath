@@ -1,5 +1,34 @@
 @inherits DragAwareComponentBase
 
+@{
+    RenderFragment actions =
+        @<div class="block-actions">
+            <button type="button"
+                    class="block-action"
+                    data-testid="program-up"
+                    aria-label="@Localizer["Program_MoveUp", Number]"
+                    disabled="@(!Session.CanMoveUp(Command.Id))"
+                    @onclick="() => Session.MoveUp(Command.Id)">
+                <ProgramIcon Kind="ProgramIconKind.Up" />
+            </button>
+            <button type="button"
+                    class="block-action"
+                    data-testid="program-down"
+                    aria-label="@Localizer["Program_MoveDown", Number]"
+                    disabled="@(!Session.CanMoveDown(Command.Id))"
+                    @onclick="() => Session.MoveDown(Command.Id)">
+                <ProgramIcon Kind="ProgramIconKind.Down" />
+            </button>
+            <button type="button"
+                    class="block-action"
+                    data-testid="program-remove"
+                    aria-label="@Localizer["Program_Remove", Number]"
+                    disabled="@(!IsEditable)"
+                    @onclick="() => Session.Remove(Command.Id)">
+                <ProgramIcon Kind="ProgramIconKind.Remove" />
+            </button>
+        </div>;
+}
 <li class="program-block"
     data-testid="program-block"
     data-path="@Number"
@@ -17,48 +46,66 @@
          data-dragging="@(Drag.Source is DragSource.Existing { Id: var dragged } && dragged == Command.Id ? "true" : null)"
          @ondragstart="StartDrag"
          @ondragend="Drag.End">
-        <button type="button"
-                class="block-select"
-                data-testid="@($"program-select-{Number}")"
-                aria-pressed="@(IsSelected ? "true" : "false")"
-                aria-label="@Localizer["Program_Block", Number, Name]"
-                @onclick="() => Session.Select(Command.Id)">
-            <span class="program-number" aria-hidden="true">@Number</span>
-            @if (Command is MoveCommand moveCommand)
+        <div class="block-head" data-testid="@($"block-head-{Number}")">
+            <button type="button"
+                    class="block-select"
+                    data-testid="@($"program-select-{Number}")"
+                    aria-pressed="@(IsSelected ? "true" : "false")"
+                    aria-label="@Localizer["Program_Block", Number, Name]"
+                    @onclick="() => Session.Select(Command.Id)">
+                <span class="program-number" aria-hidden="true">@Number</span>
+                @if (Command is MoveCommand moveCommand)
+                {
+                    <DirectionIcon Direction="moveCommand.Direction" />
+                    <span class="program-text">@Name</span>
+                }
+                else
+                {
+                    @if (Path.Count == 1)
+                    {
+                        <ProgramIcon Kind="ProgramIconKind.Repeat" />
+                    }
+                    <span class="program-text">@Localizer["Repeat_Before"]</span>
+                }
+            </button>
+            @if (Command is RepeatCommand header)
             {
-                <DirectionIcon Direction="moveCommand.Direction" />
-                <span class="program-text">@Name</span>
+                <button type="button"
+                        class="block-action"
+                        data-testid="@($"repeat-minus-{Number}")"
+                        aria-label="@Localizer["Repeat_Decrease", Number]"
+                        disabled="@(!IsEditable || header.Count <= ProgramLimits.MinRepeatCount)"
+                        @onclick="() => Session.SetRepeatCount(header.Id, header.Count - 1)">
+                    <ProgramIcon Kind="ProgramIconKind.Minus" />
+                </button>
+                <span class="repeat-count" data-testid="@($"repeat-count-{Number}")">@header.Count</span>
+                <button type="button"
+                        class="block-action"
+                        data-testid="@($"repeat-plus-{Number}")"
+                        aria-label="@Localizer["Repeat_Increase", Number]"
+                        disabled="@(!IsEditable || header.Count >= ProgramLimits.MaxRepeatCount)"
+                        @onclick="() => Session.SetRepeatCount(header.Id, header.Count + 1)">
+                    <ProgramIcon Kind="ProgramIconKind.Plus" />
+                </button>
+                <span class="repeat-after" data-testid="@($"repeat-after-{Number}")">@Localizer["Repeat_After"]</span>
             }
-            else
-            {
-                <ProgramIcon Kind="ProgramIconKind.Repeat" />
-                <span class="program-text">@Localizer["Repeat_Before"]</span>
-            }
-        </button>
-        @if (Command is RepeatCommand header)
+        </div>
+        @if (IsMove && IsSelected)
         {
-            <button type="button"
-                    class="block-action"
-                    data-testid="@($"repeat-minus-{Number}")"
-                    aria-label="@Localizer["Repeat_Decrease", Number]"
-                    disabled="@(!IsEditable || header.Count <= ProgramLimits.MinRepeatCount)"
-                    @onclick="() => Session.SetRepeatCount(header.Id, header.Count - 1)">
-                <ProgramIcon Kind="ProgramIconKind.Minus" />
-            </button>
-            <span class="repeat-count" data-testid="@($"repeat-count-{Number}")">@header.Count</span>
-            <button type="button"
-                    class="block-action"
-                    data-testid="@($"repeat-plus-{Number}")"
-                    aria-label="@Localizer["Repeat_Increase", Number]"
-                    disabled="@(!IsEditable || header.Count >= ProgramLimits.MaxRepeatCount)"
-                    @onclick="() => Session.SetRepeatCount(header.Id, header.Count + 1)">
-                <ProgramIcon Kind="ProgramIconKind.Plus" />
-            </button>
-            <span class="repeat-after">@Localizer["Repeat_After"]</span>
-            @if (Progress is { } round)
-            {
-                <span class="repeat-round" data-testid="@($"repeat-round-{Number}")">@Localizer["Repeat_Round", round.Round, round.Count]</span>
-            }
+            @actions
+        }
+        @if (!IsMove && (IsSelected || Progress is not null))
+        {
+            <div class="block-foot">
+                @if (Progress is { } round)
+                {
+                    <span class="repeat-round" data-testid="@($"repeat-round-{Number}")">@Localizer["Repeat_Round", round.Round, round.Count]</span>
+                }
+                @if (IsSelected)
+                {
+                    @actions
+                }
+            </div>
         }
         @if (IsCurrent)
         {
@@ -81,35 +128,6 @@
                 <circle class="marker-shape" cx="12" cy="12" r="10" />
                 <path class="marker-glyph" d="M12 11 V17 M12 6.8 V7" />
             </svg>
-        }
-        @if (IsSelected)
-        {
-            <div class="block-actions">
-                <button type="button"
-                        class="block-action"
-                        data-testid="program-up"
-                        aria-label="@Localizer["Program_MoveUp", Number]"
-                        disabled="@(!Session.CanMoveUp(Command.Id))"
-                        @onclick="() => Session.MoveUp(Command.Id)">
-                    <ProgramIcon Kind="ProgramIconKind.Up" />
-                </button>
-                <button type="button"
-                        class="block-action"
-                        data-testid="program-down"
-                        aria-label="@Localizer["Program_MoveDown", Number]"
-                        disabled="@(!Session.CanMoveDown(Command.Id))"
-                        @onclick="() => Session.MoveDown(Command.Id)">
-                    <ProgramIcon Kind="ProgramIconKind.Down" />
-                </button>
-                <button type="button"
-                        class="block-action"
-                        data-testid="program-remove"
-                        aria-label="@Localizer["Program_Remove", Number]"
-                        disabled="@(!IsEditable)"
-                        @onclick="() => Session.Remove(Command.Id)">
-                    <ProgramIcon Kind="ProgramIconKind.Remove" />
-                </button>
-            </div>
         }
     </div>
     @if (Command is RepeatCommand repeatCommand)

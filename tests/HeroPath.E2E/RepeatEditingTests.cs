@@ -69,6 +69,7 @@ public class RepeatEditingTests(AppFixture app)
         await Expect(page.GetByTestId("program-up")).ToBeVisibleAsync();
         await Expect(page.GetByTestId("program-down")).ToBeVisibleAsync();
         await Expect(page.GetByTestId("program-remove")).ToBeVisibleAsync();
+        await LayoutAssertions.AssertRepeatHeadersOnOneLineAsync(page);
 
         await page.GetByTestId("palette-up").ClickAsync();
         await page.GetByTestId("palette-up").ClickAsync();
@@ -135,10 +136,12 @@ public class RepeatEditingTests(AppFixture app)
 
     private static async Task CaptureBothLanguagesAsync(IPage page, string namePrefix)
     {
+        await LayoutAssertions.AssertRepeatHeadersOnOneLineAsync(page);
         await Screenshots.CaptureAsync(page, namePrefix + ".de");
         await page.GetByTestId("language-en").ClickAsync();
         await Expect(page.GetByTestId("language-en")).ToHaveAttributeAsync("aria-pressed", "true");
         await Expect(page.GetByTestId("palette-repeat")).ToContainTextAsync("Repeat");
+        await LayoutAssertions.AssertRepeatHeadersOnOneLineAsync(page);
         await Screenshots.CaptureAsync(page, namePrefix + ".en");
         await page.GetByTestId("language-de").ClickAsync();
         await Expect(page.GetByTestId("language-de")).ToHaveAttributeAsync("aria-pressed", "true");

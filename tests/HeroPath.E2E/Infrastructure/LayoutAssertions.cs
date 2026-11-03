@@ -1,0 +1,37 @@
+namespace HeroPath.E2E.Infrastructure;
+
+/// <summary>Geometry checks that a screenshot alone cannot guarantee.</summary>
+public static class LayoutAssertions
+{
+    /// <summary>
+    /// Every repeat header («Wiederhole [-] N [+] mal») must sit on one line: select button, minus, count, plus and trailing text
+    /// share one vertical centre, do not overlap each other and stay inside the block row.
+    /// </summary>
+    public static async Task AssertRepeatHeadersOnOneLineAsync(IPage page)
+    {
+        var problems = await page.EvaluateAsync<string[]>(@"() => {
+            const find = id => document.querySelector(`[data-testid='${id}']`);
+            const problems = [];
+            for (const block of document.querySelectorAll('[data-testid=program-block][data-kind=repeat]')) {
+                const path = block.dataset.path;
+                const parts = ['program-select-', 'repeat-minus-', 'repeat-count-', 'repeat-plus-', 'repeat-after-']
+                    .map(prefix => ({ id: prefix + path, rect: find(prefix + path).getBoundingClientRect() }));
+                const row = find('block-row-' + path).getBoundingClientRect();
+                const centres = parts.map(p => p.rect.top + p.rect.height / 2);
+                if (Math.max(...centres) - Math.min(...centres) > 3) {
+                    problems.push(`repeat ${path}: header wraps (centres ${centres.map(c => Math.round(c)).join(',')})`);
+                }
+                parts.forEach((p, i) => {
+                    if (p.rect.left < row.left - 0.5 || p.rect.right > row.right + 0.5) {
+                        problems.push(`repeat ${path}: ${p.id} leaves the row`);
+                    }
+                    if (i > 0 && p.rect.left < parts[i - 1].rect.right - 0.5) {
+                        problems.push(`repeat ${path}: ${p.id} overlaps ${parts[i - 1].id}`);
+                    }
+                });
+            }
+            return problems;
+        }");
+        Assert.Empty(problems);
+    }
+}

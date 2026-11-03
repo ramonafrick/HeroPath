@@ -61,6 +61,80 @@ public class DragDropTests(AppFixture app)
         Assert.Empty(errors.Errors);
     }
 
+    [Theory]
+    [InlineData("de-CH", "de")]
+    [InlineData("en", "en")]
+    public async Task InsertLine_IsShownOnLaptop(string locale, string language)
+    {
+        Assert.SkipUnless(E2EEnvironment.Enabled, "Set HEROPATH_E2E=1 to run E2E tests.");
+
+        await using var context = await app.NewContextAsync(locale, 1366, 768);
+        var page = await context.NewPageAsync();
+        var errors = BrowserErrors.Track(page);
+        await OpenAsync(page, errors);
+        await page.GetByTestId($"language-{language}").ClickAsync();
+        await Expect(page.GetByTestId($"language-{language}")).ToHaveAttributeAsync("aria-pressed", "true");
+
+        await page.GetByTestId("palette-up").ClickAsync();
+        await page.GetByTestId("palette-down").ClickAsync();
+        await BeginDragAsync(page, page.GetByTestId("palette-left"), Zone(page, "root:1"));
+        await Expect(Zone(page, "root:1")).ToHaveAttributeAsync("data-valid", "true");
+        await Expect(Zone(page, "root:1")).ToHaveAttributeAsync("data-hover", "true");
+        await Screenshots.CaptureAsync(page, $"drag.insert-line.laptop.{language}");
+        await page.Mouse.UpAsync();
+        await ExpectDirectionsAsync(page, ["up", "left", "down"]);
+
+        Assert.Empty(errors.Errors);
+    }
+
+    [Fact]
+    public async Task DragBlockOntoPalette_ShowsDeleteOverlayOnLaptop()
+    {
+        Assert.SkipUnless(E2EEnvironment.Enabled, "Set HEROPATH_E2E=1 to run E2E tests.");
+
+        await using var context = await app.NewContextAsync("de-CH", 1366, 768);
+        var page = await context.NewPageAsync();
+        var errors = BrowserErrors.Track(page);
+        await OpenAsync(page, errors);
+
+        await page.GetByTestId("palette-up").ClickAsync();
+        await page.GetByTestId("palette-down").ClickAsync();
+        await BeginDragAsync(page, Row(page, "2"), page.GetByTestId("palette"));
+        await Expect(page.GetByTestId("palette-delete")).ToBeVisibleAsync();
+        await Screenshots.CaptureAsync(page, "drag.delete.laptop.de");
+        await page.Mouse.UpAsync();
+        await ExpectPathsAsync(page, ["1"]);
+
+        Assert.Empty(errors.Errors);
+    }
+
+    [Fact]
+    public async Task InvalidTarget_IsShownInEnglish()
+    {
+        Assert.SkipUnless(E2EEnvironment.Enabled, "Set HEROPATH_E2E=1 to run E2E tests.");
+
+        await using var context = await app.NewContextAsync("en");
+        var page = await context.NewPageAsync();
+        var errors = BrowserErrors.Track(page);
+        await OpenAsync(page, errors);
+        await page.GetByTestId("language-en").ClickAsync();
+        await Expect(page.GetByTestId("language-en")).ToHaveAttributeAsync("aria-pressed", "true");
+
+        await page.GetByTestId("palette-repeat").ClickAsync();
+        await page.GetByTestId("program-select-1").ClickAsync();
+        await page.GetByTestId("palette-repeat").ClickAsync();
+        await ExpectPathsAsync(page, ["1", "1.1"]);
+
+        await BeginDragAsync(page, page.GetByTestId("palette-repeat"), Zone(page, "1.1:0"));
+        await Expect(Zone(page, "1.1:0")).ToHaveAttributeAsync("data-valid", "false");
+        await Expect(Zone(page, "1.1:0")).ToHaveAttributeAsync("data-hover", "true");
+        await Screenshots.CaptureAsync(page, "drag.invalid.desktop.en");
+        await page.Mouse.UpAsync();
+        await ExpectPathsAsync(page, ["1", "1.1"]);
+
+        Assert.Empty(errors.Errors);
+    }
+
     [Fact]
     public async Task Reorder_IntoAndOutOfRepeat()
     {
@@ -171,18 +245,46 @@ public class DragDropTests(AppFixture app)
     /// <summary>Presses on <paramref name="source"/> and moves over <paramref name="target"/> (several moves: dragover needs at least two) without releasing.</summary>
     private static async Task BeginDragAsync(IPage page, ILocator source, ILocator target)
     {
+        // The previous drop ends its drag in a render that may still be pending: zones left over from it would be measured at their old size.
+        await Expect(page.Locator("[data-testid=drop-zone][data-valid]")).ToHaveCountAsync(0);
         await source.HoverAsync();
         await page.Mouse.DownAsync();
         var start = (await source.BoundingBoxAsync())!;
         await page.Mouse.MoveAsync(start.X + (start.Width / 2) + 8, start.Y + (start.Height / 2) + 8, new() { Steps = 4 });
 
-        // The zones grow once the drag has started, so the target is measured only now.
-        var box = (await target.BoundingBoxAsync())!;
+        // Every zone grows in the render that follows dragstart (idle 0.625 rem, end zones 0, then 1.5 rem). The zones render one after the other,
+        // so measuring while only some have grown puts the pointer next to the target. Wait until none is left idle.
+        await Expect(page.Locator("[data-testid=drop-zone]:not([data-valid])")).ToHaveCountAsync(0);
+        var box = await StableBoxAsync(page, target);
         var x = box.X + (box.Width / 2);
         var y = box.Y + (box.Height / 2);
         await page.Mouse.MoveAsync(x, y, new() { Steps = 12 });
         await page.Mouse.MoveAsync(x + 1, y, new() { Steps = 3 });
         await page.Mouse.MoveAsync(x, y, new() { Steps = 3 });
+
+        if (await target.GetAttributeAsync("data-testid") == "drop-zone")
+        {
+            await Expect(target).ToHaveAttributeAsync("data-hover", "true");
+        }
+    }
+
+    /// <summary>Measures <paramref name="target"/> after two animation frames, until two consecutive measurements agree (the list is still settling after the drag started).</summary>
+    private static async Task<LocatorBoundingBoxResult> StableBoxAsync(IPage page, ILocator target)
+    {
+        LocatorBoundingBoxResult? previous = null;
+        for (var attempt = 0; attempt < 20; attempt++)
+        {
+            await page.EvaluateAsync("() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))");
+            var box = (await target.BoundingBoxAsync())!;
+            if (previous is not null && previous.X == box.X && previous.Y == box.Y && previous.Width == box.Width && previous.Height == box.Height)
+            {
+                return box;
+            }
+
+            previous = box;
+        }
+
+        throw new InvalidOperationException("The drop target never stopped moving.");
     }
 
     private static async Task ExpectPathsAsync(IPage page, string[] paths)

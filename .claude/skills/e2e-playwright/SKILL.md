@@ -24,6 +24,7 @@ HEROPATH_E2E=1 HEROPATH_BASE_URL=http://127.0.0.1:5198 dotnet test --project tes
 |---|---|
 | `AppFixture` (assembly fixture) | starts the host and browser, `NewContextAsync(locale, width, height)` with `ReducedMotion.Reduce` |
 | `E2EEnvironment` | `Enabled`, `BaseUrl`, repository root, screenshot directory |
+| `LayoutAssertions` | geometry checks: `AssertRepeatHeadersOnOneLineAsync` (select, minus, count, plus, trailing text of every repeat on one line, no overlap, inside the row). Call it in laptop and desktop flows, in DE and EN, with a selected and a nested repeat |
 | `BrowserErrors.Track(page)` | collects console errors + uncaught exceptions. **Every test ends with `Assert.Empty(errors.Errors)`** |
 | `page.WaitForRenderedAsync(selector, errors)` | waits for Blazor rendering; on timeout writes `failure.png` and puts browser errors into the message |
 | `Screenshots.CaptureAsync(page, name)` | `name.png` + `name.greyscale.png` (achromatopsia emulation via CDP) |
@@ -57,6 +58,8 @@ public class ProgramFlowTests(AppFixture app)
 - `Expect(...)` comes from `using static Microsoft.Playwright.Assertions;`. It retries automatically, so never use `Task.Delay`.
 - **Selectors**: `data-testid` on interactive elements and state carriers (`data-state`, `data-step`), defined in the component markup. No CSS classes or localized texts as selectors (texts change with the language).
 - Use the click alternative in E2E tests. Real HTML5 drag & drop only in `DragDropTests`, with the manual mouse sequence (hover, `Mouse.DownAsync`, move, measure the target after the drag started, several moves over it, screenshot, `Mouse.UpAsync`): `dragover` needs at least two moves and the drop zones grow after `dragstart`, so `DragAndDropAsync` is not used.
+- Drag helpers (`DragDropTests`) must wait for the render state, not for time: all zones carry `data-valid` before measuring, the target box is stable, `data-hover` is set before the screenshot or `Mouse.UpAsync()`. A drop ends its drag in a render that may still be pending, so the next drag first waits until no zone has `data-valid`.
+- Long runs (step limit: 1000 moves at 200 ms) use the browser clock: `page.Clock.InstallAsync()` before `GotoAsync`, then `Clock.RunForAsync(250)` in a loop while `status` is `running` (each call fires one pending timer). See `MessageTests.StepLimit_...`.
 - Never assert on animation timing. Reduced motion is on, and set the tempo to fast before Play with `page.GetByTestId("control-tempo").FillAsync("2")` (range 0 slow, 1 medium, 2 fast); wait for `status` `data-state` with `Expect` instead.
 - Each test gets a fresh context (empty `localStorage`). For a stored state, set it via `page.EvaluateAsync("localStorage.setItem(...)")` before `GotoAsync`.
 
