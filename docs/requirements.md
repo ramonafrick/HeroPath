@@ -1,173 +1,141 @@
-# Requirements: M4 – Level-Vorlagen, Start-Dialog, Items
+# Requirements: M5 – Level-Editor und Speicherung
 
-**Date**: 2026-11-03 · Vorgänger: `requirements-M3.md` (Drag & Drop, Wiederhole, Meldungen, umgesetzt), `requirements-M2.md`, `requirements-M1.md`
+**Date**: 2026-11-03 · Vorgänger: `requirements-M4.md` (Level-Vorlagen, Start-Dialog, Items, umgesetzt), `requirements-M3.md`, `requirements-M2.md`, `requirements-M1.md`
 
 ## Problem
 
-Nach M3 ist das Spiel mit Schleifen und Meldungen spielbar, aber nur auf einem einzigen Demo-Level, immer mit Max und ohne sichtbare Items. Es fehlen aus dem Must-Umfang (`Projekt_Kontext.md` §3) und dem Spielablauf (`Projektidee.md`, «Spielablauf» Schritte 1 und 2):
+Nach M4 gibt es 7 feste Level. Das Lernziel 5 «Kreativität: Mit dem Level-Editor baut man eigene Aufgaben» (`Projektidee.md`, Lernziele) ist noch offen, ebenso die Should-Punkte «Level-Editor: Hindernisse setzen, Start und Ziel festlegen, Grösse ändern» und «Eigene Levels im Browser speichern» sowie der Could-Punkt «JSON-Export und -Import von Levels» (`Projekt_Kontext.md` §3). Im Spielablauf (`Projektidee.md`, Schritt 2) ist «Vorlage oder eigenes Level» vorgesehen.
 
-- **Held wählen und benennen** (Must): Max oder Lisa, Name vorausgefüllt und überschreibbar. Heute ist der Name fest «Max» (`MessageBox`, M3) und es gibt keine Grafik für Lisa.
-- **Mindestens 4 Level-Vorlagen** (Must): Heute gibt es nur `00-demo.json`, `PlayPage` lädt es fest.
-- **Items einsammeln** (Should): Die Regeln sind seit M1 im `Interpreter` umgesetzt (Einsammeln, `RequireAllItems`, nur Erdbeeren zählen). Das Spielfeld zeigt aber keine Items, es gibt keine Grafiken und keine Anzeige, was eingesammelt ist.
-
-Bleibt M4 aus, gibt es am Zukunftstag nur eine Aufgabe und keine Wahl der Figur. Das Zusatzziel (Mädchen und Buben ansprechen, `Projektidee.md`) und die Lernziele 1, 2 und 4 lassen sich ohne abgestufte Level nicht erreichen.
+Bleibt M5 aus, ist das Spiel trotzdem vollständig (M1 bis M4, `Projekt_Kontext.md` §7). Schnelle Kinder haben dann aber nach dem Burg-Labyrinth nichts mehr zu tun, und sie können keine Aufgaben für andere Kinder bauen.
 
 ## Users & Context
 
-- Kinder 11 bis 13 Jahre ohne Vorkenntnisse, begleitet von Software Engineers, am Zukunftstag (ca. 4 Stunden).
+- Kinder 11 bis 13 Jahre ohne Vorkenntnisse, begleitet von Software Engineers, am Zukunftstag (ca. 4 Stunden). Der Editor ist für Kinder gedacht, die die Standard-Level geschafft haben, oder für eine Bau-Phase am Ende.
+- Mehrere Kinder können nacheinander am gleichen Laptop arbeiten, die eigenen Levels bleiben im Browser liegen.
 - Laptop mit externem Bildschirm (1920×1080) oder ohne (1366×768), Maus und Tastatur. Kein Touch.
-- Host: nur `HeroPath.Web` (Blazor WebAssembly). Kein MAUI.
-- Betreuer springen zwischen Levels, je nach Tempo des Kindes.
+- Host: nur `HeroPath.Web` (Blazor WebAssembly). Kein MAUI. Die Schnittstellen bleiben MAUI-tauglich (`Architektur C4.md` §4.3).
 
 ## Functional Requirements
 
-### Startseite (Held, Name, Level)
-- FR1: Die Route `/` zeigt eine **eigene Startseite** (kein modaler Dialog auf der Spielseite). Die Spielseite zieht auf `/play` um.
-- FR2: Die Startseite zeigt zwei grosse Karten **Max** und **Lisa** mit ihrer Grafik. Genau eine ist gewählt (Standard: Max). Die Wahl ist per Maus und Tastatur möglich und für Screenreader als Auswahl erkennbar.
-- FR3: Ein Eingabefeld **Name** ist mit dem Standardnamen des gewählten Helden vorausgefüllt («Max» bzw. «Lisa»). Das Kind kann ihn überschreiben.
-  - Höchstens **20 Zeichen** (Eingabe begrenzt).
-  - Leerzeichen am Rand werden entfernt, Steuerzeichen werden entfernt.
-  - Leer oder nur Leerzeichen → der Standardname des gewählten Helden wird verwendet.
-  - Wechselt das Kind den Helden und hat den Namen nicht geändert (leer oder gleich dem bisherigen Standardnamen), wird der Name auf den neuen Standardnamen gesetzt. Ein selbst eingegebener Name bleibt.
-- FR4: Die Startseite zeigt die **7 Level als Karten** in fester Reihenfolge, je mit Name und einer kleinen Vorschau des Spielfelds (Start, Ziel, Hindernisse, Items). Genau eines ist gewählt (Standard: das erste). Alle Level sind frei wählbar.
-- FR5: Gelöste Level tragen auf ihrer Karte einen **Haken** (Form, nicht nur Farbe). «Gelöst» heisst: Ein Lauf in diesem Level endete mit `Succeeded`. Der Fortschritt liegt nur im Speicher der Sitzung (nicht in `localStorage`), Neuladen setzt ihn zurück.
-- FR6: Ein Knopf **«Los!»** führt zur Spielseite mit Held, Name und Level.
-- FR7: Kommt das Kind zurück auf die Startseite, sind Held, Name und Level der letzten Wahl vorausgefüllt.
+### Editor-Seite
+- FR1: Eine eigene Seite **`/editor`** («Level bauen»). Sie ist von der Startseite aus über einen Knopf «Level bauen» erreichbar. Sie zeigt links das Spielfeld zum Bearbeiten, rechts die Werkzeuge und die Liste «Meine Levels».
+- FR2: **Neues Level:** 10×10, leer, Start links unten (0,9), Ziel rechts oben (9,0), Name vorausgefüllt mit «Mein Level N» (N = kleinste Nummer, die noch kein eigenes Level trägt).
+- FR3: **Standard-Level als Vorlage:** Das Kind wählt eines der 7 Standard-Level und bekommt eine Kopie als neues eigenes Level (neue Id, Name «Mein Level N»). Das Standard-Level selbst bleibt unverändert.
+- FR4: **Eigenes Level bearbeiten:** aus der Liste «Meine Levels» oder über den Knopf «Bearbeiten» auf der Spielseite (FR22).
 
-### Spielseite
-- FR8: Über dem Spielfeld stehen neben dem Level-Namen ein kleines Bild des Helden und sein **Name**, dazu ein Knopf **«Held wechseln»**, der zur Startseite führt.
-- FR9: Auf dem Spielfeld läuft die **gewählte Figur** (Max oder Lisa).
-- FR10: Alle Meldungen, die den Helden nennen (heute «Ziel nicht erreicht» und «Erfolg»), verwenden den gewählten Namen statt der Konstante «Max».
-- FR11: Eine **Level-Auswahl** (LevelPicker) auf der Spielseite listet die 7 Level mit Haken für gelöste. Die Auswahl eines anderen Levels lädt es sofort.
-- FR12: Nach dem Erfolg erscheint ein Knopf **«Nächstes Level»**, ausser im letzten Level. Er lädt das nächste Level in der Reihenfolge.
-- FR13: Wechsel auf ein **anderes Level** (Startseite, LevelPicker, «Nächstes Level») leert das Programm und setzt den Lauf zurück (Status Bereit, Held auf Start, Items wieder da). Wird dasselbe Level erneut gewählt, bleiben Programm und Lauf wie bisher (`GameSession.Load` mit gleichem Grid).
-- FR14: Wird `/play` ohne vorherige Wahl auf der Startseite geöffnet (direkter Aufruf, Neuladen), leitet die App auf die Startseite um.
+### Bearbeiten
+- FR5: **Werkzeugleiste** mit genau einem aktiven Werkzeug: Start, Ziel, Baum, Stein, Teich, Erdbeere, Pizza, Radiergummi. Jedes Werkzeug hat ein Bild (die bestehenden SVG-Grafiken) und einen Text. Das aktive Werkzeug ist mit Form markiert, nicht nur mit Farbe.
+- FR6: **Klick auf ein Feld** wendet das aktive Werkzeug an. Jedes Feld ist ein Knopf und per Tastatur erreichbar. Es gibt kein Drag & Drop im Editor.
+  - Hindernis oder Item auf leeres Feld → gesetzt. Auf ein Feld mit anderem Hindernis oder Item → ersetzt. Mit gleichem Werkzeug auf gleichem Inhalt → entfernt.
+  - Start oder Ziel → wird auf das Feld verschoben. Liegt dort ein Hindernis oder Item, wird es entfernt. Start und Ziel tauschen nie stillschweigend: Klick mit «Start» auf das Ziel (oder umgekehrt) tut nichts und zeigt einen Hinweis.
+  - Hindernis auf Start oder Ziel, Item auf Start → nicht möglich, Hinweis. Item auf Ziel ist erlaubt (Regel aus M1, `Grid`).
+  - Radiergummi → entfernt Hindernis oder Item, Start und Ziel bleiben.
+- FR7: **Grösse** einstellbar, Breite und Höhe je 3 bis 20 (`LevelLimits`), mit − und + Knöpfen und Zahlenanzeige.
+- FR8: **Verkleinern:** Hindernisse und Items ausserhalb werden entfernt. Start und Ziel ausserhalb rücken auf das nächste Feld am neuen Rand. Fallen Start und Ziel dann zusammen oder läge das Ziel auf einem Hindernis, rückt das Ziel auf das nächste freie Feld. Ein Hinweis nennt die Anzahl der entfernten Dinge («3 Dinge wurden entfernt»). Die Regel liegt in `Levels/Domain`.
+- FR9: **Name:** Pflichtfeld, vorausgefüllt (FR2), höchstens 50 Zeichen (`LevelLimits.MaxNameLength`). Bereinigung wie beim Heldennamen: Steuer- und Formatzeichen entfernt, Leerraum am Rand entfernt. Leer → Speichern nicht möglich, Hinweis. Unter dem Feld steht der Hinweis «Bitte verwende nicht deinen echten Namen.» Die Level-Id wird intern erzeugt und nie angezeigt.
+- FR10: **«Alle Erdbeeren nötig»** (`RequireAllItems`) als Schalter. Er ist nur aktiv, wenn mindestens eine Erdbeere liegt. Wird die letzte Erdbeere entfernt, schaltet er sich aus.
+- FR11: **Höchstens 10 Erdbeeren und 10 Pizza-Stücke** pro Level. Ist die Grenze erreicht, setzt das Werkzeug nichts und zeigt einen Hinweis.
+- FR12: **«Alles leeren»** entfernt nach einer Rückfrage alle Hindernisse und Items. Start, Ziel, Grösse und Name bleiben.
 
-### Level-Vorlagen
-- FR15: Es gibt die **7 Standard-Level** aus dem `level-design`-Skill (in dieser Reihenfolge): `free-field`, `easy-1`, `easy-2`, `strawberries`, `small-maze`, `long-road`, `castle-maze`. Jedes hat einen Namen in DE und EN (`Level_<id>`).
-- FR16: Das Demo-Level `demo` entfällt.
-- FR17: Jedes Level erfüllt die Entwurfsregeln des `level-design`-Skills (u. a. erste Level mit ≤ 10 Bausteinen lösbar, `long-road` ohne Wiederhole mindestens 3-mal so viele Bausteine wie mit, alle Hindernisarten früh sichtbar). Vor dem Schreiben wird jedes Level als ASCII-Skizze mit Lösungsidee vorgelegt (im Plan).
-- FR18: Mindestens ein Level enthält Pizza, `strawberries` verlangt alle Erdbeeren (`requireAllItems: true`).
+### Prüfen und Speichern
+- FR13: Der Editor prüft nach jeder Änderung, ob das Level **lösbar** ist (kürzester Weg vom Start zum Ziel, mit `RequireAllItems` über alle Erdbeeren). Der Löser liegt in `Levels/Domain` und ist mit xUnit getestet.
+- FR14: **Mindestschritte:** Ist das Level lösbar, zeigt der Editor «Dein Level braucht mindestens N Schritte.» Ist es nicht lösbar, zeigt er einen kindgerechten Hinweis (z. B. «Der Held kommt nicht zur Burg. Mach einen Weg frei.»), mit `RequireAllItems` einen eigenen Hinweis zu nicht erreichbaren Erdbeeren. Die Lösung oder der Weg wird nie angezeigt.
+- FR15: **Speichern** ist nur möglich, wenn das Level gültig (`LevelValidator`), lösbar und der kürzeste Weg höchstens 1000 Schritte lang ist (Schrittlimit). Sonst ist der Knopf gesperrt und der Grund steht daneben.
+- FR16: Speichern **überschreibt** ein bereits gespeichertes eigenes Level (gleiche Id). Ein neues Level oder eine Vorlage bekommt beim ersten Speichern einen Platz in «Meine Levels».
+- FR17: **Höchstens 20 eigene Levels.** Beim 21. erscheint «Du hast schon 20 Levels. Lösche zuerst eines.», nichts wird gespeichert.
+- FR18: **Speicherfehler sichtbar:** Klappt das Speichern im Browser nicht (blockiert, voll), zeigt der Editor «Speichern hat nicht geklappt. Du kannst dein Level exportieren.» Das Level bleibt im Editor offen. Dafür meldet `IAppStorage` beim Schreiben, ob es geklappt hat.
+- FR19: **«Ausprobieren»** speichert (wie FR15 bis FR18) und öffnet das Level sofort auf der Spielseite. Ohne gewählten Helden geht es über die Startseite mit diesem Level vorgewählt.
+- FR20: **Ungespeicherte Änderungen:** Verlässt das Kind den Editor über einen Knopf oder Link der App, erscheint eine Rückfrage («Deine Änderungen sind noch nicht gespeichert. Trotzdem weggehen?»). Neuladen oder Schliessen des Tabs ist nicht geschützt.
 
-### Items
-- FR19: Erdbeeren und Pizza-Stücke werden auf dem Spielfeld mit **eigenen SVG-Grafiken** gezeigt (Form unterscheidet sie, nicht nur Farbe).
-- FR20: Betritt der Held ein Item-Feld, **hüpft das Item kurz und verschwindet** (CSS-Animation). Bei `prefers-reduced-motion` verschwindet es ohne Animation. Reset und Levelwechsel zeigen alle Items wieder.
-- FR21: Über dem Spielfeld steht ein **Zähler** je Item-Art, die im Level vorkommt: «Erdbeeren 1 von 3» und «Pizza 0 von 1», jeweils mit der kleinen Item-Grafik. Hat das Level eine Art nicht, fehlt ihr Zähler. Der Zähler folgt jedem Schritt (Play und Debug).
-- FR22: Die **Erfolgsmeldung** nennt gefundene Pizza-Stücke: «Geschafft, Lisa! Du hast die Burg erreicht und 1 Pizza-Stück gefunden.» (Mehrzahl «2 Pizza-Stücke»). Ohne Pizza bleibt der bisherige Text.
-- FR23: Sind nach diesem Erfolg **alle 7 Level gelöst**, ergänzt die Erfolgsmeldung «Du hast alle Level geschafft!».
+### Eigene Levels spielen
+- FR21: Eigene Levels erscheinen **nach den Standard-Levels**: auf der Startseite in einem eigenen Abschnitt «Meine Levels» mit Vorschau-Karten (wie FR4 von M4) und im LevelPicker als eigene Gruppe. Angezeigt wird `LevelDefinition.Name` (statt `Level_<id>` aus resx). Ohne eigene Levels fehlen Abschnitt und Gruppe.
+- FR22: Auf der Spielseite gibt es bei einem eigenen Level einen Knopf **«Bearbeiten»**, der es im Editor öffnet.
+- FR23: Gelöste eigene Levels tragen den **Haken** wie Standard-Levels (nur im Speicher der Sitzung). «Nächstes Level» und «Du hast alle Level geschafft!» beziehen sich weiter nur auf die 7 Standard-Level.
+- FR24: Eigene Levels bleiben nach **Neuladen** erhalten (localStorage über `IAppStorage`).
+
+### Löschen, Export, Import
+- FR25: **Löschen** eines eigenen Levels aus «Meine Levels» nach Rückfrage («Level ‹Name› wirklich löschen?»).
+- FR26: **Export:** Ein eigenes Level lässt sich als JSON-Datei herunterladen (Format wie `LevelJson.Write`). Der Dateiname ist aus dem Level-Namen abgeleitet und bereinigt. Der Zugriff auf den Download läuft über eine Plattform-Schnittstelle (`ILevelFileService` laut `Architektur C4.md` §4.3), die Web-Implementierung liegt im Host.
+- FR27: **Import:** Das Kind wählt eine JSON-Datei aus. Sie wird geprüft wie beim Speichern (`LevelJson.Read` mit 64-KB- und Tiefen-Grenze, `LevelValidator`, Lösbarkeit, 10 Erdbeeren, 20 Levels). Gültig → neues eigenes Level mit neuer Id (nie Überschreiben, keine Kollision mit Standard-Ids), Name aus der Datei (fehlt er, «Mein Level N»). Ungültig → kindgerechte Meldung, nichts wird gespeichert.
 
 ## Non-Functional Requirements
 
-- NFR1: Spielregeln (Items, Gewinnbedingung, Gelöst-Status, Level-Reihenfolge, Namensregeln) liegen nicht im Razor-Markup, sondern in Domain/Application des zuständigen Moduls und sind mit xUnit getestet.
-- NFR2: Der Heldenname wird **nie gespeichert und nie geloggt**: nicht in `IAppStorage`, nicht in der URL, nicht in der Domain (`Person` bleibt ohne Name, Entscheid 3b), nicht in `GameMessage`.
-- NFR3: Alle neuen Texte über resx in DE (Schweizer Rechtschreibung, ohne «ß») und EN, kindgerechter Ton.
-- NFR4: Startseite auf 1366×768 und 1920×1080 ohne waagrechtes Scrollen; Spielseite behält das Laptop-Layout aus M3 (10 Zeilen ohne Seiten-Scrollen auf 1366×768) trotz der neuen Zeile mit Held und Zählern.
-- NFR5: Alle Grafiken selbst gezeichnet (`svg-assets`-Skill), farbenblind-tauglich (Max/Lisa und Erdbeere/Pizza unterscheiden sich in Form oder Muster), mit lokalisiertem Titel.
-- NFR6: Alle Bedienelemente per Tastatur erreichbar, Knöpfe mindestens 44 px.
-- NFR7: Keine CDNs, keine fremden Grafiken. Ein neues NuGet-Paket nur nach Entscheid im Plan.
-- NFR8: Ein Sprachwechsel auf Start- und Spielseite behält Held, Name, Level, Fortschritt und Programm (wie M2).
+- NFR1: Regeln (Werkzeug anwenden, Verkleinern, Grenzen, Lösbarkeit, Mindestschritte, Namensbereinigung, Nummer für «Mein Level N», Speicher-Liste) liegen in Domain/Application des Moduls `Levels` und sind mit xUnit getestet, nicht im Razor-Markup.
+- NFR2: Die Lösbarkeitsprüfung eines 20×20-Levels mit 10 Erdbeeren dauert im Browser höchstens 200 ms (Messung im Plan festlegen). Der Editor bleibt dabei bedienbar.
+- NFR3: Der **Heldenname** gelangt nie in ein Level, den Speicher oder den Export (Entscheid 3b, NFR2 aus M4). Der Level-Name ist der einzige frei eingegebene Text, der gespeichert und exportiert wird, deshalb der Hinweis in FR9.
+- NFR4: Gespeicherte oder importierte Daten sind **nicht vertrauenswürdig**: Jedes Level aus dem Speicher und aus einer Datei wird mit `LevelJson.Read` und `LevelValidator` geprüft. Kaputte oder manipulierte Einträge führen nie zu einem Absturz.
+- NFR5: Alle neuen Texte über resx in DE (Schweizer Rechtschreibung, ohne «ß») und EN, kindgerechter Ton. Der Level-Name eines Kindes wird nicht übersetzt.
+- NFR6: Editor auf 1366×768 und 1920×1080 ohne waagrechtes Scrollen; ein 10×10-Feld ist auf 1366×768 ohne Seiten-Scrollen ganz sichtbar.
+- NFR7: Alle Bedienelemente per Tastatur erreichbar, Knöpfe und Felder mindestens 44 px (bei 20×20 auf 1366×768 darf das Feld kleiner werden, es bleibt aber klickbar; Grenze im Plan festlegen).
+- NFR8: Rückfragen (Löschen, Alles leeren, Verlassen) sind eigene Komponenten ohne `window.confirm` und ohne Fluent UI (Entscheid Nr. 24), per Tastatur bedienbar.
+- NFR9: Ein Sprachwechsel im Editor behält das offene Level und die ungespeicherten Änderungen.
+- NFR10: Keine CDNs, keine fremden Grafiken. Ein neues NuGet-Paket nur nach Entscheid im Plan.
 
 ## Technical Constraints
 
-- **Module:** `Levels` (Level-JSON, Item-Darstellung im `GameBoard`, Vorschau, LevelPicker, Item-Grafiken liegen nach `svg-assets` in `Shared.UI`), `Game` (Startseite, Heldenwahl und Name als UI- bzw. Application-Zustand, Zähler, Meldungen, Gelöst-Status). Abhängigkeiten nur `Shared ← Levels ← Game`. Kein neues Modul.
-- **Host:** nur `HeroPath.Web`; Router lädt die Seiten aus den Modul-Assemblies wie heute.
-- **Speicher:** keiner neu. Held, Name, Fortschritt nur im Speicher (scoped Dienst).
-- **Grenzen:** unverändert (Raster 3 bis 20, 1000 Schritte, Wiederhole 1 bis 20, Tiefe 2, 200 Bausteine).
-- **Fluent UI:** Ob Startseite und LevelPicker Fluent-UI-Komponenten verwenden (Entscheid Nr. 6) oder eigene, wird im Plan mit Optionen entschieden.
-- **Lösbarkeit:** `StandardLevelsTests` prüft alle 7 Level (gültig, lösbar per BFS, mit `requireAllItems` über alle Erdbeeren).
-- **E2E-Abläufe (Playwright, mit Screenshots):**
-  1. Startseite: Lisa wählen, Namen eingeben, Level wählen, «Los!» → Spielseite zeigt Lisa, Namen und Level.
-  2. Direkter Aufruf von `/play` → Startseite.
-  3. Items: Level mit Erdbeeren und Pizza spielen, Zähler zählt, Items verschwinden, Erfolgsmeldung mit Pizza und Namen.
-  4. Levelwechsel über LevelPicker und «Nächstes Level» leert das Programm; Haken auf gelöstem Level (Start- und Spielseite).
-  5. Sprachwechsel auf der Startseite behält Eingaben.
+- **Module:**
+  - `Levels` (Hauptteil): Editor-Regeln, Löser und eigene Level-Quelle in `HeroPath.Modules.Levels` (Domain/Application/Infrastructure); `LevelEditor`-Seite und -Komponenten, Anpassung `LevelPicker` (Gruppe, Name) in `HeroPath.Modules.Levels.UI` (`Architektur C4.md` §3, Komponenten `LevelEditor`, `LevelRepository`).
+  - `Game`: `LevelProgress` bekommt die Levels aus der neuen Quelle (Standard + eigene), Startseite «Meine Levels» und «Level bauen», Spielseite «Bearbeiten».
+  - `Shared`: `IAppStorage` meldet beim Schreiben Erfolg oder Fehler (FR18), neue `StorageKeys` für eigene Levels, Schnittstelle für Datei-Export (FR26).
+  - Abhängigkeiten nur `Shared ← Levels ← Game`. Kein neues Modul.
+- **Host:** nur `HeroPath.Web`. `LocalStorageAppStorage` an den geänderten Vertrag anpassen, Web-Implementierung des Datei-Exports (JS-Download als eigene Datei im Projekt, keine CDN). Der Import nutzt nach Möglichkeit Blazors `InputFile` ohne eigenes JavaScript (im Plan prüfen).
+- **Speicher:** localStorage über `IAppStorage`. Aufbau der Schlüssel (ein Eintrag pro Level oder eine Liste) entscheidet der Plan.
+- **Grenzen:** Raster 3 bis 20, 1000 Schritte, Wiederhole 1 bis 20, Tiefe 2, 200 Bausteine (unverändert). Neu: höchstens 10 Erdbeeren und 10 Pizza-Stücke pro Level, höchstens 20 eigene Levels. Ob die Item-Grenze im `LevelValidator` für alle Levels gilt, entscheidet der Plan (die Standard-Level haben heute höchstens 3 Erdbeeren).
+- **Löser:** Der BFS-Löser aus den Tests (`level-design`-Skill) zieht in `Levels/Domain`, die Tests der Standard-Level verwenden danach denselben Löser.
+- **Navigation:** Rückfrage beim Verlassen über Blazors `NavigationLock` (im Plan mit Quelle bestätigen).
+- **E2E-Abläufe (Playwright, mit Screenshots DE und EN):**
+  1. Bauen → Speichern → Spielen: Startseite «Level bauen», Werkzeuge setzen, Mindestschritte sichtbar, speichern, Karte unter «Meine Levels», Level spielen und lösen, Haken.
+  2. Neuladen behält das eigene Level.
+  3. Unlösbar und Fehler: Ziel eingemauert → Speichern gesperrt mit Hinweis; Verkleinern mit Hinweis; Grenze 10 Erdbeeren.
+  4. Vorlage, Löschen, Export/Import: Standard-Level als Vorlage, eigenes Level löschen (Rückfrage), exportieren und die Datei wieder importieren.
+  5. «Ausprobieren» und «Bearbeiten» zwischen Editor und Spielseite, Rückfrage bei ungespeicherten Änderungen.
 
 ## Acceptance Criteria
 
-- [ ] `/` zeigt Heldenwahl (Max, Lisa), Namensfeld (max. 20 Zeichen) und 7 Level-Karten mit Vorschau; «Los!» öffnet `/play`.
-- [ ] Lisa ist als eigene SVG-Grafik gezeichnet und läuft auf dem Feld, wenn sie gewählt ist.
-- [ ] Leerer Name ergibt den Standardnamen; der Name erscheint über dem Feld und in den Meldungen; er steht nirgends in `IAppStorage` oder der URL.
-- [ ] `/play` ohne Wahl leitet auf `/` um.
-- [ ] Die 7 Level liegen als `01-…` bis `07-…` JSON vor, `demo` ist entfernt, `StandardLevelsTests` ist grün.
-- [ ] Erdbeeren und Pizza sind auf dem Feld sichtbar, verschwinden mit kurzer Animation beim Einsammeln und erscheinen nach Reset wieder.
-- [ ] Zähler «Erdbeeren x von y» / «Pizza x von y» erscheinen nur für vorhandene Arten und zählen bei Play und Debug mit.
-- [ ] Erfolgsmeldung nennt Pizza-Stücke (Einzahl/Mehrzahl) und, wenn alle 7 gelöst sind, «Du hast alle Level geschafft!».
-- [ ] Gelöste Level zeigen einen Haken auf Startseite und im LevelPicker.
-- [ ] «Nächstes Level» erscheint nach Erfolg (nicht im letzten Level); Levelwechsel leert das Programm.
-- [ ] Alle neuen Texte DE und EN; xUnit-, bUnit- und E2E-Tests grün; Screenshots visuell geprüft (normal und Graustufen, DE und EN).
+- [ ] Die Startseite hat einen Knopf «Level bauen», der `/editor` öffnet.
+- [ ] Im Editor lassen sich Grösse (3 bis 20), Start, Ziel, Baum, Stein, Teich, Erdbeere, Pizza per Werkzeug und Klick setzen und entfernen, Name und «Alle Erdbeeren nötig» einstellen.
+- [ ] Verkleinern entfernt Dinge ausserhalb mit Hinweis, Start und Ziel bleiben im Feld und verschieden.
+- [ ] Der Editor zeigt laufend «mindestens N Schritte» oder einen Hinweis, warum das Level nicht lösbar ist; unlösbare oder ungültige Levels lassen sich nicht speichern.
+- [ ] Höchstens 10 Erdbeeren, 10 Pizza-Stücke, 20 eigene Levels; Überschreiten zeigt einen Hinweis.
+- [ ] Gespeicherte Levels erscheinen auf der Startseite unter «Meine Levels» und im LevelPicker mit ihrem Namen, sind spielbar, bekommen den Haken und sind nach Neuladen noch da.
+- [ ] Ein Standard-Level lässt sich als Vorlage kopieren, ohne dass sich das Original ändert.
+- [ ] Eigene Levels lassen sich nach Rückfrage löschen, als JSON exportieren und wieder importieren (immer als neues Level); eine ungültige Datei ergibt eine Meldung und ändert nichts.
+- [ ] Ein Speicherfehler wird angezeigt, das Level bleibt offen.
+- [ ] «Ausprobieren», «Bearbeiten», «Alles leeren» und die Rückfrage beim Verlassen funktionieren.
+- [ ] Ein kaputter Eintrag im localStorage führt zu keinem Absturz, die übrigen Levels erscheinen.
+- [ ] Der Heldenname steht in keinem gespeicherten oder exportierten Level.
+- [ ] Alle neuen Texte DE und EN; xUnit-, bUnit-, Architektur- und E2E-Tests grün; Screenshots visuell geprüft (normal und Graustufen, DE und EN).
 
 ## Edge Cases & Failure Modes
 
-- Name nur aus Leerzeichen → Standardname, kein Fehler.
-- Name mit 20+ Zeichen eingefügt (Paste) → auf 20 Zeichen gekürzt.
-- Name mit HTML oder Skript-Text → wird als Text angezeigt (Blazor escaped), nie als Markup.
-- Heldenwechsel nach eigenem Namen → eigener Name bleibt.
-- Levelwechsel während Play → Lauf bricht ab (Runner-Abbruch wie bei `Load` heute), Programm leer, kein Schritt mehr danach.
-- «Held wechseln» während Play → Play stoppt (`PlayPage.Dispose`, M2), Rückkehr mit gleichem Level setzt fort (Pause).
-- Neuladen der Seite → Held, Name, Fortschritt sind weg, Startseite erscheint. Das ist gewollt (Name wird nicht gespeichert).
-- Erfolg im gleichen Level mehrmals → Level bleibt einmal gelöst, «alle geschafft» erscheint erst, wenn alle 7 je einmal gelöst sind (und bei jedem weiteren Erfolg danach).
-- Pizza nicht eingesammelt im Pflicht-Level → Erfolg trotzdem (M1-Regel), Meldung ohne Pizza-Teil.
-- Ungültiges eingebettetes Level → Programmierfehler, `StandardLevelsTests` schlägt fehl (kein Laufzeit-Fallback nötig).
-- Grosses Level (20×20) als kleine Vorschau → bleibt erkennbar, keine Layout-Sprünge.
+- Kaputter, manipulierter oder zu grosser Eintrag im Speicher → Eintrag wird übergangen, die übrigen Levels erscheinen, kein Absturz. Ob der Eintrag gelöscht oder liegen gelassen wird, entscheidet der Plan.
+- Speicher nicht verfügbar beim Start → keine eigenen Levels, Standard-Level spielbar, Editor nutzbar; Speichern zeigt den Fehler (FR18).
+- Speicher voll beim Speichern → Fehler sichtbar (FR18), bisheriger Stand des Levels im Speicher bleibt unverändert.
+- Zwei Tabs bearbeiten gleichzeitig → das zuletzt gespeicherte gewinnt. Keine Sperre, kein Absturz.
+- Eigenes Level wird gelöscht, während es auf der Startseite gewählt ist oder in `HeroChoice.LevelId` steht → die Wahl fällt auf das erste Standard-Level zurück.
+- Eigenes Level wird nach dem Spielen bearbeitet und gespeichert → beim nächsten Öffnen der Spielseite gilt die neue Fassung; das Programm wird geleert, wenn sich das Spielfeld geändert hat (Regel `GameSession.Load` aus M4).
+- Name mit HTML oder Skript-Text → wird als Text angezeigt (Blazor escaped), im Dateinamen des Exports bereinigt.
+- Name mit 50+ Zeichen eingefügt → gekürzt. Name gleich wie ein anderes eigenes Level → erlaubt (die Id unterscheidet).
+- Import einer Datei > 64 KB, kein JSON, falsches Schema, ungültig, unlösbar, > 10 Erdbeeren → Meldung, nichts gespeichert.
+- Import einer Datei mit Id eines Standard-Levels oder eines eigenen Levels → neue Id, kein Überschreiben.
+- Import bei 20 eigenen Levels → Meldung wie FR17.
+- Verkleinern auf 3×3 mit Start und Ziel am gleichen Randfeld → Ziel rückt auf ein freies Feld; ein 3×3-Feld hat immer genug freie Felder.
+- Lösbar, aber kürzester Weg über 1000 Schritte (theoretisch bei 20×20-Labyrinth mit 10 Erdbeeren) → nicht speicherbar, eigener Hinweis.
+- Darf nie passieren: Absturz durch Daten aus Speicher oder Datei; ein Standard-Level wird verändert; ein unlösbares Level landet in «Meine Levels»; der Heldenname gelangt in Speicher oder Export.
 
 ## Out of Scope
 
-- Konfetti oder andere Erfolgsanimation (später, M6).
-- Level-Editor, eigene Levels, Speichern von Levels (M5).
-- Fortschritt oder Heldenwahl in `localStorage`.
-- Level in der URL (`/play/<id>`).
-- Freischalten der Level nacheinander.
-- Programm pro Level merken.
-- Weitere Figuren, Items oder Themenwelten.
-- MAUI-Host.
+- Tipps oder Auflösung beim Spielen (z. B. Weg als gestrichelte Linie nach N Fehlversuchen). Wird als offener Punkt in `Projekt_Kontext.md` §8 aufgenommen, möglicher Kandidat für M6 nach dem Probelauf. Der Löser in `Levels/Domain` schafft die Grundlage.
+- Undo/Redo im Editor.
+- Fortschritt (Haken) oder Heldenwahl in `localStorage`.
+- Neue Hindernis- oder Item-Arten, Themenwelten.
+- Gespeicherte Programmlösung zum Level, Anzeige des Lösungswegs.
+- Malen durch Ziehen über mehrere Felder, Drag & Drop im Editor.
+- Teilen per Link oder QR-Code, Level in der URL.
+- Bearbeiten der Standard-Level an Ort (nur als Vorlage).
+- Export und Import im MAUI-Host (nur die Web-Implementierung hinter der Schnittstelle).
+- Schutz ungespeicherter Änderungen beim Neuladen oder Schliessen des Tabs.
 
 ## Open Questions
 
-- Keine. Technische Wahl (Fluent UI oder eigene Komponenten, Ort des Gelöst-Status, Startseite in `Game.UI`) wird im Plan mit Optionen vorgelegt.
-
-## Umsetzungsstand und bekannte Einschränkungen
-
-Stand nach M4 (Code in `src/` und `tests/`). Die Abschnitte oben beschreiben die Anforderung, dieser Abschnitt den tatsächlichen Stand. Die Entscheidungen mit Alternativen stehen in `Architektur C4.md` §6 (Nr. 21 bis 26), der Plan in `plan.md`.
-
-### Abweichungen und Ergänzungen, im Verlauf entschieden
-
-- **Level (FR15, FR17):** `free-field` startet auf (2,7) und endet auf (7,3) statt in den Ecken. Mit Ecken (unten links nach oben rechts auf 10×10) wären es 18 Bausteine. Die Regel «erste Level mit höchstens 10 Bausteinen lösbar» geht vor, hier sind es 9. `easy-2` ist das bisherige Demo-Layout mit drei Hindernissen (Baum, Stein, Teich; Plan D5), damit die Unit- und E2E-Tests ihre Koordinaten behalten.
-- **LevelPicker (FR11):** Er steht in den Werkzeugen der Seitenleiste, ganz oben in der Werkzeug-Spalte (`side-tools`), nicht im Kopf über dem Spielfeld, weil die Kopfzeile auf 1366×768 umbrach. Es ist ein natives `<select>` (kein Fluent UI, Entscheid Nr. 24).
-- **Zähler (FR21):** `ItemCounter` hat eine eigene Zeile zwischen Kopf (`board-head`) und Spielfeld. In Levels mit Items (`data-has-items` auf `board-area`, Reserve 12.75 rem statt 10.25 rem) ist das Spielfeld dadurch etwas kleiner.
-- **Startseite (FR4):**
-  - Eine Level-Karte ist ein `div` mit einem gestreckten `button` (`level-card-button`, die Klickfläche reicht per `::after` über die ganze Karte). So ist das HTML gültig (kein `button` mit Vorschau-Inhalt) und die ganze Karte bleibt klickbar.
-  - Die Vorschau hat eine feste Zellgrösse von 16 px (`--hp-preview-cell`) und eine einheitliche Höhe der Vorschau-Box (15 Zellen), damit die Karten nicht springen.
-  - Auf 1366×768 scrollt die Startseite senkrecht. Die linke Spalte mit Held, Name und «Los!» ist ab 60 rem Breite `position: sticky` und bleibt sichtbar.
-- **Breite Spielfelder:** Ist ein Spielfeld mindestens doppelt so breit wie hoch (`cols ≥ 2 × rows`, heute `long-road`, `data-wide` auf `play-page`), bekommt die Seitenleiste im Laptop-Layout eine schmalere Spalte (höchstens 36 rem statt 42 rem). Die Zellen sind dann etwa 49 px statt 40 px gross. Die untere Bildschirmhälfte bleibt trotzdem teilweise leer. Grenze: Das zweispaltige Seitenfeld (Werkzeuge und Programm) braucht etwa 36 rem, schmaler wird es nicht.
-- **Heldenname (FR3, NFR2):** `HeroChoice.NormalizeName` entfernt Steuerzeichen, Unicode-Formatzeichen (Zero-Width, Bidi-Steuerzeichen) sowie Zeilen- und Absatztrenner, entfernt Leerraum am Rand und schneidet auf höchstens 20 Textelemente (nie mitten in einem Surrogatpaar oder einer Kombination). Bleibt nichts übrig, gilt der Standardname. Das Eingabefeld begrenzt zusätzlich per `maxlength`. Das Kopf-Element `HeroBadge` zeigt den Namen mit `unicode-bidi: isolate`. Der Name wird nirgends gespeichert oder geloggt.
-- **Navigation (FR6, FR14):** `StartPage.Go` lädt das Level nicht mehr, es ruft `HeroChoice.Choose` und navigiert relativ nach `play`. `PlayPage` lädt beim Öffnen das Level aus `HeroChoice.LevelId` (bis zur Wahl `null`) über `LevelProgress.Find`. Ohne Wahl leitet `/play` per `NavigateTo("", replace: true)` auf `/` um. LevelPicker und «Nächstes Level» rufen `HeroChoice.SelectLevel` und `GameSession.Load`.
-- **Texte (FR21):** Der Pizza-Zähler hat einen einzigen Schlüssel für alle Anzahlen (`ItemCounter_Pizza`), der Erdbeeren-Zähler hat Einzahl und Mehrzahl.
-- **E2E-Tests:** `LevelCoverageTests` löst alle 7 Level per Klick (LevelPicker, feste Lösung je Level) und prüft «Du hast alle Level geschafft!» in DE und EN. Die E2E-Screenshots laufen mit reduzierter Bewegung (siehe Animation).
-- **Animation (FR20):** Ein eingesammeltes Item hüpft und blendet in 400 ms aus (`data-collected`). Bei `prefers-reduced-motion` ist es sofort versteckt. Weil die E2E-Screenshots mit reduzierter Bewegung laufen, ist die Animation selbst auf Screenshots nicht sichtbar.
-
-### Offen (nicht umgesetzt)
-
-- **Aus dem Code-Review, [COULD], nicht behoben:**
-  - `HeroChoice.Changed` wird von niemandem abonniert.
-  - `LevelPicker` setzt an den Optionen sowohl `value` als auch `selected`.
-  - `@key` am einzelnen Item-Kind im `GameBoard` hat keine Wirkung.
-  - `GameBoard` berechnet Zellarten und Items in zwei Durchläufen.
-  - Die Zuordnung Item → Grafik steht doppelt in `GameBoard` und `ItemCounter`. `Shared.UI` kann `ItemKind` nicht kennen und die Zuordnung deshalb nicht anbieten.
-  - Der Pizza-Text des `ItemCounter` hat einen Schlüssel für alle Anzahlen.
-  - Die Regeln der Level-Karten in `StartPage.razor.css` stehen nicht gruppiert (`.level-card` und zugehörige Regeln sind über die Datei verteilt).
-  - `StandardLevels.Get` wirft `KeyNotFoundException` für eine unbekannte Id. `PlayPage` verwendet es nicht mehr, sondern `LevelProgress.Find`, und leitet bei `null` um. Die Exception ist über die Oberfläche daher nicht erreichbar. Für M5 offen: `LevelProgress` kennt nur die Standard-Level, eigene Levels brauchen eine andere Quelle.
-  - `LevelPicker` zeigt nur Namen aus resx (`Level_<id>`). Eigene Levels aus M5 brauchen einen Rückfall auf `LevelDefinition.Name`.
-  - `ExecutionRunnerProgressTests` und `MessageBoxTests` verwenden noch die echten Standard-Level-Ids.
-  - `LevelProgress.MarkSolved` läuft vor `GameSession.UpdateRun`. Das kostet einen zusätzlichen Render.
-- **Visuell [COULD], nicht behoben:**
-  - Die Animation eines eingesammelten Items läuft einmal erneut ab, wenn das Kind auf die Spielseite zurückkehrt.
-  - Auf dem Desktop (1920×1080) bleibt der untere Teil der Startseite leer.
-  - Auf dem Desktop bricht im Level `small-maze` der Unterhinweis um.
-- **Verschoben (Out of Scope):**
-  - Konfetti (M6).
-  - Level-Editor und eigene Levels (M5).
-  - Fortschritt und Heldenwahl in `localStorage`.
-  - Level in der URL (`/play/<id>`).
-  - Freischalten der Level nacheinander.
-  - Programm pro Level merken.
-- **Fluent UI:** In M4 nicht verwendet (`Architektur C4.md` §6, Nr. 24). Das Setup von Version 5 ist unverifiziert.
+- Keine fachlichen. Technische Wahl wird im Plan mit Optionen und Quellen vorgelegt: Aufbau der Speicherschlüssel, Änderung des `IAppStorage`-Vertrags, Ort der neuen Level-Quelle (`ILevelSource`/`LevelRepository`), Gültigkeit der Item-Grenze für alle Levels, JS für den Download, `NavigationLock`, Umgang mit kaputten Einträgen, Mindestgrösse der Felder bei 20×20.

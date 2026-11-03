@@ -36,7 +36,7 @@ Must-have: at least 4 levels (1–4). Levels 5–7 are a bonus.
 - `src/Modules/Levels/HeroPath.Modules.Levels/Infrastructure/Levels/<nn>-<id>.json` (e.g. `01-free-field.json`). The order comes from the file prefix.
 - Embedded via `<EmbeddedResource Include="Infrastructure\Levels\*.json" />` (already a wildcard in the csproj, so no change per level).
 - Add the display name as `Level_<id>` in **both** `LevelsResources` resx files (see the `localization` skill).
-- `easy-2` has the layout of the former M2 demo level (10×10, start (1,6), goal (6,3), tree/rock/pond, shortest solution 8 moves). It has three obstacles instead of two so all three graphics show early (decision D5 in `docs/plan.md`). `free-field` uses start (2,7) and goal (7,3) instead of corner to corner, to stay at 9 blocks (rule: first levels ≤ 10).
+- `easy-2` has the layout of the former M2 demo level (10×10, start (1,6), goal (6,3), tree/rock/pond, shortest solution 8 moves). It has three obstacles instead of two so all three graphics show early (decision D5 in `docs/plan-M4.md`). `free-field` uses start (2,7) and goal (7,3) instead of corner to corner, to stay at 9 blocks (rule: first levels ≤ 10).
 
 ## Mandatory check (test in HeroPath.Modules.Levels.Tests)
 

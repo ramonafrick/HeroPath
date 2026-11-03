@@ -1,6 +1,6 @@
 namespace HeroPath.E2E.Infrastructure;
 
-/// <summary>Builds the known solutions of the standard levels with palette clicks (docs/plan.md, Level-Skizzen) and plays them.</summary>
+/// <summary>Builds the known solutions of the standard levels with palette clicks (docs/plan-M4.md, Level-Skizzen) and plays them.</summary>
 public static class LevelSolutions
 {
     private static readonly Dictionary<string, string[]> _simple = new()
