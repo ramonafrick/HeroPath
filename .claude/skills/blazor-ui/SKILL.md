@@ -14,7 +14,7 @@ Docs: `docs/Architektur C4.md` §4.1 (components), §4.3 (MAUI rules), §5 (Play
 3. Every drag & drop action has a **click alternative** (click on a palette block appends it; buttons to remove/move).
 4. Responsive layout: CSS Grid/Flexbox, relative units, container queries. No fixed pixel widths. Click/tap targets ≥ 44 px.
 5. Static assets from an RCL: `_content/<AssemblyName>/...` (e.g. `_content/HeroPath.Shared.UI/css/theme.css`).
-6. Interactive elements and state carriers get a `data-testid` (`palette-right`, `control-play`, `status` with `data-state`) for E2E tests.
+6. Interactive elements and state carriers get a `data-testid` (`palette-right`, `control-play`, `status` with `data-state`) for E2E tests. Shell ids: `app-title` (the single `<h1>` in `MainLayout`, which `FocusOnNavigate Selector="h1"` relies on, so pages must not add another h1), `language-de` / `language-en` (`aria-pressed` marks the active one).
 7. No CDN links. Fonts, icons and graphics are local.
 8. MAUI is **not** in scope. Don't create a MAUI project, but don't block one either.
 

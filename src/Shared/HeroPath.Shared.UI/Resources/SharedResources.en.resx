@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="App_Title" xml:space="preserve">
+    <value>Hero's Path</value>
+    <comment>App display name, shown in the header and as page title.</comment>
+  </data>
+  <data name="Language_Switch_Label" xml:space="preserve">
+    <value>Choose language</value>
+    <comment>Accessible name of the language button group.</comment>
+  </data>
+  <data name="Language_German" xml:space="preserve">
+    <value>German</value>
+    <comment>Tooltip of the German button.</comment>
+  </data>
+  <data name="Language_English" xml:space="preserve">
+    <value>English</value>
+    <comment>Tooltip of the English button.</comment>
+  </data>
+  <data name="Language_German_Short" xml:space="preserve">
+    <value>DE</value>
+    <comment>Visible text of the German button.</comment>
+  </data>
+  <data name="Language_English_Short" xml:space="preserve">
+    <value>EN</value>
+    <comment>Visible text of the English button.</comment>
+  </data>
+</root>

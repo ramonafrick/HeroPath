@@ -80,8 +80,10 @@ public sealed class LanguageService(IAppStorage storage)
 }
 ```
 
-- Components with texts (or the layout root) subscribe to `Changed` → `InvokeAsync(StateHasChanged)`.
-- At startup (`Program.cs`, after `Build()`, before `RunAsync()`) read the stored language and set the culture. Default is `de-CH`.
+- Real API (`HeroPath.Shared.UI.Localization`): `LanguageService` (scoped; `Current`, `ApplyStoredAsync`, `SetAsync`, `Changed`, `Normalize`); storage key `StorageKeys.Language`. Unsupported values are normalized to `de-CH`; a throwing `IAppStorage` is swallowed and the switch still happens.
+- Components with texts subscribe to `Changed` in `OnInitialized`, unsubscribe in `Dispose`, and re-render via `InvokeAsync(StateHasChanged)`. A page with `<PageTitle>` does the same (see `PlayPage`).
+- At startup (`Program.cs`, after `Build()`, before `RunAsync()`) call `await host.Services.ApplyStoredCultureAsync()`. Default is `de-CH`.
+- Tests that switch culture change process-wide state: put them in `[Collection("Culture")]` and restore the cultures afterwards (`CultureScope` in `HeroPath.Shared.Tests`).
 - Only the language is stored, never the hero name.
 
 ## Checklist for a text change

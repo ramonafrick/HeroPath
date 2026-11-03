@@ -1,3 +1,11 @@
 @inherits LayoutComponentBase
 
-@Body
+<div class="app-shell">
+    <header class="app-header">
+        <h1 class="app-title" data-testid="app-title">@Localizer["App_Title"]</h1>
+        <LanguageSwitcher />
+    </header>
+    <div class="app-content">
+        @Body
+    </div>
+</div>

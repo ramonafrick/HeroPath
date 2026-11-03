@@ -406,6 +406,7 @@ HeroPath/
 │     ├─ HeroPath.Maui/                (später) MAUI Blazor Hybrid Host
 │     └─ HeroPath.Host/                (optional) Mini-Webserver für den lokalen Einsatz
 ├─ tests/
+│  ├─ HeroPath.Shared.Tests/           xUnit + bUnit (Sprache, LanguageSwitcher)
 │  ├─ HeroPath.Modules.Levels.Tests/   xUnit + bUnit
 │  ├─ HeroPath.Modules.Game.Tests/     xUnit + bUnit
 │  ├─ HeroPath.ArchitectureTests/      Abhängigkeitsregeln

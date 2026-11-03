@@ -15,7 +15,6 @@ public class PlayPageTests(AppFixture app)
 
         await page.GotoAsync("/");
         await page.WaitForRenderedAsync("main.play-page", browserErrors);
-        await Screenshots.CaptureAsync(page, "play-page.desktop.de");
 
         Assert.Empty(browserErrors.Errors);
     }

@@ -1,0 +1,49 @@
+:root {
+    --hp-start: #6cc070;
+    --hp-goal: #f2c230;
+    --hp-max-shirt: #f4d03f;
+    --hp-max-pants: #3b6fd4;
+    --hp-lisa-dress: #d9455a;
+    --hp-tree: #2f8f4e;
+    --hp-rock: #8a8f98;
+    --hp-pond: #4aa3df;
+    --hp-strawberry: #e0334c;
+    --hp-pizza: #e8a33d;
+    --hp-outline: #2b2d42;
+
+    --hp-surface: #ffffff;
+    --hp-background: #f3f8ee;
+    --hp-text: #2b2d42;
+    --hp-accent: #2b2d42;
+    --hp-on-accent: #ffffff;
+    --hp-focus: #1b5fd9;
+
+    --hp-font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+html, body {
+    margin: 0;
+    background: var(--hp-background);
+    color: var(--hp-text);
+    font-family: var(--hp-font);
+}
+
+button {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0.5rem 0.75rem;
+    font-family: inherit;
+}
+
+:focus-visible {
+    outline: 3px solid var(--hp-focus);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

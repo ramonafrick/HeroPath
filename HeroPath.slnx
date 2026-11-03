@@ -21,5 +21,6 @@
     <Project Path="tests/HeroPath.E2E/HeroPath.E2E.csproj" />
     <Project Path="tests/HeroPath.Modules.Game.Tests/HeroPath.Modules.Game.Tests.csproj" />
     <Project Path="tests/HeroPath.Modules.Levels.Tests/HeroPath.Modules.Levels.Tests.csproj" />
+    <Project Path="tests/HeroPath.Shared.Tests/HeroPath.Shared.Tests.csproj" />
   </Folder>
 </Solution>

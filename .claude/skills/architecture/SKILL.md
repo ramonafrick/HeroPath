@@ -29,6 +29,7 @@ src/
     HeroPath.Web/                    Blazor WASM host: Program.cs, App.razor (router), index.html, web platform services
     HeroPath.Maui/                   (later, do not create)
 tests/
+  HeroPath.Shared.Tests/             xUnit + bUnit for Shared and Shared.UI (LanguageService, LanguageSwitcher)
   HeroPath.Modules.Levels.Tests/     xUnit + bUnit for Levels and Levels.UI
   HeroPath.Modules.Game.Tests/       xUnit + bUnit for Game and Game.UI
   HeroPath.ArchitectureTests/        dependency rules (metadata-based)

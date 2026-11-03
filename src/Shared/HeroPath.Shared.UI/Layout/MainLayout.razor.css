@@ -1,0 +1,25 @@
+.app-shell {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.5rem 1rem;
+    background: var(--hp-surface);
+    border-bottom: 3px solid var(--hp-outline);
+}
+
+.app-title {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--hp-text);
+}
+
+.app-content {
+    flex: 1;
+}
