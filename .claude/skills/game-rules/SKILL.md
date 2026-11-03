@@ -11,8 +11,8 @@ Docs: `docs/Projektidee.md` (behaviour), `docs/Architektur C4.md` §4.2 (class m
 
 | Module | Domain | Application | Infrastructure |
 |---|---|---|---|
-| `HeroPath.Modules.Levels` | `Position`, `Grid`, `ObstacleKind`, `ItemKind`, `LevelDefinition`, `LevelLimits` | `LevelValidator`, `ILevelSource`, `LevelRepository` | embedded `Levels/*.json`, `LevelJsonContext`, storage-backed custom levels |
-| `HeroPath.Modules.Game` | `Direction`, `Person`, `MoveResult`/`MoveOutcome`, `ICommand`, `MoveCommand`, `RepeatCommand`, `ProgramDefinition`, `Interpreter`, `ExecutionStep`/`ExecutionState`/`ExecutionError`, `ProgramLimits` | `GameSession`, `ExecutionRunner` | none so far |
+| `HeroPath.Modules.Levels` | `Position`, `Grid`, `ObstacleKind`, `ItemKind`, `LevelObstacle`, `LevelItem`, `LevelDefinition`, `LevelLimits` | `LevelValidator`, `LevelValidationError(Kind)`, `LevelReadResult`; later `ILevelSource`, `LevelRepository` | `LevelJson` (Read/Write), `LevelJsonContext`; later embedded `Levels/*.json`, storage-backed custom levels |
+| `HeroPath.Modules.Game` | `Direction`, `Person`, `MoveResult`/`MoveOutcome`, `Command` (abstract), `MoveCommand`, `RepeatCommand`, `ProgramDefinition`, `Interpreter`, `ExecutionStep`/`ExecutionState`/`ExecutionError`, `ProgramLimits` | `GameSession`, `ExecutionRunner` | none so far |
 
 Game depends on Levels (the interpreter runs on a `Grid`), never the other way round.
 
@@ -39,25 +39,33 @@ Game depends on Levels (the interpreter runs on a `Grid`), never the other way r
 
 Items are collected when the person **enters** the cell. The start cell is walkable again.
 
+`Person` holds **only** `Position` (decided 2026-11-02). Hero name and avatar are UI state and never enter the domain, so they can't leak into logs, `ToString()` or exceptions.
+
 ## Commands
 
-- `ICommand` has a stable `Guid Id` — the UI highlights the block with this id.
+- `Command` is an abstract class with a `private protected` constructor, i.e. a **closed** hierarchy: only `MoveCommand` and `RepeatCommand` exist; the interpreter switches over them without casts. A new block type (e.g. «Wenn» later) is added deliberately here. Every command has a stable `Guid Id` (optional explicit id in the ctor), equality is identity. The UI highlights the block with this id.
 - `MoveCommand(Direction)`.
 - `RepeatCommand(Count, Body)`: `Count` 1–20, body may contain `MoveCommand` and `RepeatCommand`, **max. nesting depth 2** (a repeat inside a repeat, no deeper).
-- `ProgramDefinition` = ordered list of commands. Validate depth and count when constructing / before running, not halfway through execution.
+- `ProgramDefinition` = ordered list of commands, max. `ProgramLimits.MaxProgramCommands` = 200 blocks (counted recursively).
+- Invalid count, depth or block total is a programming error (the UI never builds such a program): `ArgumentOutOfRangeException` in the constructor. Depth is checked only in `RepeatCommand` (`CommandNesting.DepthOf`).
 - An empty repeat body is **not** skipped. The run doesn't start and returns `ExecutionError.EmptyRepeat` with the `CommandId` of the empty repeat, so the UI can highlight it (decided 2026-11-02).
 
 ## Interpreter (one engine for Play and Debug)
 
-`new Interpreter(program, grid, person)`. `Step()` executes **exactly one move** (one expanded `MoveCommand`) and returns an `ExecutionStep`:
+`new Interpreter(program, grid)`; the interpreter places the `Person` on `grid.Start` itself. `Step()` executes **exactly one move** (one expanded `MoveCommand`) and returns an `ExecutionStep`:
 
 | Field | Meaning |
 |---|---|
-| `CommandId` | id of the `MoveCommand` that just ran (for highlighting) |
-| `StepNumber` | 1-based count of executed moves in this run |
+| `CommandId` | id of the `MoveCommand` that ran or failed; the empty `RepeatCommand` for `EmptyRepeat`; `Guid.Empty` for `EmptyProgram` |
+| `StepNumber` | 1-based move number. On `Obstacle`/`OutOfBounds`/`StepLimitExceeded` it is the **attempted** move (executed + 1), so «Schritt N» can be shown directly. Otherwise the last executed move, `0` for `EmptyProgram`/`EmptyRepeat`. Counts expanded moves, not blocks |
 | `Position` | person position after the step |
-| `State` | `Running`, `Succeeded`, `Failed` |
+| `State` | `Ready`, `Running`, `Succeeded`, `Failed` |
 | `Error` | `null` or the error kind (see below) |
+| `CollectedItem` | `ItemKind?` collected in this step only |
+| `HitObstacle` | `ObstacleKind?` on `Obstacle` |
+| `MissingItems` | missing strawberries, only with `ItemsMissing` |
+
+The interpreter also exposes `State`, `Position` and `CollectedItems` (`IReadOnlySet<Position>`). The step that executes the **last** move already carries the terminal state, so Play needs no extra empty step.
 
 - Repeats are expanded lazily (an execution stack of `(commands, index, remainingIterations)`), not by flattening the whole program up front. That is what keeps `CommandId` correct inside nested repeats.
 - Play = UI calls `Step()` in a loop with a delay; Debug = one `Step()` per click. Same results, guaranteed by using the same object.
@@ -106,7 +114,9 @@ Standard levels are embedded resources in `HeroPath.Modules.Levels/Infrastructur
 }
 ```
 
-- camelCase properties, enums as camelCase strings (`JsonSourceGenerationOptions(UseStringEnumConverter = true, PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)`).
+- camelCase properties, enums as camelCase strings. `LevelJsonContext` registers a string-only enum converter (`allowIntegerValues: false`) instead of `UseStringEnumConverter`, because the latter also accepts integers. `MaxDepth = 8`.
+- Use `LevelJson.Read(string)` / `Write(level)`. `Read` never throws: input over `LevelJson.MaxJsonLength` (64 KB), broken JSON or rule violations return `LevelReadResult.Failure(errors)`.
+- The source generator ignores property initializers: an omitted field becomes `default`, so a missing `schemaVersion` or list is a validation error, not a default value.
 - Standard levels: `name` is `null`; the UI shows the resx text `Level_<id>`. Custom levels: `name` is the user's text (no resx).
 - `schemaVersion` allows later migration of stored custom levels. Unknown versions are rejected with a validation error, not a crash.
 
@@ -116,6 +126,9 @@ Standard levels are embedded resources in `HeroPath.Modules.Levels/Infrastructur
 - start, goal, every obstacle and item inside the grid
 - start ≠ goal; no obstacle on start or goal; at most one obstacle or item per cell; no item on start
 - `requireAllItems = true` requires at least one required item
+- `id` matches `^[a-z0-9-]{1,40}$`; `name` is `null` or 1–50 chars, not blank, no control characters
+- more objects than cells → one `TooManyObjects` error, per-object checks skipped (no error amplification)
+- `Grid` throws on the same rules (defensive net). Guarantee, covered by tests: validator-valid ⇒ `ToGrid()` doesn't throw
 - Validation runs for embedded levels (in a test) **and** for custom levels loaded from storage. An invalid custom level is reported and skipped, never crashes.
 
 ## Required tests (HeroPath.Modules.Game.Tests / HeroPath.Modules.Levels.Tests)

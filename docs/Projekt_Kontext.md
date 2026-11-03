@@ -74,7 +74,9 @@ Browser-Lern-App «HeroPath» (HeldenWeg / Hero's Path) für den Zukunftstag: Ki
 - **Standard-Levels:** Eingebettete JSON-Ressourcen in `HeroPath.Modules.Levels`, damit sie in jedem Host funktionieren.
 - **Interpreter:** Ein Interpreter für Play und Debug. Er liefert pro `Step()` einen `ExecutionStep` mit Position, Status und ggf. Fehler.
 - **Schrittlimit:** Maximal 1000 ausgeführte Schritte pro Lauf, Wiederhole-Anzahl 1 bis 20, Verschachtelung maximal 2 Ebenen.
+- **Programmgrösse:** Maximal 200 Bausteine pro Programm (Bewegungen und Wiederhole-Blöcke rekursiv gezählt, `ProgramLimits.MaxProgramCommands`).
 - **Spielfeldgrenzen:** Breite und Höhe je 3 bis 20.
+- **Level-JSON:** Maximal 64 KB (65 536 Zeichen, längere Eingaben werden vor dem Parsen abgelehnt) und maximale JSON-Tiefe 8. Level-Id nach `^[a-z0-9-]{1,40}$`, Level-Name (optional) höchstens 50 Zeichen, nicht nur Leerraum und ohne Steuerzeichen.
 - **Gewinnbedingung:** Ziel erreicht. Pro Level optional zusätzlich alle Items eingesammelt (`RequireAllItems`).
 - **Rendering:** CSS Grid für das Raster, SVG für Figuren, Hindernisse und Items. Bewegung mit CSS-Transitions.
 - **Drag & Drop:** Native HTML5-Ereignisse in einer eigenen Komponente `ProgramEditor`, dazu immer eine Alternative per Klick. Die Technik bleibt austauschbar.
@@ -102,17 +104,17 @@ Browser-Lern-App «HeroPath» (HeldenWeg / Hero's Path) für den Zukunftstag: Ki
 
 ## 7. Meilensteine (Vorschlag)
 
-| Nr. | Inhalt |
-|---|---|
-| M1 | Domain der Module `Levels` (Grid, Level) und `Game` (Person, Befehle, Interpreter) mit Tests |
-| M2 | Blazor-Grundgerüst, Spielfeld, Figur, Play, Debug, Reset (Programm zunächst per Klick) |
-| M3 | Drag & Drop, Wiederhole-Block, Block-Hervorhebung, Fehlermeldungen |
-| M4 | Level-Vorlagen, Start-Dialog, Items |
-| M5 | Level-Editor und Speicherung |
-| M6 | Deutsch und Englisch, Feinschliff, Probelauf auf dem Ziel-Laptop |
-| M7 | (später, nach dem Zukunftstag) `Hosts/HeroPath.Maui` als Host, responsives Layout und Touch-Bedienung |
+| Nr. | Inhalt | Stand |
+|---|---|---|
+| M1 | Domain der Module `Levels` (Grid, Level) und `Game` (Person, Befehle, Interpreter) mit Tests | ✅ erledigt |
+| M2 | Blazor-Grundgerüst, Spielfeld, Figur, Play, Debug, Reset (Programm zunächst per Klick) | offen |
+| M3 | Drag & Drop, Wiederhole-Block, Block-Hervorhebung, Fehlermeldungen | offen |
+| M4 | Level-Vorlagen, Start-Dialog, Items | offen |
+| M5 | Level-Editor und Speicherung | offen |
+| M6 | Deutsch und Englisch, Feinschliff, Probelauf auf dem Ziel-Laptop | offen |
+| M7 | (später, nach dem Zukunftstag) `Hosts/HeroPath.Maui` als Host, responsives Layout und Touch-Bedienung | offen |
 
-Wenn die Zeit knapp wird, entfallen zuerst M5 und die Items. M1 bis M4 ergeben bereits ein vollwertiges Spiel.
+Wenn die Zeit knapp wird, entfallen zuerst M5 und die Items. M1 bis M4 ergeben bereits ein vollwertiges Spiel. Abweichungen und offene Punkte aus M1: `requirements.md`, Abschnitt «Umsetzungsstand und bekannte Einschränkungen».
 
 ## 8. Offene Punkte
 

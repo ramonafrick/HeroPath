@@ -34,7 +34,7 @@ Alle Spielregeln (Spielfeld, Bewegung, Bausteine, Interpreter, Gewinn- und Fehle
 
 - FR7: `Direction` (`Up`, `Down`, `Left`, `Right`). `Up` bedeutet `Y − 1`, `Down` bedeutet `Y + 1`.
 - FR8: `Person` hält **nur** die `Position`, ohne Name und ohne Avatar (Entscheid 2026-11-02). `Move(Direction, Grid) → MoveResult` mit `MoveOutcome` `Moved`, `Blocked` (mit `Hit = ObstacleKind`) oder `OutOfBounds`. Bei `Blocked` und `OutOfBounds` bleibt die Position unverändert.
-- FR9: `ICommand` mit stabiler `Guid Id`, dazu `MoveCommand(Direction)` und `RepeatCommand(Count, Body)`. Gilt `Count ∉ 1..20` oder die Verschachtelung ist tiefer als 2, wirft der Konstruktor von `RepeatCommand` bzw. `ProgramDefinition` eine `ArgumentOutOfRangeException` (Entscheid 2026-11-02). Ein leerer Body ist beim Erstellen erlaubt.
+- FR9: `ICommand` mit stabiler `Guid Id`, dazu `MoveCommand(Direction)` und `RepeatCommand(Count, Body)`. Gilt `Count ∉ 1..20` oder die Verschachtelung ist tiefer als 2, wirft der Konstruktor von `RepeatCommand` bzw. `ProgramDefinition` eine `ArgumentOutOfRangeException` (Entscheid 2026-11-02). Ein leerer Body ist beim Erstellen erlaubt. (Umgesetzt mit `Command` statt `ICommand`, siehe «Umsetzungsstand».)
 - FR10: `ProgramDefinition` ist eine geordnete Liste von `ICommand`.
 - FR11: Der `Interpreter` wird mit `new Interpreter(program, grid)` erstellt. Er legt die `Person` selbst auf `grid.Start`. Vor dem ersten Schritt ist `State = Ready`. `Step()` führt genau einen `MoveCommand` aus. Wiederhole-Blöcke werden über einen Ausführungsstapel schrittweise aufgelöst, nicht vorab flachgeklopft.
 - FR12: `ExecutionStep` (Record) enthält `CommandId`, `StepNumber` (ab 1), `Position`, `State` (`Ready`, `Running`, `Succeeded`, `Failed`), `Error` (`ExecutionError?`), `CollectedItem` (`ItemKind?`, das in diesem Schritt eingesammelte Item), `HitObstacle` (`ObstacleKind?`) und `MissingItems` (Anzahl, bei `ItemsMissing`).
@@ -113,3 +113,31 @@ Alle Spielregeln (Spielfeld, Bewegung, Bausteine, Interpreter, Gewinn- und Fehle
   - Der 1001. Schritt wird nicht mehr ausgeführt.
   - Leere Wiederhole-Blöcke werden vor dem ersten Schritt im ganzen Programm gesucht. Gemeldet wird der erste in Ausführungsreihenfolge.
   - Der Interpreter erzeugt die `Person` selbst. Abweichung von §4.2: `new Interpreter(program, grid)` statt `new Interpreter(program, grid, person)`, damit der Held immer auf dem Start beginnt.
+
+## Umsetzungsstand und bekannte Einschränkungen
+
+Stand nach M1 (Code in `src/Modules/Levels/HeroPath.Modules.Levels` und `src/Modules/Game/HeroPath.Modules.Game/Domain`). Die Abschnitte oben beschreiben die Anforderung, dieser Abschnitt den tatsächlichen Stand.
+
+### Abweichungen, im Review entschieden
+
+- **`Command` statt `ICommand`:** Die Befehle sind eine geschlossene Hierarchie (abstrakte Klasse `Command`, `private protected`-Konstruktor, nur `MoveCommand` und `RepeatCommand`). Begründung und Alternative: `Architektur C4.md` §6, Nr. 3a.
+- **`StepNumber`-Semantik:** Bei `Obstacle`, `OutOfBounds` und `StepLimitExceeded` ist es die Nummer des versuchten Zuges (ausgeführte Züge + 1). Sonst ist es die Nummer des zuletzt ausgeführten Zuges, bei `EmptyProgram` und `EmptyRepeat` 0. Der Schritt des letzten Zuges trägt bereits den Endzustand (`Succeeded`, `GoalNotReached` oder `ItemsMissing`), es gibt keinen separaten Abschluss-Schritt.
+- **Zusätzliche Validierungsregeln** (über FR5 hinaus), im `LevelValidator`:
+  - Level-Id muss `^[a-z0-9-]{1,40}$` entsprechen (`InvalidId`).
+  - Level-Name (optional) höchstens 50 Zeichen, nicht nur Leerraum, ohne Steuerzeichen (`InvalidName`).
+  - `null`-Listen oder `null`-Einträge bei Hindernissen und Items ergeben `ObstaclesInvalid` bzw. `ItemsInvalid`, keine Exception.
+  - Mehr Objekte (Hindernisse + Items) als Felder ergibt `TooManyObjects`, danach wird nicht weiter geprüft.
+  - Ein Hindernis auf dem Ziel wird als `ObstacleOnGoal` gemeldet, ein Item auf dem Ziel ist erlaubt. Ein Feld doppelt belegt ergibt `CellOccupiedTwice`.
+- **Grenzwerte:** Maximal 200 Bausteine pro Programm (`ProgramLimits.MaxProgramCommands`, `ProgramDefinition` wirft `ArgumentOutOfRangeException`). Level-JSON höchstens 64 KB (`LevelJson.MaxJsonLength`, 65 536 Zeichen) und maximale Tiefe 8, sonst `InvalidJson`. Übersicht in `Projekt_Kontext.md` §4.
+
+### Offen (Review-Funde, nicht umgesetzt)
+
+- **Interpreter, kleine Aufräumarbeiten:** Der Zustand `Ready` wird in `Step()` zweimal geprüft. Die Zahl der fehlenden Erdbeeren wird bei jedem Schritt berechnet statt nur bei Bedarf. `CollectedItems` gibt die interne Menge direkt zurück (Aufrufer sehen den Live-Stand und könnten sie über einen Cast verändern).
+- **`MoveFrom`:** Könnte ein Operator auf `Position` sein (`Position + Direction`) statt einer Erweiterung auf `Direction`.
+- **`LevelObstacle.GetPosition()`/`LevelItem.GetPosition()`:** Methode statt Property (bewusst, damit die Position nicht ins JSON serialisiert wird). Prüfen, ob eine `[JsonIgnore]`-Property klarer wäre.
+- **`StepNumber` zählt expandierte Züge:** Ein Zug in `Wiederhole 3 mal` zählt dreimal. Die Meldungen sprechen von «Schritt N» (z. B. «Schau dir Schritt {0} noch einmal an»). In M3 prüfen, ob das für Kinder verständlich ist oder ob die Position im Programm besser passt.
+- **`LevelJsonContext`:** Verwendet einen eigenen, nur Strings akzeptierenden Enum-Konverter statt `UseStringEnumConverter`. Prüfen, ob die eingebaute Variante mit Source-Generator inzwischen ausreicht.
+- **`StartEqualsGoal`:** Wird auch gemeldet, wenn Start und Ziel beide ausserhalb des Feldes liegen (zusätzlich zu `StartOutsideGrid` und `GoalOutsideGrid`).
+- **Id-Regex:** Das Muster im `LevelValidator` enthält die Länge 40 fest (`{1,40}`) statt `LevelLimits.MaxIdLength` zu verwenden.
+- **Testnamen:** Die Benennung der Tests ist nicht durchgehend einheitlich.
+- **Datenschutz-Hinweis für M5:** Der Level-Editor soll den Kindern sagen, dass sie im Level-Namen nicht ihren echten Namen verwenden sollen. Der Level-Name wird (anders als der Heldenname) im localStorage gespeichert und im JSON-Export weitergegeben.

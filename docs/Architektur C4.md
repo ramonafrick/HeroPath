@@ -119,7 +119,11 @@ C4Component
 
 ### 4.2 Domain-Modell (Modules.Levels und Modules.Game)
 
-`Position`, `ObstacleKind`, `Grid` und `LevelDefinition` gehören zu `Modules.Levels/Domain`. `Direction`, `Person`, `MoveResult`, die Befehle, `ProgramDefinition`, `Interpreter` und `ExecutionStep` gehören zu `Modules.Game/Domain`.
+Stand: umgesetzt in M1 (Domain beider Module, noch ohne UI, `GameSession`, `ExecutionRunner` und `LevelRepository`).
+
+`Position`, `ObstacleKind`, `ItemKind`, `LevelObstacle`, `LevelItem`, `Grid`, `LevelDefinition` und `LevelLimits` gehören zu `Modules.Levels/Domain`. Dazu kommen `LevelValidator`, `LevelValidationError`, `LevelValidationErrorKind` und `LevelReadResult` in `Modules.Levels/Application` sowie `LevelJson` (Lesen und Schreiben von Level-JSON, source-generierter `LevelJsonContext`) in `Modules.Levels/Infrastructure`. `Direction`, `Person`, `MoveResult`, die Befehle (`Command`, `MoveCommand`, `RepeatCommand`), `ProgramDefinition`, `Interpreter`, `ExecutionStep`, `ExecutionState`, `ExecutionError` und `ProgramLimits` gehören zu `Modules.Game/Domain`.
+
+`Person` hält nur die `Position`. Heldenname und Avatar sind reiner UI-Zustand und gelangen nie in die Domain (Datenschutz). Der `Interpreter` erzeugt die `Person` selbst auf `Grid.Start`. Ein Reset bedeutet, einen neuen `Interpreter` zu erstellen.
 
 ```mermaid
 classDiagram
@@ -127,6 +131,57 @@ classDiagram
     <<record struct>>
     +int X
     +int Y
+    +IsInside(int width, int height) bool
+  }
+  class ObstacleKind {
+    <<enum>>
+    Tree
+    Rock
+    Pond
+  }
+  class ItemKind {
+    <<enum>>
+    Strawberry
+    Pizza
+  }
+  class LevelObstacle {
+    <<record>>
+    +int X
+    +int Y
+    +ObstacleKind Kind
+  }
+  class LevelItem {
+    <<record>>
+    +int X
+    +int Y
+    +ItemKind Kind
+  }
+  class Grid {
+    +int Width
+    +int Height
+    +Position Start
+    +Position Goal
+    +bool RequireAllItems
+    +IReadOnlyList~LevelItem~ Items
+    +IReadOnlyDictionary Obstacles
+    +int RequiredItemCount
+    +IsInside(Position) bool
+    +GetObstacle(Position) ObstacleKind?
+    +GetItem(Position) ItemKind?
+  }
+  class LevelDefinition {
+    <<record>>
+    +int SchemaVersion
+    +string Id
+    +string? Name
+    +int Width
+    +int Height
+    +Position Start
+    +Position Goal
+    +bool RequireAllItems
+    +IReadOnlyList~LevelObstacle~ Obstacles
+    +IReadOnlyList~LevelItem~ Items
+    +ToGrid() Grid
   }
   class Direction {
     <<enum>>
@@ -135,24 +190,7 @@ classDiagram
     Left
     Right
   }
-  class ObstacleKind {
-    <<enum>>
-    Tree
-    Rock
-    Pond
-  }
-  class Grid {
-    +int Width
-    +int Height
-    +Position Start
-    +Position Goal
-    +IsInside(Position) bool
-    +GetObstacle(Position) ObstacleKind?
-    +HasItem(Position) bool
-  }
   class Person {
-    +string Name
-    +AvatarKind Avatar
     +Position Position
     +Move(Direction, Grid) MoveResult
   }
@@ -162,8 +200,8 @@ classDiagram
     +Position NewPosition
     +ObstacleKind? Hit
   }
-  class ICommand {
-    <<interface>>
+  class Command {
+    <<abstract>>
     +Guid Id
   }
   class MoveCommand {
@@ -171,15 +209,17 @@ classDiagram
   }
   class RepeatCommand {
     +int Count
-    +IReadOnlyList~ICommand~ Body
+    +IReadOnlyList~Command~ Body
   }
   class ProgramDefinition {
-    +IReadOnlyList~ICommand~ Commands
+    +IReadOnlyList~Command~ Commands
   }
   class Interpreter {
-    +Interpreter(ProgramDefinition, Grid, Person)
+    +Interpreter(ProgramDefinition, Grid)
+    +ExecutionState State
+    +Position Position
+    +IReadOnlySet~Position~ CollectedItems
     +Step() ExecutionStep
-    +State ExecutionState
   }
   class ExecutionStep {
     <<record>>
@@ -188,28 +228,57 @@ classDiagram
     +Position Position
     +ExecutionState State
     +ExecutionError? Error
+    +ItemKind? CollectedItem
+    +ObstacleKind? HitObstacle
+    +int MissingItems
   }
-  class LevelDefinition {
-    +string Name
-    +int Width
-    +int Height
-    +Position Start
-    +Position Goal
-    +bool RequireAllItems
+  class ExecutionState {
+    <<enum>>
+    Ready
+    Running
+    Succeeded
+    Failed
   }
-  ICommand <|.. MoveCommand
-  ICommand <|.. RepeatCommand
-  RepeatCommand o-- ICommand
-  ProgramDefinition o-- ICommand
+  class ExecutionError {
+    <<enum>>
+    EmptyProgram
+    EmptyRepeat
+    Obstacle
+    OutOfBounds
+    StepLimitExceeded
+    GoalNotReached
+    ItemsMissing
+  }
+  Command <|-- MoveCommand
+  Command <|-- RepeatCommand
+  RepeatCommand o-- Command
+  ProgramDefinition o-- Command
   Interpreter --> ProgramDefinition
   Interpreter --> Grid
-  Interpreter --> Person
+  Interpreter --> Person : erzeugt
   Interpreter --> ExecutionStep
+  ExecutionStep --> ExecutionState
+  ExecutionStep --> ExecutionError
   Person --> MoveResult
   Grid --> Position
-  Grid --> ObstacleKind
-  LevelDefinition --> Grid : erzeugt
+  Grid --> LevelObstacle
+  Grid --> LevelItem
+  LevelObstacle --> ObstacleKind
+  LevelItem --> ItemKind
+  LevelDefinition --> Grid : ToGrid()
 ```
+
+`Command` ist eine geschlossene Hierarchie: Der Konstruktor ist `private protected`, ausserhalb der Game-Assembly kann niemand weitere Unterklassen ableiten. Der Interpreter muss deshalb nur `MoveCommand` und `RepeatCommand` kennen. `RepeatCommand` und `ProgramDefinition` prüfen ihre Grenzen im Konstruktor und kopieren die übergebene Liste.
+
+`LevelDefinition` ist reine Daten (wie im JSON) und wird nicht beim Erstellen geprüft. `LevelValidator.Validate` liefert alle Regelverletzungen als Werte. `LevelJson.Read` verbindet Parsen und Validieren und gibt ein `LevelReadResult` zurück, nie eine Exception. `Grid` und `LevelDefinition.ToGrid()` werfen bei ungültigen Daten dagegen eine Exception (Schutznetz gegen Programmierfehler).
+
+**Semantik von `StepNumber`:**
+
+- Bei `Obstacle`, `OutOfBounds` und `StepLimitExceeded` ist es die Nummer des versuchten Zuges (ausgeführte Züge + 1). Sie passt damit zur hervorgehobenen `CommandId`.
+- In allen anderen Fällen ist es die Nummer des zuletzt ausgeführten Zuges.
+- Bei `EmptyProgram` und `EmptyRepeat` ist es 0.
+
+Der Schritt des letzten Zuges trägt bereits den Endzustand (`Succeeded`, oder `Failed` mit `GoalNotReached` bzw. `ItemsMissing`). Es gibt keinen zusätzlichen «Programm zu Ende»-Schritt. Weitere `Step()`-Aufrufe nach einem Endzustand liefern denselben End-Schritt.
 
 ### 4.3 MAUI-Bereitschaft (Plattform-Abstraktion)
 
@@ -270,6 +339,8 @@ sequenceDiagram
 | 2a | Oberfläche in Razor Class Libraries, Hosts nur zum Starten | Gleiche Komponenten im Browser und später in MAUI | Komponenten direkt im Web-Projekt |
 | 2b | Abhängigkeitsregeln als automatischer Test (`HeroPath.ArchitectureTests`, liest DLL-Metadaten) | Grenzen bleiben auch bei KI-generiertem Code eingehalten | Nur Code-Review; NetArchTest-Paket |
 | 3 | Ein Interpreter für Play und Debug | Weniger Code, gleiches Verhalten | Zwei getrennte Ausführungswege |
+| 3a | Geschlossene Befehlshierarchie: abstrakte Klasse `Command` mit `private protected`-Konstruktor, nur `MoveCommand` und `RepeatCommand` | Der Interpreter kennt alle Fälle, kein unbekannter Befehlstyp von aussen. Gemeinsame `Id` in der Basisklasse | Interface `ICommand` (ursprünglicher Entwurf in §4.2): offen für beliebige Implementierungen, der Interpreter bräuchte einen Fallback für unbekannte Typen |
+| 3b | `Person` hält nur die `Position`, ohne Name und Avatar. Der `Interpreter` erzeugt die `Person` selbst auf `Grid.Start` | Datenschutz: Der Heldenname gelangt nie in die Domain (Logs, `ToString()`, Exceptions). Name und Avatar sind UI-Zustand. Der Held beginnt immer auf dem Start | `Person` mit `Name` und `Avatar` und `Interpreter(program, grid, person)` wie im ursprünglichen §4.2 |
 | 4 | Native HTML5 Drag & Drop in eigener Komponente, dazu Klick-zum-Hinzufügen | Keine Abhängigkeit, Maus genügt heute, Klick funktioniert auch auf Touch | SortableJS-Wrapper, MudBlazor DropZone, Blockly, Pointer Events |
 | 5 | Raster mit CSS Grid, Figuren und Items als SVG | Einfach, skalierbar, Animation mit CSS-Transitions | Canvas |
 | 6 | Fluent UI nur für Dialoge, Auswahl, Slider, Buttons | Bekannt, wenig Aufwand, eigenes verspieltes Styling darüber | Reines eigenes CSS |

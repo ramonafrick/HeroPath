@@ -17,7 +17,7 @@ src/
   Modules/
     Levels/
       HeroPath.Modules.Levels/       pure C#: Domain/ (Position, Grid, ObstacleKind, ItemKind, LevelDefinition, LevelLimits)
-                                               Application/ (LevelValidator, ILevelSource, LevelRepository)
+                                               Application/ (LevelValidator, LevelReadResult, ILevelSource, LevelRepository)
                                                Infrastructure/ (embedded Levels/*.json, JSON context, storage-backed source)
       HeroPath.Modules.Levels.UI/    RCL: board view, LevelPicker, LevelEditor, LevelsModuleExtensions, Resources/
     Game/
