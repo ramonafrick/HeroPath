@@ -1,67 +1,74 @@
 # HeroPath
 
-Browser-Lern-App (Blazor WebAssembly, .NET 10) für Kinder von 11 bis 13 Jahren: Mit Bausteinen wird ein Held über ein Spielfeld zur Burg programmiert.
+Browser learning app (Blazor WebAssembly, .NET 10) for children aged 11 to 13: they program a hero across a board to the castle using blocks.
 
-## Zuerst lesen
+## Read first
 
-1. `docs/Architektur C4.md`: Module, Komponenten, MAUI-Regeln (§4.3), Entscheidungen
-2. `docs/Projektidee.md`: Spielablauf, Bausteine, Meldungen, Level
-3. `docs/Projekt_Kontext.md`: Entscheidungen, MoSCoW, Grenzwerte, Konventionen, Meilensteine
+1. `docs/Architektur C4.md`: modules, components, MAUI rules (§4.3), decisions
+2. `docs/Projektidee.md`: gameplay, blocks, messages, levels
+3. `docs/Projekt_Kontext.md`: decisions, MoSCoW, limits, conventions, milestones
 
-Die Docs beschreiben die Zielarchitektur. Was davon schon umgesetzt ist, zeigt nur der Code in `src/` und `tests/`.
+The docs describe the target architecture. Only the code in `src/` and `tests/` shows what is already implemented.
 
-## Aufbau
+## Structure
 
-Modulare Clean Architecture, Details im Skill `architecture`:
+Modular Clean Architecture, details in the `architecture` skill:
 
 ```
-src/Shared/          HeroPath.Shared (Verträge) + HeroPath.Shared.UI (Layout, Theme, Grafiken, Sprache)
+src/Shared/          HeroPath.Shared (contracts) + HeroPath.Shared.UI (layout, theme, graphics, language)
 src/Modules/Levels/  HeroPath.Modules.Levels (Domain/Application/Infrastructure) + .UI
 src/Modules/Game/    HeroPath.Modules.Game  (Domain/Application) + .UI
-src/Hosts/           HeroPath.Web (heute), HeroPath.Maui (später, nicht anlegen)
+src/Hosts/           HeroPath.Web (today), HeroPath.Maui (later, do not create)
 ```
 
-Die Abhängigkeitsrichtung ist `Shared ← Levels ← Game`, für `.UI` gleich. Reine Projekte haben kein Blazor. `tests/HeroPath.ArchitectureTests` prüft das.
+Dependencies point `Shared ← Levels ← Game`, the same for `.UI`. Pure projects have no Blazor. `tests/HeroPath.ArchitectureTests` enforces this.
 
-## Befehle
+## Commands
 
 ```bash
 dotnet build HeroPath.slnx
-dotnet test --solution HeroPath.slnx                       # Unit-, bUnit- und Architekturtests (E2E werden übersprungen)
-HEROPATH_E2E=1 dotnet test --project tests/HeroPath.E2E    # Playwright E2E + Screenshots in artifacts/screenshots
+dotnet test --solution HeroPath.slnx                       # unit, bUnit and architecture tests (E2E are skipped)
+HEROPATH_E2E=1 dotnet test --project tests/HeroPath.E2E    # Playwright E2E + screenshots in artifacts/screenshots
 dotnet format HeroPath.slnx --verify-no-changes
 dotnet watch --project src/Hosts/HeroPath.Web
 dotnet publish src/Hosts/HeroPath.Web -c Release
 ```
 
-## Wichtigste Regeln
+## Key rules
 
-- Spielregeln nur im `Domain`-Ordner des zuständigen Moduls. Zu jeder Logikänderung gehört ein xUnit-Test, zu jedem sichtbaren Ablauf ein E2E-Test.
-- Keine Plattformzugriffe in Komponenten (`localStorage`, `window`), nur über `IAppStorage`.
-- Benutzertexte nur über resx, immer DE (Schweizer Rechtschreibung, kein «ß») und EN.
-- Drag & Drop immer mit Klick-Alternative.
-- Der Heldenname wird nie gespeichert oder geloggt.
-- Keine CDNs, keine fremden Grafiken, Texte oder Code-Auszüge.
-- Code und Bezeichner auf Englisch, Doku auf Deutsch.
-- Entwurfsentscheidungen mit Alternativen kurz erklären, bevor sie umgesetzt werden.
+- Game rules live only in the `Domain` folder of the owning module. Every logic change needs an xUnit test, every visible flow an E2E test.
+- No platform access in components (`localStorage`, `window`), only through `IAppStorage`.
+- User-facing texts only via resx, always DE (Swiss spelling, no «ß») and EN.
+- Drag & drop always has a click alternative.
+- The hero's name is never stored or logged.
+- No CDNs, no third-party graphics, texts or code excerpts.
+- Language: code, identifiers, `CLAUDE.md` and everything in `.claude/` (skills, agents) in English. Project documentation in `docs/` in German. German is fine inside these files only where it is product content, e.g. quoted UI texts or the German template for `docs/`.
+- Skills and agents in `.claude/` are part of the code. If a commit changes something a skill or agent describes (types, rules, limits, commands, workflows), update the description in the same commit. `ClaudeWorkflowTests` checks that every public type of the Levels and Game modules is named in `game-rules`, and that skill names, agent names and the skill table below match.
 
-## Bekannte Stolpersteine
+## Working style: research, don't assume
 
-- Windows Application Control kann frisch gebaute DLLs beim Laden blockieren («An Application Control policy has blocked this file»). Tests, die Assemblies untersuchen, lesen deshalb Metadaten statt `Assembly.Load`.
-- Ein Testprojekt ohne Test lässt `dotnet test` fehlschlagen (MTP Exit-Code 8).
-- Überflüssige `using`s sind Build-Fehler (IDE0005).
+- Do not make assumptions. If something is not settled by the request, the code or `docs/`, research it before acting: the code, `docs/`, the git history, and official sources (Microsoft Learn, .NET/Blazor/Playwright docs, Claude Code docs).
+- Name the sources: file paths with line numbers, URLs, doc sections. Mark anything that could not be verified as unverified.
+- Make proposals instead of silently deciding: for each design decision, show the options with pros and cons and a recommendation, then implement after approval.
+- If research leaves the question open, say what was checked and ask, instead of guessing.
+
+## Known pitfalls
+
+- Windows Application Control can block freshly built DLLs on load («An Application Control policy has blocked this file»). Tests that inspect assemblies therefore read metadata instead of calling `Assembly.Load`.
+- A test project without tests makes `dotnet test` fail (MTP exit code 8).
+- Unnecessary `using`s are build errors (IDE0005).
 
 ## Skills
 
-| Skill | Wofür |
+| Skill | Purpose |
 |---|---|
-| `architecture` | Module, Abhängigkeitsregeln, wo neuer Code hingehört |
-| `dotnet10` | C#-Konventionen, Solution, Pakete, Tests, CLI |
-| `game-rules` | Interpreter, Bewegung, Fehler, Level-JSON |
-| `blazor-ui` | Komponenten, Services, Drag & Drop, bUnit |
-| `localization` | Texte, resx pro Modul, Sprachwechsel, Tonalität |
-| `level-design` | Standard-Levels, Lösbarkeits-Test |
-| `svg-assets` | Eigene SVG-Grafiken |
-| `e2e-playwright` | E2E-Tests, Screenshots für den visuellen Check |
-| `release` | CI, GitHub Pages, ZIP für Büro-Laptops |
-| `grill-me` / `orchestrate` | Anforderungen klären / kompletter Feature-Workflow inkl. visuellem Check |
+| `architecture` | Modules, dependency rules, where new code belongs |
+| `dotnet10` | C# conventions, solution, packages, tests, CLI |
+| `game-rules` | Interpreter, movement, errors, level JSON |
+| `blazor-ui` | Components, services, drag & drop, bUnit |
+| `localization` | Texts, resx per module, language switching, tone |
+| `level-design` | Standard levels, solvability test |
+| `svg-assets` | Own SVG graphics |
+| `e2e-playwright` | E2E tests, screenshots for the visual check |
+| `release` | CI, GitHub Pages, ZIP for office laptops |
+| `grill-me` / `orchestrate` | Clarify requirements / full feature workflow incl. visual check |

@@ -13,119 +13,123 @@ disable-model-invocation: true
 
 # Orchestrator: Full Development Workflow
 
-Aufgabe/Feature: $ARGUMENTS
+Task/feature: $ARGUMENTS
 
-Führe die 9 Phasen in Reihenfolge aus. Delegierte Phasen dürfen den Kontext isolieren. Verwende nur verfügbare Agenten und bestätige keine Modell- oder Tool-Fähigkeiten, die in der aktuellen Umgebung nicht existieren. Phasen, die nicht delegiert werden (1, 8, 9, alle HITL-Gates), laufen im aktuellen Sitzungsmodell.
+Run the 9 phases in order. Delegated phases may isolate context. Use only agents that are available, and do not claim model or tool capabilities that do not exist in the current environment. Phases that are not delegated (1, 8, 9, all HITL gates) run in the current session model.
 
-| Phase | Name | Modell | Wie |
+| Phase | Name | Model | How |
 |---|---|---|---|
-| 1 | Clarify | Sitzungsmodell | `grill-me` Skill, inline (braucht AskUserQuestion) |
-| — | **HITL-Gate** | — | AskUserQuestion: requirements.md freigeben? |
-| 2 | Plan | Sitzungsmodell oder verfügbarer Plan-Agent | Module und vertikale Slices |
-| — | **HITL-Gate** | — | AskUserQuestion: plan.md freigeben, welcher Slice zuerst? |
-| 3+4 | Implement + Build (pro Slice, Loop) | Sonnet / Haiku | Agent `implementer` → Agent `build-fixer` |
-| 5 | Verify (E2E + Visual) | Sonnet | Agent `visual-checker` (nur wenn sichtbare UI geändert wurde) |
-| 6 | Review | Sonnet | Agent `code-reviewer` + Agent `security-reviewer` parallel |
-| 7 | Documentation | Sonnet | Agent `docs-writer` |
-| 8 | Long-Term Memory | Sitzungsmodell | inline, aktualisiert Projekt-`.claude/` |
-| 9 | Size/SRP-Audit | Sitzungsmodell | inline |
+| 1 | Clarify | session model | `grill-me` skill, inline (needs AskUserQuestion) |
+| — | **HITL gate** | — | AskUserQuestion: approve requirements.md? |
+| 2 | Plan | session model or an available Plan agent | modules and vertical slices |
+| — | **HITL gate** | — | AskUserQuestion: approve plan.md, which slice first? |
+| 3+4 | Implement + Build (per slice, loop) | Sonnet / Haiku | agent `implementer` → agent `build-fixer` |
+| 5 | Verify (E2E + visual) | Sonnet | agent `visual-checker` (only if visible UI changed) |
+| 6 | Review | Sonnet | agents `code-reviewer` + `security-reviewer` in parallel |
+| 7 | Documentation | Sonnet | agent `docs-writer` |
+| 8 | Long-term memory | session model | inline, updates the project's `.claude/` |
+| 9 | Size/SRP audit | session model | inline |
 
-Vor dem Start: Ermittle aus dem `architecture`-Skill und dem Repository, welche Projekte betroffen sind (`Shared`, `Modules.Levels`, `Modules.Game`, jeweils mit `.UI`, `Hosts/HeroPath.Web`). Frage nur nach Host- oder Scope-Entscheidungen, die sich nicht aus der Anfrage ableiten lassen. Eine MAUI-App ist kein bestehender Host und darf nicht stillschweigend als Voraussetzung angenommen werden.
+Before starting: determine from the `architecture` skill and the repository which projects are affected (`Shared`, `Modules.Levels`, `Modules.Game`, each with `.UI`, `Hosts/HeroPath.Web`). Ask only about host or scope decisions that cannot be derived from the request. A MAUI app is not an existing host and must not silently be taken as a prerequisite.
 
-Projekt-Skills (in Phase 2 im Plan pro Slice nennen, die Agents laden sie über ihr `skills:`-Frontmatter): `architecture` (Module, Abhängigkeiten), `dotnet10` (C#/Solution), `game-rules` (Spielregeln), `blazor-ui` (Komponenten), `localization` (Texte), `level-design` (Levels), `svg-assets` (Grafiken), `e2e-playwright` (E2E/Screenshots), `release` (CI/Deployment).
+Project skills (name them per slice in the phase 2 plan; the agents load them through their `skills:` frontmatter): `architecture` (modules, dependencies), `dotnet10` (C#/solution), `game-rules` (game rules), `blazor-ui` (components), `localization` (texts), `level-design` (levels), `svg-assets` (graphics), `e2e-playwright` (E2E/screenshots), `release` (CI/deployment).
 
 ---
 
 ## PHASE 1: Clarify
 
-Folge dem `grill-me`-Skill für `$ARGUMENTS` (7 Bereiche, `AskUserQuestion`, max. 2 Fragen pro Runde). Ergebnis: `docs/requirements.md`.
+Follow the `grill-me` skill for `$ARGUMENTS` (7 areas, `AskUserQuestion`, max. 2 questions per round). Result: `docs/requirements.md`.
 
-**STOPP**: Zeige `docs/requirements.md` und frage per `AskUserQuestion` explizit: freigeben und weiter zu Phase 2, oder Änderungen? Ohne explizite Freigabe nicht weitermachen.
-
----
-
-## PHASE 2: Plan (Vertical Slices)
-
-Erstelle einen Plan im aktuellen Kontext oder verwende einen verfügbaren Plan-Agenten. Gib `docs/requirements.md`, die Projektunterlagen und den `architecture`-Skill mit.
-
-Was ein guter Slice ist: Er schneidet durch die tatsächlich betroffenen Projekte (Domain → Application → UI → Host-Registrierung), ist ohne den nächsten Slice testbar und bleibt klein genug, um überprüfbar zu sein. Er respektiert die Abhängigkeitsregeln (`Shared ← Levels ← Game`). Ein neues Modul nur nach den Kriterien im `architecture`-Skill.
-
-Ergebnis: `docs/plan.md` mit Modul-Überblick und pro Slice: Name, Ziel, Projekte/Dateien, Tests (xUnit/bUnit/**E2E-Flow mit Screenshot-Namen**, falls sichtbar), Akzeptanz, Abhängigkeiten. Dazu die Build- und Testbefehle aus dem Repository.
-
-**STOPP**: Zeige die Slice-Tabelle und frage per `AskUserQuestion`: freigeben, und welcher Slice zuerst?
+**STOP**: Show `docs/requirements.md` and ask explicitly via `AskUserQuestion`: approve and continue to phase 2, or changes? Do not continue without explicit approval.
 
 ---
 
-## PHASE 3+4: Implement → Build (Loop pro Slice)
+## PHASE 2: Plan (vertical slices)
 
-Für jeden Slice, in der freigegebenen Reihenfolge:
+Create a plan in the current context or use an available Plan agent. Pass along `docs/requirements.md`, the project documents and the `architecture` skill.
 
-1. **Implement**: Agent-Tool, `subagent_type: "implementer"`. Übergib die Slice-Definition aus plan.md, den relevanten Abschnitt von requirements.md und die betroffenen Dateien. Bei sichtbaren Änderungen gehören `data-testid`-Attribute und der E2E-Test für den Flow dazu.
-2. **Build**: Agent-Tool, `subagent_type: "build-fixer"`, mit den geänderten Dateien. Er loopt intern bis grün oder 3 Versuche. Dazu gehören die ArchitectureTests. Die E2E-Tests laufen hier nicht, sie bleiben ohne `HEROPATH_E2E` übersprungen.
-3. Wenn build-fixer nach 3 Versuchen immer noch rot meldet: **STOPP**, zeige den Fehler und frage die Nutzerin. Nicht selbst weiterraten.
-4. Erstelle nur dann einen Commit, wenn die Nutzerin dies angefordert oder freigegeben hat. Sonst lasse Änderungen uncommitted.
-5. Kurzer Kontext-Reset: notiere "Slice X abgeschlossen, nächster: Y", dann weiter.
+Research before planning: for every technical choice that the requirements, code and docs do not settle, check the code, `docs/` and official sources, and record in the plan the options, a recommendation and the sources (file paths, URLs). Do not plan on assumptions; open questions go to the gate below.
 
-Erst wenn alle Slices durch sind: weiter zu Phase 5.
+A good slice cuts through the projects that are actually affected (Domain → Application → UI → host registration), is testable without the next slice and stays small enough to review. It respects the dependency rules (`Shared ← Levels ← Game`). A new module only according to the criteria in the `architecture` skill.
 
----
+Result: `docs/plan.md` with a module overview and per slice: name, goal, projects/files, tests (xUnit/bUnit/**E2E flow with screenshot names** if visible), acceptance, dependencies. Plus the build and test commands from the repository.
 
-## PHASE 5: Verify (E2E + Visual Check)
-
-Nur wenn ein Slice sichtbare UI geändert hat (Razor, CSS, SVG, resx). Sonst überspringen und das im Abschluss erwähnen.
-
-1. Agent-Tool, `subagent_type: "visual-checker"`. Übergib die Akzeptanzkriterien und die geänderten Komponenten. Er führt `HEROPATH_E2E=1 dotnet test --project tests/HeroPath.E2E` aus und liest alle Screenshots, normal und in Graustufen, jeweils auf Deutsch und Englisch.
-2. Schlägt ein E2E-Test fehl, ist das ein [MUST]-Finding. Wenn die Ursache eindeutig im Code liegt, gib es zuerst an `build-fixer` mit der Fehlermeldung.
-3. Die Findings des visuellen Checks werden **nicht** sofort umgesetzt, sondern gehen gesammelt in die Auswahl von Phase 6.
-4. Meldet der Checker Lücken (Komponente ohne Screenshot), nimm sie als [SHOULD]-Finding auf.
+**STOP**: Show the slice table and the open decisions with their options and sources, and ask via `AskUserQuestion`: approve, and which slice first?
 
 ---
 
-## PHASE 6: Review (Quality + Security + Visual, max. 3 Runden)
+## PHASE 3+4: Implement → Build (loop per slice)
 
-Runde 1 von maximal 3:
+For each slice, in the approved order:
 
-1. Dispatch parallel: Agent `code-reviewer` (Vereinfachung, Konsistenz, Modulgrenzen) und Agent `security-reviewer` (Security/SAST, inkl. Datenschutz Minderjähriger) auf alle in Phase 3+4 geänderten Dateien.
-2. Führe die Findings von code-reviewer, security-reviewer und visual-checker (Phase 5) in einer Liste zusammen, sortiert nach Schwere ([MUST]/🔴 zuerst). Bei jedem Finding steht die Quelle.
-3. `AskUserQuestion` (multiSelect): liste jedes Finding als Option (Schwere, Quelle, Kurzbeschreibung). Die Nutzerin wählt aus, welche jetzt umgesetzt werden.
-4. Setze die ausgewählten Findings um.
-5. Zurück zu **Phase 4** (build-fixer) auf die geänderten Dateien. Wurden visuelle Findings umgesetzt: danach **Phase 5** erneut, damit die Korrektur auf den Screenshots belegt ist.
-6. Wenn nach dieser Runde noch offene Findings da sind: weiter zu Phase 7 und sie als bekannte Einschränkung notieren.
-7. Weitere Runden sind möglich, aber **nie mehr als 3 insgesamt**.
+1. **Implement**: Agent tool, `subagent_type: "implementer"`. Pass the slice definition from plan.md, the relevant section of requirements.md and the affected files. For visible changes this includes `data-testid` attributes and the E2E test for the flow.
+2. **Build**: Agent tool, `subagent_type: "build-fixer"`, with the changed files. It loops internally until green or 3 attempts. This includes the ArchitectureTests (and with them `ClaudeWorkflowTests`). The E2E tests do not run here; without `HEROPATH_E2E` they stay skipped.
+3. If build-fixer still reports red after 3 attempts: **STOP**, show the error and ask the user. Do not keep guessing.
+4. Commit only if the user asked for it or approved it. Otherwise leave changes uncommitted.
+5. Short context reset: note "Slice X done, next: Y", then continue.
+
+Only when all slices are done: continue to phase 5.
+
+---
+
+## PHASE 5: Verify (E2E + visual check)
+
+Only if a slice changed visible UI (Razor, CSS, SVG, resx). Otherwise skip and mention it in the wrap-up.
+
+1. Agent tool, `subagent_type: "visual-checker"`. Pass the acceptance criteria and the changed components. It runs `HEROPATH_E2E=1 dotnet test --project tests/HeroPath.E2E` and reads all screenshots, normal and greyscale, each in German and English.
+2. A failing E2E test is a [MUST] finding. If the cause is clearly in the code, hand it to `build-fixer` first with the error message.
+3. Findings from the visual check are **not** fixed immediately; they go into the selection in phase 6.
+4. If the checker reports gaps (component without screenshot), add them as [SHOULD] findings.
+
+---
+
+## PHASE 6: Review (quality + security + visual, max. 3 rounds)
+
+Round 1 of at most 3:
+
+1. Dispatch in parallel: agent `code-reviewer` (simplification, consistency, module boundaries) and agent `security-reviewer` (security/SAST, incl. privacy of minors) on all files changed in phases 3+4.
+2. Merge the findings of code-reviewer, security-reviewer and visual-checker (phase 5) into one list, sorted by severity ([MUST]/🔴 first). Each finding states its source.
+3. `AskUserQuestion` (multiSelect): list each finding as an option (severity, source, short description). The user picks which ones to fix now.
+4. Fix the selected findings.
+5. Back to **phase 4** (build-fixer) on the changed files. If visual findings were fixed: run **phase 5** again afterwards so the fix is proven on the screenshots.
+6. If findings remain open after this round: continue to phase 7 and record them as known limitations.
+7. More rounds are possible, but **never more than 3 in total**.
 
 ---
 
 ## PHASE 7: Documentation
 
-Verwende `docs-writer` oder dokumentiere direkt: übergib den Plan (falls vorhanden), die implementierten Dateien und nicht adressierte Findings. Dokumentiere nur tatsächlich implementiertes Verhalten. Ändere README nur bei Auswirkungen auf Setup, Nutzung oder öffentliche Befehle. Kommt ein neues Modul dazu, wird die Modultabelle in `docs/Architektur C4.md` nachgeführt.
+Use `docs-writer` or document directly: pass the plan (if any), the implemented files and findings that were not addressed. Document only behaviour that is actually implemented. Change the README only if setup, usage or public commands are affected. If a new module was added, update the module table in `docs/Architektur C4.md`.
 
 ---
 
-## PHASE 8: Long-Term Memory (Projekt, nicht persönliche Cross-Session-Memory)
+## PHASE 8: Long-term memory (project, not personal cross-session memory)
 
-Aktualisiere Projektanweisungen nur dann, wenn sich während der Arbeit eine dauerhafte Konvention oder ein belegter Gotcha ergeben hat. Das betrifft vorhandene `.claude/`-Dateien oder `CLAUDE.md`. Lege keine Langzeitnotizen ausserhalb des Repositories an.
+Update project guidance only if the work produced a lasting convention or a proven gotcha. This concerns existing `.claude/` files or `CLAUDE.md`, always written in English. Do not create long-term notes outside the repository.
 
-1. Vergleiche neue, belegte Erkenntnisse mit vorhandenen Projektanweisungen und Skills.
-2. Aktualisiere nur, was sich tatsächlich geändert oder erweitert hat: neue Gotchas, neue Konventionen, neue Module/Komponenten/Dateien, geänderte Commands, neue `data-testid`-Konventionen.
-3. Nichts hinzufügen, was schon aus Code oder Git-History ableitbar ist.
-
----
-
-## PHASE 9: Size/SRP-Audit
-
-Für jede in Phase 8 berührte oder neu erstellte Datei unter `.claude/`:
-
-- **SKILL.md-Body**: Ziel < 500 Zeilen. Über dem Limit in `references/*.md` aufteilen und aus SKILL.md eine Ebene tief verlinken. Referenzdateien mit mehr als 100 Zeilen bekommen ein Inhaltsverzeichnis.
-- **Projektanweisungen**: knapp und thematisch fokussiert halten. Nur bei tatsächlichem Umfangsbedarf aufteilen.
-- SRP-Check: Enthält eine Datei mehrere unabhängige Themen? Dann nach Domäne aufteilen.
+1. Compare new, proven findings with the existing project guidance and skills.
+2. Update only what actually changed or grew: new gotchas, new conventions, new modules/components/files, changed commands, new `data-testid` conventions. Skills must describe every new public type of the Levels and Game modules (`ClaudeWorkflowTests`).
+3. Add nothing that can already be derived from the code or the git history.
 
 ---
 
-## Regeln
+## PHASE 9: Size/SRP audit
 
-- Niemals einen Slice beginnen, wenn der Build vorheriger Arbeit noch rot ist.
-- Review (Phase 6) und Tests (Teil von Phase 3) nie überspringen. Verify (Phase 5) nur überspringen, wenn keine sichtbare UI geändert wurde.
-- HITL-Gates sind turn-basiert: Nach dem Stopp endet die Antwort, es geht erst in einer neuen Nutzer-Nachricht weiter. Schweigen oder Themenwechsel zählt nicht als Freigabe.
-- Nach 2 gescheiterten Korrekturversuchen am selben Problem: nicht weiter raten, Nutzerin einbeziehen.
-- Verwende Delegation nur, wenn passende Agenten tatsächlich verfügbar und für die Aufgabe sinnvoll sind.
-- Behandle vorgeschlagene oder zukünftige Architektur (z. B. MAUI) nicht als implementierten Projektbestand.
+For each file under `.claude/` touched or created in phase 8:
+
+- **SKILL.md body**: target < 500 lines. Above the limit, split into `references/*.md` and link them one level deep from SKILL.md. Reference files over 100 lines get a table of contents.
+- **Project guidance**: keep it concise and focused on its topic. Split only when the size really requires it.
+- SRP check: does a file contain several unrelated topics? Then split it by domain.
+- Language check: the file is in English (German only for quoted product texts).
+
+---
+
+## Rules
+
+- Never start a slice while the build from previous work is still red.
+- Never skip review (phase 6) or tests (part of phase 3). Skip verify (phase 5) only if no visible UI changed.
+- HITL gates are turn-based: after the stop the answer ends, and work continues only with a new user message. Silence or a change of topic does not count as approval.
+- No assumptions: research first (code, `docs/`, official sources), cite the sources, and present options with a recommendation instead of deciding silently.
+- After 2 failed fix attempts on the same problem: stop guessing and involve the user.
+- Use delegation only if suitable agents are actually available and useful for the task.
+- Do not treat proposed or future architecture (e.g. MAUI) as implemented project state.
