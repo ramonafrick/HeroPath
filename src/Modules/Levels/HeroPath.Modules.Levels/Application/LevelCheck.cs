@@ -8,7 +8,9 @@ public static class LevelCheck
     public static LevelCheckResult Evaluate(LevelDefinition level) => Evaluate(level, LevelLimits.MaxSteps);
 
     /// <summary>Same check with a custom step limit (the standard limit is practically out of reach on a 20x20 board, so tests lower it).</summary>
-    public static LevelCheckResult Evaluate(LevelDefinition level, int maxSteps)
+    public static LevelCheckResult Evaluate(LevelDefinition level, int maxSteps) => Evaluate(level, maxSteps, Solve);
+
+    internal static LevelCheckResult Evaluate(LevelDefinition level, int maxSteps, Func<Grid, SolverOutcome> solve)
     {
         ArgumentNullException.ThrowIfNull(level);
         var errors = LevelValidator.Validate(level);
@@ -17,15 +19,22 @@ public static class LevelCheck
             return new(errors, LevelCheckStatus.Invalid, null);
         }
 
-        var grid = level.ToGrid();
-        var steps = LevelSolver.ShortestSolution(grid);
-        var status = steps switch
+        var outcome = solve(level.ToGrid());
+        var status = outcome.Steps switch
         {
-            null when !LevelSolver.CanReachGoal(grid) => LevelCheckStatus.GoalUnreachable,
+            null when !outcome.GoalReachable => LevelCheckStatus.GoalUnreachable,
             null => LevelCheckStatus.StrawberriesUnreachable,
             { } count when count > maxSteps => LevelCheckStatus.TooManySteps,
             _ => LevelCheckStatus.Valid,
         };
-        return new(errors, status, steps);
+        return new(errors, status, outcome.Steps);
     }
+
+    internal static SolverOutcome Solve(Grid grid)
+    {
+        var steps = LevelSolver.ShortestSolution(grid);
+        return new(steps, steps is not null || LevelSolver.CanReachGoal(grid));
+    }
+
+    internal readonly record struct SolverOutcome(int? Steps, bool GoalReachable);
 }

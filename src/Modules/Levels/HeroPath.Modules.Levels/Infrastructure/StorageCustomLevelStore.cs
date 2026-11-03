@@ -30,6 +30,7 @@ public sealed class StorageCustomLevelStore(IAppStorage storage) : ICustomLevelS
     private static List<LevelDefinition> Parse(string? json)
     {
         List<LevelDefinition> levels = [];
+        // The +1 leaves room for the array brackets and the commas between the elements.
         if (string.IsNullOrWhiteSpace(json) || json.Length > (LevelLimits.MaxCustomLevels + 1) * LevelJson.MaxJsonLength)
         {
             return levels;

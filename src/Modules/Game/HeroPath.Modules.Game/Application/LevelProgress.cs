@@ -12,27 +12,28 @@ namespace HeroPath.Modules.Game.Application;
 public sealed class LevelProgress
 {
     private readonly LevelRepository _repository;
-    private readonly HashSet<string> _solved = [];
+    private readonly Dictionary<string, Grid?> _solved = [];
 
     public LevelProgress(LevelRepository repository)
     {
         ArgumentNullException.ThrowIfNull(repository);
         _repository = repository;
+        repository.Changed += ForgetChangedLevels;
     }
 
-    /// <summary>Raised after a level was marked solved for the first time.</summary>
+    /// <summary>Raised after a level was marked solved for the first time, or after a solved custom level was edited or deleted and so lost its tick.</summary>
     public event Action? Changed;
 
     /// <summary>All playable levels in order: standard levels, then custom levels.</summary>
     public IReadOnlyList<LevelDefinition> Levels => _repository.All;
 
     /// <summary>Whether every standard level is solved (false when there are none). Custom levels do not count.</summary>
-    public bool AllSolved => _repository.Standard.Count > 0 && _repository.Standard.All(level => _solved.Contains(level.Id));
+    public bool AllSolved => _repository.Standard.Count > 0 && _repository.Standard.All(level => _solved.ContainsKey(level.Id));
 
     /// <summary>The level with <paramref name="id"/> (standard or custom), or <see langword="null"/> when there is none.</summary>
     public LevelDefinition? Find(string id) => _repository.Find(id);
 
-    public bool IsSolved(string id) => _solved.Contains(id);
+    public bool IsSolved(string id) => _solved.ContainsKey(id);
 
     /// <summary>The standard level after <paramref name="id"/>, or <see langword="null"/> for the last standard level, a custom level or an unknown id.</summary>
     public LevelDefinition? NextAfter(string id)
@@ -52,7 +53,28 @@ public sealed class LevelProgress
     /// <summary>Marks a level solved. Unknown ids and repeated calls change nothing and raise no event.</summary>
     public void MarkSolved(string id)
     {
-        if (Find(id) is not null && _solved.Add(id))
+        if (Find(id) is { } level && !_solved.ContainsKey(id))
+        {
+            _solved[id] = _repository.IsCustom(id) ? level.ToGrid() : null;
+            Changed?.Invoke();
+        }
+    }
+
+    /// <summary>A tick belongs to the solved board: a custom level that was deleted or saved with another grid is no longer solved. A rename keeps it.</summary>
+    private void ForgetChangedLevels()
+    {
+        var forgotten = false;
+        foreach (var (id, solvedGrid) in _solved.ToList())
+        {
+            var level = _repository.Find(id);
+            if (level is null || (solvedGrid is not null && !solvedGrid.Equals(level.ToGrid())))
+            {
+                _solved.Remove(id);
+                forgotten = true;
+            }
+        }
+
+        if (forgotten)
         {
             Changed?.Invoke();
         }

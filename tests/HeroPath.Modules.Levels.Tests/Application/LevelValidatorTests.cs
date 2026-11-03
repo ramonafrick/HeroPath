@@ -70,7 +70,7 @@ public class LevelValidatorTests
     public static TheoryData<string> ValidNames => ["Mein Level", "a", "Hällo «Welt»", new string('x', LevelLimits.MaxNameLength)];
 
     public static TheoryData<string> InvalidNames =>
-        ["", " ", "   \t", "tab\there", "line\nbreak", "bell\a", new string('x', LevelLimits.MaxNameLength + 1)];
+        ["", " ", "   \t", "tab\there", "line\nbreak", "bell\a", "evil\u202Elevel", "zero\u200Bwidth", "bom\uFEFFname", "line\u2028sep", "para\u2029sep", new string('x', LevelLimits.MaxNameLength + 1)];
 
     [Fact]
     public void Validate_TenStrawberriesAndTenPizzas_IsValid()
@@ -158,6 +158,19 @@ public class LevelValidatorTests
     [Fact]
     public void Validate_NullId_ReportsInvalidId() =>
         AssertOnly(Valid() with { Id = null! }, LevelValidationErrorKind.InvalidId);
+
+    [Theory]
+    [InlineData("evil202Elevel202C")]
+    [InlineData("200B200Bx")]
+    [InlineData("a2028b2029c")]
+    [InlineData("\u0007  padded200F  ")]
+    public void CleanName_OfHiddenCharacters_AlwaysPassesTheValidator(string raw)
+    {
+        var name = LevelEditing.CleanName(raw);
+
+        Assert.NotEmpty(name);
+        Assert.Empty(LevelValidator.Validate(Valid() with { Name = name }));
+    }
 
     [Fact]
     public void Validate_NullName_ReturnsNoErrors() =>

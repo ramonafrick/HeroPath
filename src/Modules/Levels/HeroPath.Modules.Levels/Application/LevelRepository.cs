@@ -7,6 +7,8 @@ namespace HeroPath.Modules.Levels.Application;
 /// The standard levels plus the child's custom levels. Standard levels are fixed; custom levels are loaded once with
 /// <see cref="LoadAsync"/> and changed through <see cref="SaveAsync"/>, <see cref="DeleteAsync"/> and <see cref="ImportAsync"/>, which write
 /// the whole list to the <see cref="ICustomLevelStore"/> first and only then update the memory, so a failed write changes nothing.
+/// The three changes and the load run one after another (a gate), so overlapping calls never overwrite each other with a stale list;
+/// a change before the load first loads the stored levels. <see cref="Changed"/> is raised after the gate is released.
 /// Level lists are replaced, never modified, so a list handed out earlier stays consistent.
 /// </summary>
 public sealed class LevelRepository
@@ -16,6 +18,7 @@ public sealed class LevelRepository
     private readonly HashSet<string> _standardIds;
     private IReadOnlyList<LevelDefinition> _custom = [];
     private IReadOnlyList<LevelDefinition> _all;
+    private readonly SemaphoreSlim _gate = new(1, 1);
     private bool _loaded;
 
     /// <param name="store">Where custom levels are kept.</param>
@@ -59,30 +62,18 @@ public sealed class LevelRepository
     /// <summary>Loads the custom levels once; later calls do nothing. A failing storage means no custom levels.</summary>
     public async Task LoadAsync(CancellationToken cancellationToken)
     {
-        if (_loaded)
-        {
-            return;
-        }
-
-        IReadOnlyList<LevelDefinition> loaded;
+        var changed = false;
+        await _gate.WaitAsync(cancellationToken);
         try
         {
-            loaded = await _store.LoadAsync(cancellationToken);
+            changed = await EnsureLoadedAsync(cancellationToken);
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        finally
         {
-            loaded = [];
+            _gate.Release();
         }
 
-        if (_loaded)
-        {
-            return;
-        }
-
-        _loaded = true;
-        var seen = new HashSet<string>(_standardIds);
-        List<LevelDefinition> custom = [.. loaded.Where(level => seen.Add(level.Id))];
-        Replace(custom, raiseChanged: custom.Count > 0);
+        RaiseChanged(changed);
     }
 
     /// <summary>Saves a new custom level (appended) or overwrites the one with the same id (keeps its position).</summary>
@@ -94,37 +85,68 @@ public sealed class LevelRepository
             return SaveOutcome.Invalid;
         }
 
-        var index = IndexOf(level.Id);
-        if (index < 0 && _custom.Count >= LevelLimits.MaxCustomLevels)
+        var changed = false;
+        SaveOutcome outcome;
+        await _gate.WaitAsync(cancellationToken);
+        try
         {
-            return SaveOutcome.LimitReached;
+            changed = await EnsureLoadedAsync(cancellationToken);
+            var index = IndexOf(level.Id);
+            if (index < 0 && _custom.Count >= LevelLimits.MaxCustomLevels)
+            {
+                outcome = SaveOutcome.LimitReached;
+            }
+            else
+            {
+                List<LevelDefinition> next = [.. _custom];
+                if (index < 0)
+                {
+                    next.Add(level);
+                }
+                else
+                {
+                    next[index] = level;
+                }
+
+                var written = await WriteAsync(next, cancellationToken);
+                changed |= written;
+                outcome = written ? SaveOutcome.Saved : SaveOutcome.StorageFailed;
+            }
+        }
+        finally
+        {
+            _gate.Release();
         }
 
-        List<LevelDefinition> next = [.. _custom];
-        if (index < 0)
-        {
-            next.Add(level);
-        }
-        else
-        {
-            next[index] = level;
-        }
-
-        return await WriteAsync(next, cancellationToken) ? SaveOutcome.Saved : SaveOutcome.StorageFailed;
+        RaiseChanged(changed);
+        return outcome;
     }
 
     /// <summary>Deletes a custom level. Returns <c>false</c> for an unknown id and when the storage could not be written (the list stays).</summary>
     public async Task<bool> DeleteAsync(string id, CancellationToken cancellationToken)
     {
-        var index = IndexOf(id);
-        if (index < 0)
+        var changed = false;
+        var deleted = false;
+        await _gate.WaitAsync(cancellationToken);
+        try
         {
-            return false;
+            changed = await EnsureLoadedAsync(cancellationToken);
+            var index = IndexOf(id);
+            if (index >= 0)
+            {
+                List<LevelDefinition> next = [.. _custom];
+                next.RemoveAt(index);
+                deleted = await WriteAsync(next, cancellationToken);
+                changed |= deleted;
+            }
+        }
+        finally
+        {
+            _gate.Release();
         }
 
-        List<LevelDefinition> next = [.. _custom];
-        next.RemoveAt(index);
-        return await WriteAsync(next, cancellationToken);
+        RaiseChanged(changed);
+        return deleted;
     }
 
     /// <summary>
@@ -144,34 +166,76 @@ public sealed class LevelRepository
             return new(ImportOutcome.NotSavable);
         }
 
-        if (_custom.Count >= LevelLimits.MaxCustomLevels)
+        var changed = false;
+        ImportResult result;
+        await _gate.WaitAsync(cancellationToken);
+        try
         {
-            return new(ImportOutcome.LimitReached);
+            changed = await EnsureLoadedAsync(cancellationToken);
+            if (_custom.Count >= LevelLimits.MaxCustomLevels)
+            {
+                result = new(ImportOutcome.LimitReached);
+            }
+            else
+            {
+                var name = LevelEditing.CleanName(read.Name);
+                var level = read with
+                {
+                    Id = LevelIdGenerator.NewId(id => _standardIds.Contains(id) || IndexOf(id) >= 0),
+                    Name = name.Length > 0 ? name : NextDefaultName(defaultNameFormat),
+                };
+
+                var written = await WriteAsync([.. _custom, level], cancellationToken);
+                changed |= written;
+                result = written ? new(ImportOutcome.Imported, level) : new(ImportOutcome.StorageFailed);
+            }
+        }
+        finally
+        {
+            _gate.Release();
         }
 
-        var name = LevelEditing.CleanName(read.Name);
-        var level = read with
-        {
-            Id = LevelIdGenerator.NewId(id => _standardIds.Contains(id) || IndexOf(id) >= 0),
-            Name = name.Length > 0 ? name : NextDefaultName(defaultNameFormat),
-        };
-
-        return await WriteAsync([.. _custom, level], cancellationToken)
-            ? new(ImportOutcome.Imported, level)
-            : new(ImportOutcome.StorageFailed);
+        RaiseChanged(changed);
+        return result;
     }
 
     private int IndexOf(string id)
     {
-        for (var i = 0; i < _custom.Count; i++)
+        var custom = _custom;
+        for (var i = 0; i < custom.Count; i++)
         {
-            if (_custom[i].Id == id)
+            if (custom[i].Id == id)
             {
                 return i;
             }
         }
 
         return -1;
+    }
+
+    /// <summary>Loads once, inside the gate, so a change never writes a list that does not know the stored levels. Returns whether levels were found.</summary>
+    private async Task<bool> EnsureLoadedAsync(CancellationToken cancellationToken)
+    {
+        if (_loaded)
+        {
+            return false;
+        }
+
+        IReadOnlyList<LevelDefinition> loaded;
+        try
+        {
+            loaded = await _store.LoadAsync(cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            loaded = [];
+        }
+
+        _loaded = true;
+        var seen = new HashSet<string>(_standardIds);
+        List<LevelDefinition> custom = [.. loaded.Where(level => seen.Add(level.Id))];
+        Replace(custom);
+        return custom.Count > 0;
     }
 
     private async Task<bool> WriteAsync(List<LevelDefinition> next, CancellationToken cancellationToken)
@@ -188,17 +252,21 @@ public sealed class LevelRepository
 
         if (written)
         {
-            Replace(next, raiseChanged: true);
+            Replace(next);
         }
 
         return written;
     }
 
-    private void Replace(IReadOnlyList<LevelDefinition> custom, bool raiseChanged)
+    private void Replace(IReadOnlyList<LevelDefinition> custom)
     {
-        _custom = custom;
         _all = [.. Standard, .. custom];
-        if (raiseChanged)
+        _custom = custom;
+    }
+
+    private void RaiseChanged(bool changed)
+    {
+        if (changed)
         {
             Changed?.Invoke();
         }

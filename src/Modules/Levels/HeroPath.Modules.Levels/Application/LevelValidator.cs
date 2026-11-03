@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using HeroPath.Modules.Levels.Domain;
+using HeroPath.Shared.Application;
 
 namespace HeroPath.Modules.Levels.Application;
 
@@ -94,7 +95,7 @@ public static partial class LevelValidator
     private static bool IsValidName(string name) =>
         name.Length is >= 1 and <= LevelLimits.MaxNameLength
         && !string.IsNullOrWhiteSpace(name)
-        && !name.Any(char.IsControl);
+        && !name.Any(TextCleaner.IsHidden);
 
     [GeneratedRegex(@"^[a-z0-9-]{1,40}\z")]
     private static partial Regex IdPattern();

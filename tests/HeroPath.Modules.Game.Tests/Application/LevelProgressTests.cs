@@ -173,6 +173,72 @@ public class LevelProgressTests
         Assert.Null(progress.Find("custom-1"));
     }
 
+    [Fact]
+    public async Task Save_SolvedCustomLevelWithChangedGrid_ForgetsTheTick()
+    {
+        var (progress, repository) = await ProgressWithCustomLevelAsync();
+        progress.MarkSolved("custom-1");
+        var changes = 0;
+        progress.Changed += () => changes++;
+
+        await repository.SaveAsync(Custom("custom-1") with { Goal = new Position(4, 3) }, Xunit.TestContext.Current.CancellationToken);
+
+        Assert.False(progress.IsSolved("custom-1"));
+        Assert.Equal(1, changes);
+    }
+
+    [Fact]
+    public async Task Save_SolvedCustomLevelRenamedOnly_KeepsTheTick()
+    {
+        var (progress, repository) = await ProgressWithCustomLevelAsync();
+        progress.MarkSolved("custom-1");
+        var changes = 0;
+        progress.Changed += () => changes++;
+
+        await repository.SaveAsync(Custom("custom-1") with { Name = "Renamed" }, Xunit.TestContext.Current.CancellationToken);
+
+        Assert.True(progress.IsSolved("custom-1"));
+        Assert.Equal(0, changes);
+    }
+
+    [Fact]
+    public async Task Save_OtherLevelChanges_KeepsTheTickOfTheSolvedOne()
+    {
+        var (progress, repository) = await ProgressWithCustomLevelAsync();
+        progress.MarkSolved("custom-1");
+        progress.MarkSolved("level-a");
+
+        await repository.SaveAsync(Custom("custom-2"), Xunit.TestContext.Current.CancellationToken);
+
+        Assert.True(progress.IsSolved("custom-1"));
+        Assert.True(progress.IsSolved("level-a"));
+    }
+
+    [Fact]
+    public async Task Delete_SolvedCustomLevel_RemovesTheTick()
+    {
+        var (progress, repository) = await ProgressWithCustomLevelAsync();
+        progress.MarkSolved("custom-1");
+
+        await repository.DeleteAsync("custom-1", Xunit.TestContext.Current.CancellationToken);
+
+        Assert.False(progress.IsSolved("custom-1"));
+    }
+
+    [Fact]
+    public async Task Save_ChangedGridAfterForgetting_CanBeSolvedAgain()
+    {
+        var (progress, repository) = await ProgressWithCustomLevelAsync();
+        progress.MarkSolved("custom-1");
+        await repository.SaveAsync(Custom("custom-1") with { Goal = new Position(4, 3) }, Xunit.TestContext.Current.CancellationToken);
+
+        progress.MarkSolved("custom-1");
+
+        Assert.True(progress.IsSolved("custom-1"));
+        await repository.SaveAsync(Custom("custom-1") with { Goal = new Position(4, 3), Name = "Again" }, Xunit.TestContext.Current.CancellationToken);
+        Assert.True(progress.IsSolved("custom-1"));
+    }
+
     private static LevelDefinition Custom(string id) =>
         TestLevels.Empty(id, 5, 5, new Position(0, 0), new Position(4, 4)) with { Name = "Mine" };
 

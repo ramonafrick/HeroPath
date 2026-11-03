@@ -88,6 +88,91 @@ public class LevelSolverTests
     }
 
     [Fact]
+    public void ShortestSolution_RandomGrids_MatchesStateSpaceSearch()
+    {
+        var random = new Random(20261103);
+        for (var round = 0; round < 300; round++)
+        {
+            var width = random.Next(3, 8);
+            var height = random.Next(3, 8);
+            var start = new Position(random.Next(width), random.Next(height));
+            Position goal;
+            do
+            {
+                goal = new Position(random.Next(width), random.Next(height));
+            }
+            while (goal == start);
+
+            var taken = new HashSet<Position> { start, goal };
+            var obstacles = new List<LevelObstacle>();
+            var items = new List<LevelItem>();
+            var obstacleCount = random.Next(0, width * height / 3);
+            for (var i = 0; i < obstacleCount; i++)
+            {
+                var cell = new Position(random.Next(width), random.Next(height));
+                if (cell != goal && cell != start && taken.Add(cell))
+                {
+                    obstacles.Add(new(cell.X, cell.Y, ObstacleKind.Rock));
+                }
+            }
+
+            for (var i = random.Next(0, 5); i > 0; i--)
+            {
+                var cell = new Position(random.Next(width), random.Next(height));
+                if (cell == goal && random.Next(2) == 0)
+                {
+                    items.Add(new(cell.X, cell.Y, ItemKind.Strawberry));
+                }
+                else if (taken.Add(cell))
+                {
+                    items.Add(new(cell.X, cell.Y, random.Next(4) == 0 ? ItemKind.Pizza : ItemKind.Strawberry));
+                }
+            }
+
+            var requireAll = items.Any(item => item.Kind == ItemKind.Strawberry) && random.Next(4) != 0;
+            var grid = (Level(width, height, start, goal) with { Obstacles = obstacles, Items = items, RequireAllItems = requireAll }).ToGrid();
+
+            Assert.Equal(ReferenceSearch(grid), LevelSolver.ShortestSolution(grid));
+        }
+    }
+
+    private static int? ReferenceSearch(Grid grid)
+    {
+        var strawberries = grid.Items.Where(item => item.Kind == ItemKind.Strawberry && grid.RequireAllItems).ToList();
+        var full = (1 << strawberries.Count) - 1;
+        int MaskAt(Position position) => strawberries.FindIndex(item => item.GetPosition() == position) is var index and >= 0 ? 1 << index : 0;
+        var seen = new Dictionary<(Position, int), int> { [(grid.Start, 0)] = 0 };
+        var queue = new Queue<(Position Cell, int Mask)>();
+        queue.Enqueue((grid.Start, 0));
+        while (queue.Count > 0)
+        {
+            var (cell, mask) = queue.Dequeue();
+            var distance = seen[(cell, mask)];
+            if (cell == grid.Goal && mask == full)
+            {
+                return distance;
+            }
+
+            foreach (var (dx, dy) in new[] { (0, -1), (0, 1), (-1, 0), (1, 0) })
+            {
+                var next = new Position(cell.X + dx, cell.Y + dy);
+                if (!grid.IsInside(next) || grid.GetObstacle(next) is not null)
+                {
+                    continue;
+                }
+
+                var nextMask = mask | MaskAt(next);
+                if (seen.TryAdd((next, nextMask), distance + 1))
+                {
+                    queue.Enqueue((next, nextMask));
+                }
+            }
+        }
+
+        return null;
+    }
+
+    [Fact]
     public void ShortestSolution_NullGrid_Throws() =>
         Assert.Throws<ArgumentNullException>(() => LevelSolver.ShortestSolution(null!));
 

@@ -11,6 +11,7 @@ namespace HeroPath.Modules.Levels.Application;
 public sealed class LevelEditorState
 {
     private readonly LevelRepository _repository;
+    private readonly LevelCheckCache _checkCache = new();
     private int _generation;
 
     public LevelEditorState(LevelRepository repository)
@@ -18,7 +19,7 @@ public sealed class LevelEditorState
         ArgumentNullException.ThrowIfNull(repository);
         _repository = repository;
         Draft = LevelEditing.NewLevel(NewId(), string.Empty);
-        Check = LevelCheck.Evaluate(Draft);
+        Check = _checkCache.Evaluate(Draft);
     }
 
     /// <summary>Raised after every change of the state.</summary>
@@ -61,7 +62,7 @@ public sealed class LevelEditorState
     /// <summary>Opens a saved custom level. Returns <c>false</c> (and changes nothing) for unknown ids and standard levels.</summary>
     public bool Open(string id)
     {
-        if (id is null || !_repository.IsCustom(id) || _repository.Find(id) is not { } level)
+        if (!_repository.IsCustom(id) || _repository.Find(id) is not { } level)
         {
             return false;
         }
@@ -90,12 +91,8 @@ public sealed class LevelEditorState
     public void ClearObjects()
     {
         ClearMessages();
-        if (Draft.Obstacles.Count > 0 || Draft.Items.Count > 0 || Draft.RequireAllItems)
-        {
-            Replace(LevelEditing.ClearObjects(Draft));
-        }
-
-        Changed?.Invoke();
+        var empty = Draft.Obstacles.Count == 0 && Draft.Items.Count == 0 && !Draft.RequireAllItems;
+        Commit(empty ? Draft : LevelEditing.ClearObjects(Draft));
     }
 
     /// <summary>
@@ -137,12 +134,7 @@ public sealed class LevelEditorState
         var result = LevelEditing.Apply(Draft, Tool, position);
         ClearMessages();
         Hint = result.Hint;
-        if (!ReferenceEquals(result.Level, Draft))
-        {
-            Replace(result.Level);
-        }
-
-        Changed?.Invoke();
+        Commit(result.Level);
     }
 
     public void Resize(int width, int height)
@@ -165,25 +157,14 @@ public sealed class LevelEditorState
     {
         var name = LevelEditing.CleanName(raw);
         LastSave = null;
-        if (name != Draft.Name)
-        {
-            Replace(Draft with { Name = name });
-        }
-
-        Changed?.Invoke();
+        Commit(name != Draft.Name ? Draft with { Name = name } : Draft);
     }
 
     /// <summary>Switches «all strawberries needed». Turning it on without a strawberry does nothing.</summary>
     public void SetRequireAllItems(bool value)
     {
         ClearMessages();
-        var level = LevelEditing.SetRequireAllItems(Draft, value);
-        if (!ReferenceEquals(level, Draft))
-        {
-            Replace(level);
-        }
-
-        Changed?.Invoke();
+        Commit(LevelEditing.SetRequireAllItems(Draft, value));
     }
 
     /// <summary>
@@ -206,27 +187,26 @@ public sealed class LevelEditorState
         try
         {
             outcome = await _repository.SaveAsync(saving, cancellationToken);
+            if (generation == _generation)
+            {
+                if (outcome == SaveOutcome.Saved)
+                {
+                    EditingId = saving.Id;
+                    IsDirty = !ReferenceEquals(Draft, saving);
+                }
+
+                if (ReferenceEquals(Draft, saving))
+                {
+                    LastSave = outcome;
+                }
+            }
         }
         finally
         {
             IsSaving = false;
+            Changed?.Invoke();
         }
 
-        if (generation == _generation)
-        {
-            if (outcome == SaveOutcome.Saved)
-            {
-                EditingId = saving.Id;
-                IsDirty = !ReferenceEquals(Draft, saving);
-            }
-
-            if (ReferenceEquals(Draft, saving))
-            {
-                LastSave = outcome;
-            }
-        }
-
-        Changed?.Invoke();
         return outcome;
     }
 
@@ -238,7 +218,17 @@ public sealed class LevelEditorState
         IsDirty = false;
         IsSaving = false;
         ClearMessages();
-        Check = LevelCheck.Evaluate(level);
+        Check = _checkCache.Evaluate(level);
+        Changed?.Invoke();
+    }
+
+    private void Commit(LevelDefinition level)
+    {
+        if (!ReferenceEquals(level, Draft))
+        {
+            Replace(level);
+        }
+
         Changed?.Invoke();
     }
 
@@ -246,7 +236,7 @@ public sealed class LevelEditorState
     {
         Draft = level;
         IsDirty = true;
-        Check = LevelCheck.Evaluate(level);
+        Check = _checkCache.Evaluate(level);
     }
 
     private void ClearMessages()

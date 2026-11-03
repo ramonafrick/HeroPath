@@ -99,6 +99,17 @@ public class StorageCustomLevelStoreTests
         Assert.Equal(["custom-b"], levels.Select(l => l.Id));
     }
 
+    [Theory]
+    [InlineData("evil\u202Elevel")]
+    [InlineData("zero\u200Bwidth")]
+    [InlineData("line\u2028break")]
+    public async Task Load_NameWithHiddenCharacters_IsSkipped(string name)
+    {
+        var levels = await LoadAsync(Array(Json(CustomLevelSamples.Valid("custom-a", name)), Json(CustomLevelSamples.Valid("custom-b"))));
+
+        Assert.Equal(["custom-b"], levels.Select(l => l.Id));
+    }
+
     [Fact]
     public async Task Load_OversizedEntry_IsSkipped()
     {

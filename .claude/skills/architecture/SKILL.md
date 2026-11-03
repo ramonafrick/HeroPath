@@ -17,7 +17,7 @@ src/
   Modules/
     Levels/
       HeroPath.Modules.Levels/       pure C#: Domain/ (Position, Grid, ObstacleKind, ItemKind, LevelDefinition, LevelLimits, LevelSolver, EditorTool, LevelEditing)
-                                               Application/ (LevelValidator, LevelReadResult, LevelCheck, LevelIdGenerator, LevelRepository, SaveOutcome, LevelEditorState, ImportResult, Contracts/ICustomLevelStore)
+                                               Application/ (LevelValidator, LevelReadResult, LevelCheck (+ internal LevelCheckCache), LevelIdGenerator, LevelRepository, SaveOutcome, LevelEditorState, ImportResult, Contracts/ICustomLevelStore)
                                                Infrastructure/ (embedded Levels/*.json, JSON context, StorageCustomLevelStore)
       HeroPath.Modules.Levels.UI/    RCL: board view (GameBoard, also the clickable edit board), LevelPicker, LevelEditor (+ EditorToolbar, EditorSizeControl, EditorStatus, CustomLevelList), LevelsModuleExtensions (AddLevelsModule, LoadCustomLevelsAsync), LevelDisplayExtensions (NameOf), Resources/
     Game/

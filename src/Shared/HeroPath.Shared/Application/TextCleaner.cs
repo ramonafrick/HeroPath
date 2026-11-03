@@ -30,7 +30,8 @@ public static class TextCleaner
         return builder.ToString().Trim();
     }
 
-    private static bool IsHidden(char character) =>
+    /// <summary>Whether a character is invisible or a line break: control, format (zero-width, bidi marks and overrides), line or paragraph separator.</summary>
+    public static bool IsHidden(char character) =>
         char.IsControl(character)
         || CharUnicodeInfo.GetUnicodeCategory(character) is UnicodeCategory.Format or UnicodeCategory.LineSeparator or UnicodeCategory.ParagraphSeparator;
 }
