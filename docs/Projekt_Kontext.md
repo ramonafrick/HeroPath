@@ -15,7 +15,7 @@ Browser-Lern-App «HeroPath» (HeldenWeg / Hero's Path) für den Zukunftstag: Ki
 | Dauer | Ca. 4 Stunden Halbtag, danach ist der Einsatz vorbei |
 | Technik | .NET 10, Blazor WebAssembly, rein clientseitig |
 | Plattformen | Heute Browser. Die Architektur ist für .NET MAUI Blazor Hybrid (Mobile) als zweiten Host vorbereitet, Umsetzung später |
-| UI-Bibliothek | Fluent UI Blazor für Dialoge, Auswahl, Slider und Buttons, eigenes verspieltes Styling. Stand nach M4 nicht verwendet: Startseite und Level-Auswahl nutzen eigene Karten und ein natives `select` (`Architektur C4.md` §6, Nr. 24) |
+| UI-Bibliothek | Fluent UI Blazor für Dialoge, Auswahl, Slider und Buttons, eigenes verspieltes Styling. Stand nach M5 nicht verwendet: Startseite, Level-Auswahl und Rückfragen (`ConfirmDialog`) sind eigene Komponenten bzw. ein natives `select` (`Architektur C4.md` §6, Nr. 24) |
 | Steuerung | Absolut: Hoch, Runter, Links, Rechts. Dazu Wiederhole-Block (verschachtelbar, 2 Ebenen) |
 | Spielfeld | Frei einstellbar, Standard 10×10, nicht zwingend quadratisch |
 | Start und Ziel | Eigene Felder mit anderer Farbe und Muster (Fussabdrücke, Burg auf Schachbrett) |
@@ -70,21 +70,24 @@ Browser-Lern-App «HeroPath» (HeldenWeg / Hero's Path) für den Zukunftstag: Ki
 
 - **Sprache und Framework:** C# (aktueller Sprachstand von .NET 10), Blazor WebAssembly.
 - **Architektur:** Modular nach Clean Architecture. Module `Levels` (Spielfeld, Level, Editor) und `Game` (Held, Bausteine, Interpreter) plus `Shared`. Jedes Modul hat ein reines C#-Projekt (`Domain`, `Application`, `Infrastructure`, ohne UI-Abhängigkeit) und ein `.UI`-Projekt (Razor Class Library). Abhängigkeitsrichtung `Shared ← Levels ← Game`, automatisch geprüft. Hosts unter `src/Hosts`: heute `HeroPath.Web`, `HeroPath.Maui` kann später folgen. Details in `Architektur C4.md` §3.
-- **Plattformdienste:** Speicher, Datei-Export und Ähnliches laufen über Schnittstellen in `Shared` (z. B. `IAppStorage`), die jeder Host implementiert.
-- **Standard-Levels:** Eingebettete JSON-Ressourcen in `HeroPath.Modules.Levels`, damit sie in jedem Host funktionieren. Seit M4 sieben Level (`free-field`, `easy-1`, `easy-2`, `strawberries`, `small-maze`, `long-road`, `castle-maze`), das Demo-Level entfällt. Sie werden weiter über die statische Klasse `StandardLevels` gelesen, `LevelProgress` (Game) bekommt die Reihenfolge aus `StandardLevels.All`. `ILevelSource` und `LevelRepository` folgen mit M5.
+- **Plattformdienste:** Speicher, Datei-Export und Ähnliches laufen über Schnittstellen in `Shared`, die jeder Host implementiert: `IAppStorage` (seit M5 melden `SetAsync` und `RemoveAsync` per `bool`, ob geschrieben wurde) und `IFileDownload` (Export, seit M5).
+- **Standard-Levels:** Eingebettete JSON-Ressourcen in `HeroPath.Modules.Levels`, damit sie in jedem Host funktionieren. Seit M4 sieben Level (`free-field`, `easy-1`, `easy-2`, `strawberries`, `small-maze`, `long-road`, `castle-maze`), das Demo-Level entfällt. Sie werden weiter über die statische Klasse `StandardLevels` gelesen. Seit M5 reicht `AddLevelsModule` die Liste an den `LevelRepository` weiter, der Standard-Levels und eigene Levels vereint. `LevelProgress` (Game) liest die Levels aus dem Repository. Ein `ILevelSource` gibt es nicht (`Architektur C4.md` §6, Nr. 13).
 - **Heldenwahl, Name und Fortschritt (seit M4):** `HeroChoice` (Held, normalisierter Name, gewähltes Level) und `LevelProgress` (Reihenfolge, gelöste Level) sind scoped Dienste in `Modules.Game/Application` und halten ihre Daten nur im Speicher. Nichts davon geht in `localStorage`, die URL oder die Domain. Ein Neuladen der Seite setzt Held, Name und Fortschritt zurück, `/play` ohne Wahl leitet auf `/` um. Namensregeln: höchstens 20 Zeichen, Steuer- und Formatzeichen entfernt, leer ergibt den Standardnamen. Details in `Architektur C4.md` §4.2 («Held, Level und Fortschritt») und §6 (Nr. 21 bis 26).
+- **Eigene Levels und Editor (seit M5):** Der Level-Editor (`/editor`, Komponente `LevelEditor` in `Levels.UI`, Seite `EditorPage` in `Game.UI`) baut Levels mit Werkzeug und Klick. Die Regeln liegen in `Modules.Levels` (`LevelEditing`, `LevelCheck`, `LevelEditorState`). Eigene Levels liegen als eine JSON-Liste unter dem localStorage-Schlüssel `heropath.levels` (über `IAppStorage` und `ICustomLevelStore`), jedes Element wird beim Laden und Importieren wie nicht vertrauenswürdige Eingabe geprüft. Export als `.heropath.json`-Datei über `IFileDownload`, Import über Blazors `InputFile`. Der Level-Name ist der einzige frei eingegebene Text, der gespeichert und exportiert wird. Details in `Architektur C4.md` §4.2 («Editor und eigene Levels») und §6 (Nr. 27 bis 40), Abweichungen in `requirements.md`, Abschnitt «Umsetzungsstand und bekannte Einschränkungen».
 - **Interpreter:** Ein Interpreter für Play und Debug. Er liefert pro `Step()` einen `ExecutionStep` mit Position, Status, ggf. Fehler und (seit M3) den Runden der umschliessenden Wiederhole-Blöcke.
 - **Ablaufsteuerung (seit M2):** `GameSession` hält Programm, Lauf-Status (`RunStatus`) und Tempo, `ExecutionRunner` führt Play, Debug und Reset über den Interpreter aus. Beide sind reines C# in `Modules.Game/Application`. Details in `Architektur C4.md` §4.2.
 - **Programm als Baum (seit M3):** Das Programm ist eine unveränderliche `ProgramDefinition` mit verschachtelten Wiederhole-Blöcken. Alle Bearbeitungen (Einfügen, Verschieben, Entfernen, Anzahl ändern) sind reine Funktionen in `ProgramEditing` (Domain). `GameSession` hält zusätzlich Auswahl und Meldung (`GameMessage`). Details in `Architektur C4.md` §4.2 und §6 (Nr. 15 bis 20).
-- **Schrittlimit:** Maximal 1000 ausgeführte Schritte pro Lauf, Wiederhole-Anzahl 1 bis 20, Verschachtelung maximal 2 Ebenen.
+- **Schrittlimit:** Maximal 1000 ausgeführte Schritte pro Lauf, Wiederhole-Anzahl 1 bis 20, Verschachtelung maximal 2 Ebenen. Seit M5 gilt dieselbe Zahl als Grenze für den kürzesten Weg eines eigenen Levels (`LevelLimits.MaxSteps`), sonst ist das Level nicht speicherbar.
 - **Programmgrösse:** Maximal 200 Bausteine pro Programm (Bewegungen und Wiederhole-Blöcke rekursiv gezählt, `ProgramLimits.MaxProgramCommands`).
 - **Spielfeldgrenzen:** Breite und Höhe je 3 bis 20.
-- **Level-JSON:** Maximal 64 KB (65 536 Zeichen, längere Eingaben werden vor dem Parsen abgelehnt) und maximale JSON-Tiefe 8. Level-Id nach `^[a-z0-9-]{1,40}$`, Level-Name (optional) höchstens 50 Zeichen, nicht nur Leerraum und ohne Steuerzeichen.
+- **Grenzen für eigene Levels (seit M5):** höchstens 10 Erdbeeren und 10 Pizza-Stücke pro Level (der `LevelValidator` prüft sie für alle Levels), höchstens 20 eigene Levels. Beim Import wird eine Datei bis 256 KB gelesen, als Level-JSON gelten höchstens 64 KB (65 536 Zeichen). Ein eigenes Level hat einen Namen (höchstens 50 Zeichen).
+- **Löser (seit M5):** `LevelSolver` in `Modules.Levels/Domain` berechnet den kürzesten Weg zum Ziel, mit `RequireAllItems` über alle Erdbeeren (BFS vom Start und von jeder Erdbeere, danach dynamische Programmierung über die Reihenfolge). Der Editor zeigt damit «mindestens N Schritte» und sperrt unlösbare Levels. Der Löser zeigt dem Kind nie den Weg. Die Tests der Standard-Level verwenden denselben Löser.
+- **Level-JSON:** Maximal 64 KB (65 536 Zeichen, längere Eingaben werden vor dem Parsen abgelehnt) und maximale JSON-Tiefe 8. Level-Id nach `^[a-z0-9-]{1,40}$` (eigene Levels: `custom-` plus 12 Hex-Zeichen), Level-Name (optional, bei eigenen Levels Pflicht) höchstens 50 Zeichen, nicht nur Leerraum und ohne Steuer- und Formatzeichen.
 - **Gewinnbedingung:** Ziel erreicht. Pro Level optional zusätzlich alle Items eingesammelt (`RequireAllItems`).
 - **Rendering:** CSS Grid für das Raster, SVG für Figuren, Hindernisse und Items. Bewegung mit CSS-Transitions.
-- **Drag & Drop (seit M3):** Native HTML5-Ereignisse über Blazor (`ProgramEditor` mit `BlockList`, `ProgramBlock`, `DropZone`, dazu `BlockPalette`), kein eigenes JavaScript. Immer mit Alternative per Klick (Auswählen, Einfügeziel, ▲▼🗑). Die Technik bleibt austauschbar. Ob Firefox den Drag ohne `dataTransfer.setData` startet, ist unverifiziert (siehe §8). Entscheid: `Architektur C4.md` §6, Nr. 20.
+- **Drag & Drop (seit M3):** Native HTML5-Ereignisse über Blazor (`ProgramEditor` mit `BlockList`, `ProgramBlock`, `DropZone`, dazu `BlockPalette`), kein eigenes JavaScript. Immer mit Alternative per Klick (Auswählen, Einfügeziel, ▲▼🗑). Die Technik bleibt austauschbar. Ob Firefox den Drag ohne `dataTransfer.setData` startet, ist unverifiziert (siehe §8). Entscheid: `Architektur C4.md` §6, Nr. 20. Im Level-Editor gibt es kein Drag & Drop, nur Klick.
 - **Lokalisierung:** `IStringLocalizer` mit resx-Dateien (`de`, `en`), Sprache im localStorage. Auch der Anzeigename der App wird lokalisiert (HeldenWeg / Hero's Path). Die Sprache wird ohne Neuladen umgeschaltet. Damit die `en`-Texte dann vorhanden sind, lädt `index.html` beim Start alle Satellite-Assemblies (`Blazor.start` mit `loadAllSatelliteResources`), siehe `Architektur C4.md` §6, Nr. 11.
-- **Keine externen Ressourcen:** Keine CDNs, Schriften und Grafiken liegen lokal im Projekt.
+- **Keine externen Ressourcen:** Keine CDNs, Schriften und Grafiken liegen lokal im Projekt. Das JS-Modul für den Export-Download (`wwwroot/js/file-download.js`) ist eine eigene Datei im Host.
 
 ## 5. Konventionen
 
@@ -113,11 +116,11 @@ Browser-Lern-App «HeroPath» (HeldenWeg / Hero's Path) für den Zukunftstag: Ki
 | M2 | Blazor-Grundgerüst, Spielfeld, Figur, Play, Debug, Reset (Programm zunächst per Klick) | ✅ erledigt |
 | M3 | Drag & Drop, Wiederhole-Block, Block-Hervorhebung, Fehlermeldungen | ✅ erledigt |
 | M4 | Level-Vorlagen, Start-Dialog, Items | ✅ erledigt |
-| M5 | Level-Editor und Speicherung | offen |
+| M5 | Level-Editor und Speicherung | ✅ erledigt |
 | M6 | Deutsch und Englisch, Feinschliff, Probelauf auf dem Ziel-Laptop | offen |
 | M7 | (später, nach dem Zukunftstag) `Hosts/HeroPath.Maui` als Host, responsives Layout und Touch-Bedienung | offen |
 
-Wenn die Zeit knapp wird, entfallen zuerst M5 und die Items. M1 bis M4 ergeben bereits ein vollwertiges Spiel. Abweichungen und offene Punkte aus M1: `requirements-M1.md`, Abschnitt «Umsetzungsstand und bekannte Einschränkungen». Aus M2: `requirements-M2.md`, Abschnitt «Umsetzungsstand und bekannte Einschränkungen». Aus M3: `requirements-M3.md`, Abschnitt «Umsetzungsstand und bekannte Einschränkungen». Aus M4: `requirements-M4.md`, Abschnitt «Umsetzungsstand und bekannte Einschränkungen».
+M1 bis M5 sind umgesetzt. Abweichungen und offene Punkte aus M1: `requirements-M1.md`, Abschnitt «Umsetzungsstand und bekannte Einschränkungen». Aus M2: `requirements-M2.md`, Abschnitt «Umsetzungsstand und bekannte Einschränkungen». Aus M3: `requirements-M3.md`, Abschnitt «Umsetzungsstand und bekannte Einschränkungen». Aus M4: `requirements-M4.md`, Abschnitt «Umsetzungsstand und bekannte Einschränkungen». Aus M5: `requirements.md`, Abschnitt «Umsetzungsstand und bekannte Einschränkungen».
 
 ## 8. Offene Punkte
 
@@ -125,9 +128,10 @@ Wenn die Zeit knapp wird, entfallen zuerst M5 und die Items. M1 bis M4 ergeben b
 - [x] Hindernisse und Items final festlegen: Baum, Stein, Teich; Erdbeere, Pizza (seit M4 in den sieben Standard-Levels umgesetzt, weitere Arten wären Could)
 - [ ] Freigabe der IT/Security für die lokale Installation auf den Laptops
 - [ ] Ablauf des Halbtags (App als Einstieg, danach weitere Aufgaben?)
-- [ ] Soll jedes Kind seine Levels am Ende mitnehmen können (Export)?
+- [x] Soll jedes Kind seine Levels am Ende mitnehmen können (Export)? Beantwortet durch M5: Eigene Levels lassen sich als `.heropath.json`-Datei herunterladen und wieder importieren. Ob die Downloads auf den Firmenlaptops erlaubt sind, ist nicht geprüft (bei der IT-Freigabe mitklären)
 - [ ] Zielplattformen für Mobile (Android, iOS)? Der iOS-Build braucht einen Mac
 - [ ] Rückgängig/Wiederherstellen (Undo/Redo) im Programm-Editor: nach dem Probelauf (M6) entscheiden
+- [ ] Tipps oder Auflösung beim Spielen, z. B. Weg als gestrichelte Linie nach N Fehlversuchen. Der Löser in `Levels/Domain` ist vorhanden (M5). Nach dem Probelauf (M6) entscheiden
 - [ ] Drag & Drop im Firefox auf dem Firmenbrowser prüfen: Blazor kann `dataTransfer.setData` nicht aufrufen, ob Firefox den Drag dann startet, ist unverifiziert (`Architektur C4.md` §6, Nr. 20). Die Klick-Alternative funktioniert in jedem Fall
 
 ## 9. Risiken
@@ -147,6 +151,7 @@ Wenn die Zeit knapp wird, entfallen zuerst M5 und die Items. M1 bis M4 ergeben b
 | Programm | Liste von Bausteinen, die nacheinander ausgeführt werden |
 | Baustein (Block) | Ein Befehl, z. B. «Rechts» oder «Wiederhole 3 mal» |
 | Level | Ein Spielfeld mit Start, Ziel, Hindernissen und ggf. Items |
+| Eigenes Level | Ein vom Kind gebautes oder importiertes Level, im Browser gespeichert (localStorage), mit eigenem Namen |
 | Debug | Programm Schritt für Schritt ausführen, um Fehler zu finden |
 | Step | Ein einzelner Bewegungsschritt der Figur |
 

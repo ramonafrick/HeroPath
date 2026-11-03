@@ -34,13 +34,13 @@ C4Context
 HeroPath ist modular nach Clean Architecture aufgebaut (inspiriert von MiniMate):
 
 - **Module** bündeln eine Fachlichkeit. Jedes Modul besteht aus zwei Projekten: einer reinen C#-Bibliothek mit den Ordnern `Domain`, `Application` und `Infrastructure` (ohne Blazor) und einer Razor Class Library `.UI` mit Komponenten, Texten und der Registrierung `Add<X>Module()`.
-- **Shared** enthält modulübergreifende Verträge (`IAppStorage`) und UI (Layout, Theme, Grafiken, Sprache).
+- **Shared** enthält modulübergreifende Verträge (`IAppStorage`, `IFileDownload`) und UI (Layout, Theme, Grafiken, Sprache, `ConfirmDialog`).
 - **Hosts** starten die App und liefern die Plattformdienste. Heute gibt es den Web-Host, ein MAUI-Host kann später ergänzt werden, ohne Module zu ändern.
 
 | Modul | Fachlichkeit |
 |---|---|
-| `Levels` | Spielfeld (Raster, Positionen, Hindernisse, Items), Level-Definitionen, Validierung, Standard-Levels, eigene Levels, Level-Editor |
-| `Game` | Held, Bausteine, Programm, Interpreter, Play/Debug/Reset, Startseite, Spielseite |
+| `Levels` | Spielfeld (Raster, Positionen, Hindernisse, Items), Level-Definitionen, Validierung, Löser, Standard-Levels, eigene Levels (Repository, Speicher), Level-Editor |
+| `Game` | Held, Bausteine, Programm, Interpreter, Play/Debug/Reset, Startseite, Spielseite, Editor-Seite (hostet den `LevelEditor` aus `Levels.UI`) |
 
 Abhängigkeitsrichtung: `Shared ← Levels ← Game`, für die `.UI`-Projekte gleich. Jedes `.UI`-Projekt kennt sein Modul, Hosts kennen alle `.UI`-Projekte. Reine Projekte referenzieren nie Blazor. `tests/HeroPath.ArchitectureTests` prüft diese Regeln automatisch.
 
@@ -49,14 +49,14 @@ C4Container
   title Container HeroPath
   Person(kid, "Kind", "Nutzt die App")
   Container_Boundary(device, "Gerät") {
-    Container(web, "Hosts/HeroPath.Web", "Blazor WebAssembly Host, .NET 10", "Startpunkt im Browser, Web-Implementierung der Plattformdienste")
+    Container(web, "Hosts/HeroPath.Web", "Blazor WebAssembly Host, .NET 10", "Startpunkt im Browser, Web-Implementierung der Plattformdienste (Speicher, Datei-Download)")
     Container(maui, "Hosts/HeroPath.Maui (später)", ".NET MAUI Blazor Hybrid", "Startpunkt als Mobile App, MAUI-Implementierung der Plattformdienste")
-    Container(gameui, "Modules.Game.UI", "Razor Class Library", "Startseite, Spielseite, Palette, Programm-Editor, Meldungsfeld, Steuerung")
+    Container(gameui, "Modules.Game.UI", "Razor Class Library", "Startseite, Spielseite, Editor-Seite, Palette, Programm-Editor, Meldungsfeld, Steuerung")
     Container(game, "Modules.Game", "C# Bibliothek", "Held, Bausteine, Interpreter, GameSession, ExecutionRunner, HeroChoice, LevelProgress")
     Container(levelsui, "Modules.Levels.UI", "Razor Class Library", "Spielfeld-Ansicht, Level-Auswahl, Level-Editor")
-    Container(levels, "Modules.Levels", "C# Bibliothek", "Raster, Level-Modelle, Validierung, eingebettete Standard-Levels")
-    Container(sharedui, "Shared.UI", "Razor Class Library", "Layout, Theme, SVG-Grafiken, Sprache")
-    Container(shared, "Shared", "C# Bibliothek", "Verträge für Plattformdienste (IAppStorage)")
+    Container(levels, "Modules.Levels", "C# Bibliothek", "Raster, Level-Modelle, Validierung, Löser, Editor-Regeln, LevelRepository, eingebettete Standard-Levels")
+    Container(sharedui, "Shared.UI", "Razor Class Library", "Layout, Theme, SVG-Grafiken, Sprache, ConfirmDialog")
+    Container(shared, "Shared", "C# Bibliothek", "Verträge für Plattformdienste (IAppStorage, IFileDownload), TextCleaner")
     ContainerDb(store, "Gerätespeicher", "localStorage (Web) oder Preferences (MAUI)", "Eigene Levels, gewählte Sprache")
   }
   Container(host, "Statischer Webserver", "GitHub Pages oder lokaler Mini-Server", "Liefert die veröffentlichten Web-Dateien")
@@ -79,7 +79,7 @@ C4Container
 
 ### 4.1 Komponenten und Dienste
 
-Zuordnung zu den Projekten: `StartPage`, `PlayPage`, `HeroBadge`, `HeroFigure`, `ItemCounter`, `BlockPalette`, `ProgramEditor`, `MessageBox`, `ControlBar` liegen in `Modules.Game.UI`. `GameBoard`, `LevelPicker` und `LevelEditor` liegen in `Modules.Levels.UI`, `LanguageSwitcher` in `Shared.UI`. `GameSession`, `ExecutionRunner`, `HeroChoice` und `LevelProgress` liegen in `Modules.Game/Application`, `LevelRepository` in `Modules.Levels/Application`, `IAppStorage` in `Shared/Application/Contracts`.
+Zuordnung zu den Projekten: `StartPage`, `PlayPage`, `EditorPage`, `HeroBadge`, `HeroFigure`, `ItemCounter`, `BlockPalette`, `ProgramEditor`, `MessageBox`, `ControlBar` liegen in `Modules.Game.UI`. `GameBoard`, `LevelPicker` und `LevelEditor` (mit `EditorToolbar`, `EditorSizeControl`, `EditorStatus`, `CustomLevelList`, `EditorLevelFiles`) liegen in `Modules.Levels.UI`, `LanguageSwitcher` und `ConfirmDialog` in `Shared.UI`. `GameSession`, `ExecutionRunner`, `HeroChoice` und `LevelProgress` liegen in `Modules.Game/Application`, `LevelRepository` und `LevelEditorState` in `Modules.Levels/Application`, `IAppStorage` und `IFileDownload` in `Shared/Application/Contracts`.
 
 **Stand nach M2:** Umgesetzt sind `PlayPage`, `GameSession`, `ExecutionRunner`, `GameBoard`, `BlockPalette`, `ProgramEditor` (nur Klick, kein Drag & Drop, keine Wiederhole-Blöcke), `ControlBar` (Play, Debug, Reset, Tempo, Status), `LanguageSwitcher` und `IAppStorage` (Web-Implementierung `LocalStorageAppStorage` im Host). Noch offen sind `StartDialog` (M4), `LevelPicker` (M4), `LevelEditor` (M5) und `LevelRepository` (M5). Bis dahin liest `PlayPage` das Demo-Level direkt über die statische Klasse `StandardLevels` (§6, Nr. 13).
 
@@ -104,40 +104,62 @@ Zuordnung zu den Projekten: `StartPage`, `PlayPage`, `HeroBadge`, `HeroFigure`, 
   - `GameBoard` hat zwei neue Parameter: `CollectedItems` (eingesammelte Items bleiben mit `data-collected` im DOM und blenden aus) und `Preview` (kleines, dekoratives Bild ohne Held, `aria-hidden`, Grösse vom Container).
 - `Modules.Game/Application`:
   - `HeroChoice` (scoped): `Avatar` (`HeroAvatar`: `Max`, `Lisa`), `Name`, `LevelId`, `IsChosen`, `Choose`, `SelectLevel`, statisch `DefaultName`, `NormalizeName`, `NameAfterSwitch`. Nur Arbeitsspeicher, `Changed` wird nicht abonniert.
-  - `LevelProgress` (scoped, wird in `AddGameModule` mit `StandardLevels.All` erzeugt): `Levels`, `Find`, `IsSolved`, `AllSolved`, `NextAfter`, `MarkSolved`, `Changed`. Nur Arbeitsspeicher.
+  - `LevelProgress` (scoped, in M4 mit `StandardLevels.All` erzeugt, seit M5 aus dem `LevelRepository`): `Levels`, `Find`, `IsSolved`, `AllSolved`, `NextAfter`, `MarkSolved`, `Changed`. Nur Arbeitsspeicher.
   - `GameSession.Load(LevelDefinition)` ersetzt `Load(Grid)`, dazu `Level` und `CollectedItems`. `ExecutionRunner` hat den Konstruktor `ExecutionRunner(GameSession, LevelProgress, TimeProvider)` und markiert ein Level bei `Succeeded` als gelöst. `GameMessage` hat das Feld `PizzaCount`.
 - `Shared.UI/Graphics`: `HeroLisa`, `ItemStrawberry`, `ItemPizza`.
-- Nicht gebaut sind weiterhin `LevelEditor` und `LevelRepository` (M5). Fluent UI wird nicht verwendet (§6, Nr. 24).
+- Fluent UI wird nicht verwendet (§6, Nr. 24).
 
-Abweichungen des Ist-Stands vom Diagramm unten: `GameBoard` kennt keine Game-Typen und greift nicht auf die Session zu. Es bekommt `Grid`, Heldposition, markiertes Feld, eingesammelte Items und Schrittdauer als Parameter von `PlayPage` und rendert die Figur über das `RenderFragment` `HeroContent`. `BlockPalette`, `ProgramEditor` (mit `ProgramBlock` und `DropZone`), `MessageBox`, `ControlBar` und `ItemCounter` lesen und ändern die `GameSession` direkt (`ControlBar` ruft zusätzlich den `ExecutionRunner` auf). `LanguageSwitcher` speichert die Sprache über `LanguageService` (Shared.UI), der `IAppStorage` verwendet. `LevelRepository` fehlt bis M5: Der `LevelPicker` ist über `PlayPage` an `LevelProgress` angebunden, nicht an ein Repository.
+**Stand nach M5:** Der Level-Editor und die Speicherung eigener Levels sind gebaut. Neu oder erweitert:
+
+- `Modules.Levels` (Domain, Application, Infrastructure): `LevelSolver`, `LevelEditing`, `EditorTool`, `LevelCheck`, `LevelEditorState`, `LevelRepository`, `LevelIdGenerator`, `ICustomLevelStore` mit `StorageCustomLevelStore`. Details in §4.2 («Editor und eigene Levels»).
+- `Modules.Levels.UI`:
+  - `LevelEditor` (`data-testid="level-editor"`, Parameter `LevelId`): Werkzeugleiste (`EditorToolbar`), Grösse (`EditorSizeControl`), Name, Schalter «Alle Erdbeeren nötig», Prüfanzeige (`EditorStatus`), Speichern, «Ausprobieren», «Alles leeren», Vorlage, Liste «Meine Levels» (`CustomLevelList`), Export und Import (`EditorLevelFiles`). Er zeigt die Rückfragen über den `ConfirmDialog` und schützt den Entwurf mit einem `NavigationLock` (§6, Nr. 32). Aller Zustand liegt in `LevelEditorState`, ein Sprachwechsel oder ein neues Rendern verliert nichts.
+  - `GameBoard` hat den Bearbeitungsmodus: Mit dem Parameter `CellClicked` (und `CellLabel`) ist jedes Feld ein `<button>`, ohne Held (§6, Nr. 35). Ohne Handler und in der Vorschau ändert sich nichts.
+  - `LevelPicker` zeigt eigene Levels in einer `<optgroup>` «Meine Levels» (nach den Standard-Levels). Der Anzeigename kommt aus `LevelDisplayExtensions.NameOf`: `Name` für eigene Levels, sonst `Level_<id>` aus resx.
+  - `LevelsModuleExtensions`: `AddLevelsModule` registriert die Dienste und reicht die Standard-Levels und `LevelJson.Read` an den `LevelRepository`. `LoadCustomLevelsAsync` lädt die eigenen Levels beim Start (§6, Nr. 38).
+- `Modules.Game.UI`:
+  - `EditorPage` (`/editor`, `/editor/{LevelId}`, `data-testid="editor-page"`) bettet den `LevelEditor` ein und liefert «Ausprobieren»: mit gewähltem Helden `HeroChoice.SelectLevel` und `NavigateTo("play")`, sonst `HeroChoice.Preselect(id)` und `NavigateTo("#level-card-{id}")` (Startseite mit Fragment, die Karte ist vorgewählt und sichtbar). Wird ein eigenes Level gelöscht, das in `HeroChoice.LevelId` steht, ersetzt die Seite es durch das erste Standard-Level (§6, Nr. 29).
+  - `StartPage`: Knopf «Level bauen» (`start-build`), Abschnitt «Meine Levels» mit Vorschau-Karten (nur wenn eigene Levels existieren), Sprunglink «Zu meinen Levels» (`start-jump-custom`). Das Formular (Name, Wahl) bleibt beim Gang in den Editor nicht erhalten.
+  - `PlayPage`: Knopf «Bearbeiten» (`play-edit`) bei eigenen Levels, Anzeigename über `NameOf`, Umleitung auf die Startseite, wenn das Level nicht mehr existiert.
+- `Modules.Game/Application`: `HeroChoice.Preselect(levelId)` setzt nur das vorgewählte Level, ohne eine Wahl zu bestätigen. `LevelProgress` liest aus dem `LevelRepository`, `NextAfter` und `AllSolved` gelten nur für die Standard-Levels. Verliert ein eigenes Level sein Spielfeld (gelöscht oder mit anderem Raster gespeichert), verliert es den Haken (§6, Nr. 40). `GameSession.Load` ersetzt bei gleicher Id und gleichem `Grid`, aber anderem Namen nur `Level`.
+- `Shared.UI`: `ConfirmDialog` (eigenes modales Fenster, §6, Nr. 32). `Shared`: `IFileDownload`, `TextCleaner`, `StorageKeys.CustomLevels`.
+- `Hosts/HeroPath.Web`: `BrowserFileDownload` mit `wwwroot/js/file-download.js`, `LocalStorageAppStorage` meldet Erfolg, `Program.cs` lädt die eigenen Levels vor `RunAsync`.
+
+Abweichungen des Ist-Stands vom Diagramm unten: `GameBoard` kennt keine Game-Typen und greift nicht auf die Session zu. Es bekommt `Grid`, Heldposition, markiertes Feld, eingesammelte Items und Schrittdauer als Parameter von `PlayPage` und rendert die Figur über das `RenderFragment` `HeroContent`. `BlockPalette`, `ProgramEditor` (mit `ProgramBlock` und `DropZone`), `MessageBox`, `ControlBar` und `ItemCounter` lesen und ändern die `GameSession` direkt (`ControlBar` ruft zusätzlich den `ExecutionRunner` auf). `LanguageSwitcher` speichert die Sprache über `LanguageService` (Shared.UI), der `IAppStorage` verwendet. Der `LevelPicker` bekommt seine Level von `PlayPage` (aus `LevelProgress.Levels`), nicht vom Repository direkt. Die `StartPage` liest `LevelRepository` und `LevelProgress`. Die Pfeile unten zeigen die wichtigsten Beziehungen, nicht jede.
 
 ```mermaid
 C4Component
   title Komponenten HeroPath
   Container_Boundary(ui, "UI-Projekte und Application-Dienste") {
-    Component(start, "StartPage", "Razor Page (/)", "Held, Name und Level wählen")
+    Component(start, "StartPage", "Razor Page (/)", "Held, Name und Level wählen, Meine Levels, Level bauen")
     Component(play, "PlayPage", "Razor Page (/play)", "Hauptansicht, verbindet alle Teile")
+    Component(editorpage, "EditorPage", "Razor Page (/editor, Game.UI)", "Hostet den LevelEditor, Ausprobieren")
     Component(badge, "HeroBadge", "Razor Component", "Bild und Name des Helden, Held wechseln")
     Component(counter, "ItemCounter", "Razor Component", "Eingesammelte Items je Art")
-    Component(picker, "LevelPicker", "Razor Component", "Level auswählen (natives select)")
-    Component(board, "GameBoard", "Razor Component", "Zeichnet Raster, Hindernisse, Items, Figur")
+    Component(picker, "LevelPicker", "Razor Component", "Level auswählen (natives select, Gruppe Meine Levels)")
+    Component(board, "GameBoard", "Razor Component", "Zeichnet Raster, Hindernisse, Items, Figur; im Editor klickbare Felder")
     Component(palette, "BlockPalette", "Razor Component", "Verfügbare Bausteine, Quelle des Ziehens, Löschziel")
     Component(editor, "ProgramEditor", "Razor Component", "Programm mit Drag & Drop, verschachtelte Wiederhole-Blöcke (BlockList, ProgramBlock, DropZone)")
     Component(message, "MessageBox", "Razor Component", "Meldung zu Fehler, Erfolg oder Hinweis")
     Component(controls, "ControlBar", "Razor Component", "Play, Debug, Reset, Tempo")
-    Component(lvled, "LevelEditor", "Razor Component", "Felder bearbeiten, Grösse ändern (M5)")
+    Component(lvled, "LevelEditor", "Razor Component (Levels.UI)", "Werkzeuge, Grösse, Name, Prüfung, Speichern, Meine Levels, Export, Import")
+    Component(confirm, "ConfirmDialog", "Razor Component (Shared.UI)", "Rückfragen: Löschen, Alles leeren, Verlassen")
     Component(lang, "LanguageSwitcher", "Razor Component", "DE/EN oben rechts")
     Component(drag, "ProgramDragState", "Scoped Service (UI)", "Was gerade gezogen wird")
     Component(choice, "HeroChoice", "Scoped Service", "Held, Name, Level der Wahl (nur Speicher)")
-    Component(progress, "LevelProgress", "Scoped Service", "Level-Reihenfolge und gelöste Level (nur Speicher)")
+    Component(progress, "LevelProgress", "Scoped Service", "Gelöste Level (nur Speicher), Reihenfolge der Standard-Level")
     Component(session, "GameSession", "Scoped Service", "Zustand: Level, Figur, Programm, Auswahl, Meldung, Status, eingesammelte Items")
     Component(runner, "ExecutionRunner", "Service", "Play-Schleife mit Tempo und Abbruch, Debug-Schritt")
-    Component(repo, "LevelRepository", "Service (M5)", "Standard-Levels aus Modules.Levels, eigene Levels aus dem Speicher")
+    Component(estate, "LevelEditorState", "Scoped Service", "Entwurf, Werkzeug, ungespeichert, Prüfung (LevelCheck)")
+    Component(repo, "LevelRepository", "Scoped Service", "Standard-Levels und eigene Levels, Speichern, Löschen, Import")
     Component(storage, "IAppStorage", "Schnittstelle", "Speichern und Laden von Einstellungen und Levels, Implementierung je Host")
+    Component(filedl, "IFileDownload", "Schnittstelle", "Textdatei speichern (Export), Implementierung je Host")
   }
   Rel(start, choice, "schreibt Wahl")
-  Rel(start, progress, "liest Level und Gelöst-Status")
+  Rel(start, repo, "liest Standard und eigene Levels")
+  Rel(start, progress, "liest Gelöst-Status")
   Rel(start, play, "navigiert zu /play")
+  Rel(start, editorpage, "navigiert zu /editor")
   Rel(play, choice, "liest Wahl, wählt Level")
   Rel(play, progress, "liest Level und Gelöst-Status")
   Rel(play, board, "enthält")
@@ -148,8 +170,17 @@ C4Component
   Rel(play, message, "enthält")
   Rel(play, controls, "enthält")
   Rel(play, picker, "enthält, übergibt Level")
-  Rel(play, lvled, "wechselt in Editor-Modus (M5)")
+  Rel(play, editorpage, "navigiert zu /editor/id (Bearbeiten)")
   Rel(play, lang, "enthält")
+  Rel(editorpage, lvled, "enthält")
+  Rel(editorpage, choice, "Ausprobieren: wählt oder merkt Level")
+  Rel(lvled, estate, "bearbeitet Entwurf")
+  Rel(lvled, board, "enthält (klickbar)")
+  Rel(lvled, confirm, "fragt zurück")
+  Rel(lvled, filedl, "exportiert")
+  Rel(lvled, repo, "löscht, importiert")
+  Rel(estate, repo, "speichert")
+  Rel(progress, repo, "liest Levels")
   Rel(badge, choice, "liest")
   Rel(controls, runner, "startet")
   Rel(runner, session, "aktualisiert")
@@ -164,16 +195,15 @@ C4Component
   Rel(editor, drag, "liest und beendet")
   Rel(palette, drag, "startet und beendet")
   Rel(drag, session, "fragt Ziel, legt ab")
-  Rel(lvled, repo, "speichert Levels (M5)")
-  Rel(repo, storage, "nutzt")
+  Rel(repo, storage, "nutzt (ICustomLevelStore)")
   Rel(lang, storage, "speichert Sprache")
 ```
 
 ### 4.2 Domain-Modell (Modules.Levels und Modules.Game)
 
-Stand: Domain beider Module umgesetzt in M1. Der Lauf-Zustand darüber (`GameSession`, `ExecutionRunner`) kam in M2, siehe Unterabschnitt «Lauf-Zustand». In M3 kamen die Bearbeitung des Programmbaums (`ProgramEditing`, `BlockSlot`), der Rundenzähler (`RepeatProgress`) und die Meldungen (`GameMessage`) dazu, siehe «Programmbaum und Meldungen (seit M3)». M4 ergänzte `HeroChoice`, `HeroAvatar` und `LevelProgress` sowie die eingesammelten Items in der Session, siehe «Held, Level und Fortschritt (seit M4)». `LevelRepository` fehlt noch.
+Stand: Domain beider Module umgesetzt in M1. Der Lauf-Zustand darüber (`GameSession`, `ExecutionRunner`) kam in M2, siehe Unterabschnitt «Lauf-Zustand». In M3 kamen die Bearbeitung des Programmbaums (`ProgramEditing`, `BlockSlot`), der Rundenzähler (`RepeatProgress`) und die Meldungen (`GameMessage`) dazu, siehe «Programmbaum und Meldungen (seit M3)». M4 ergänzte `HeroChoice`, `HeroAvatar` und `LevelProgress` sowie die eingesammelten Items in der Session, siehe «Held, Level und Fortschritt (seit M4)». M5 ergänzte Löser, Editor-Regeln und das `LevelRepository`, siehe «Editor und eigene Levels (seit M5)».
 
-`Position`, `ObstacleKind`, `ItemKind`, `LevelObstacle`, `LevelItem`, `Grid`, `LevelDefinition` und `LevelLimits` gehören zu `Modules.Levels/Domain`. Dazu kommen `LevelValidator`, `LevelValidationError`, `LevelValidationErrorKind` und `LevelReadResult` in `Modules.Levels/Application` sowie `LevelJson` (Lesen und Schreiben von Level-JSON, source-generierter `LevelJsonContext`) und `StandardLevels` (seit M2, eingebettete Levels, seit M4 sieben) in `Modules.Levels/Infrastructure`. `Direction`, `Person`, `MoveResult`, die Befehle (`Command`, `MoveCommand`, `RepeatCommand`), `ProgramDefinition`, `ProgramEditing`, `BlockSlot`, `Interpreter`, `ExecutionStep`, `RepeatProgress`, `ExecutionState`, `ExecutionError` und `ProgramLimits` gehören zu `Modules.Game/Domain`.
+`Position`, `ObstacleKind`, `ItemKind`, `LevelObstacle`, `LevelItem`, `Grid`, `LevelDefinition`, `LevelLimits`, `LevelSolver`, `EditorTool` und `LevelEditing` gehören zu `Modules.Levels/Domain`. Dazu kommen `LevelValidator`, `LevelValidationError`, `LevelValidationErrorKind`, `LevelReadResult`, `LevelCheck`, `LevelIdGenerator`, `LevelRepository`, `LevelEditorState` und `ICustomLevelStore` (in `Contracts`) in `Modules.Levels/Application` sowie `LevelJson` (Lesen und Schreiben von Level-JSON, source-generierter `LevelJsonContext`), `StandardLevels` (seit M2, eingebettete Levels, seit M4 sieben) und `StorageCustomLevelStore` (seit M5) in `Modules.Levels/Infrastructure`. `Direction`, `Person`, `MoveResult`, die Befehle (`Command`, `MoveCommand`, `RepeatCommand`), `ProgramDefinition`, `ProgramEditing`, `BlockSlot`, `Interpreter`, `ExecutionStep`, `RepeatProgress`, `ExecutionState`, `ExecutionError` und `ProgramLimits` gehören zu `Modules.Game/Domain`.
 
 `Person` hält nur die `Position`. Heldenname und Avatar sind reiner UI- bzw. Application-Zustand (`HeroChoice`) und gelangen nie in die Domain (Datenschutz). Der `Interpreter` erzeugt die `Person` selbst auf `Grid.Start`. Ein Reset bedeutet, einen neuen `Interpreter` zu erstellen.
 
@@ -371,6 +401,7 @@ classDiagram
     +bool IsChosen
     +Choose(avatar, rawName, levelId)
     +SelectLevel(levelId)
+    +Preselect(levelId)
     +NormalizeName(raw, avatar) string$
   }
   class LevelProgress {
@@ -400,7 +431,7 @@ classDiagram
   GameMessage --> GameMessageCode
   GameMessage ..> ExecutionStep : aus Schritt abgeleitet
   HeroChoice --> HeroAvatar
-  LevelProgress o-- LevelDefinition
+  LevelProgress ..> LevelDefinition : liest aus LevelRepository
   Person --> MoveResult
   Grid --> Position
   Grid --> LevelObstacle
@@ -449,7 +480,7 @@ Operationen des Runners:
 - **Vorprüfung (seit M3):** `PlayAsync` und `StepOnce` prüfen im Status `Ready` zuerst `ProgramDefinition.FindEmptyRepeat()`. Bei einem Treffer erzeugt der Runner keinen Interpreter, die Session zeigt den Hinweis `EmptyRepeat` mit der Nummer des Blocks und markiert ihn (`HintedId`), der Status bleibt `Ready`. `CanStart` bleibt unverändert, die Knöpfe sind aktiv.
 - **`Stop`:** Bricht ein laufendes Play ab und lässt den Lauf `Paused`: Interpreter, Position und Programm bleiben. Kein Knopf der Oberfläche, nur `PlayPage` ruft es beim Verlassen der Seite auf.
 - **`Reset`:** Bricht Play ab, verwirft den Interpreter und setzt Status, Schritt, eingesammelte Items und Meldung zurück (`Ready`, Held auf Start). Das Programm bleibt, das Tempo bleibt.
-- **`GameSession.Load(LevelDefinition)` (seit M4, vorher `Load(Grid)`):** Dasselbe Level (gleiche Id und gleiches Grid) ändert nichts, Programm und Lauf bleiben. Ein anderes Level verwirft den Lauf (der Runner bekommt `RunDiscarded` und lässt Interpreter und Abbruch fallen), setzt `Ready`, leert die eingesammelten Items und **leert zusätzlich Programm, Auswahl und Hinweise** (§6, Nr. 22).
+- **`GameSession.Load(LevelDefinition)` (seit M4, vorher `Load(Grid)`):** Dasselbe Level (gleiche Id und gleiches Grid) ändert nichts, Programm und Lauf bleiben. Ein anderes Level verwirft den Lauf (der Runner bekommt `RunDiscarded` und lässt Interpreter und Abbruch fallen), setzt `Ready`, leert die eingesammelten Items und **leert zusätzlich Programm, Auswahl und Hinweise** (§6, Nr. 22). Seit M5 gilt: Dieselbe Id mit gleichem Grid, aber anderem Namen (umbenanntes eigenes Level) ersetzt nur `Level`, Programm und Lauf bleiben. Ein anderes Grid unter derselben Id gilt als anderes Level und leert das Programm.
 - **Beginn eines Laufs:** `UpdateRun` hebt die Auswahl auf.
 - **Gelöst-Status (seit M4):** Ein Schritt mit `Succeeded` ruft `LevelProgress.MarkSolved(level.Id)` auf, bevor `UpdateRun` die Session meldet (§6, Nr. 23).
 
@@ -457,10 +488,110 @@ Markiertes Feld bei einem Fehlerschritt: bei `Obstacle` das Hindernisfeld (Posit
 
 #### Held, Level und Fortschritt (seit M4)
 
-- **`HeroChoice` (scoped, Application):** Hält `Avatar` (Standard `HeroAvatar.Max`), den normalisierten `Name` (bis zur Wahl der Standardname des Avatars), `LevelId` und `IsChosen`. `Choose(avatar, rawName, levelId)` bestätigt die Wahl, `SelectLevel(levelId)` wechselt das Level bei gleichem Helden (wirkungslos vor der ersten Wahl oder bei gleicher Id). Es gibt keine Speicherung, kein Logging und keine `ToString`-Überschreibung mit dem Namen.
-- **Namensregeln (`HeroChoice.NormalizeName`):** Entfernt Steuerzeichen, Unicode-Formatzeichen (Zero-Width, Bidi) sowie Zeilen- und Absatztrenner, entfernt Leerraum am Rand, schneidet auf höchstens 20 Textelemente und liefert bei leerem Ergebnis den Standardnamen (`DefaultName`: «Max», «Lisa»). `NameAfterSwitch` setzt beim Heldenwechsel einen leeren oder dem bisherigen Standardnamen gleichen Namen auf den neuen Standardnamen, ein selbst eingegebener bleibt. In der Oberfläche zeigt `HeroBadge` den Namen mit `unicode-bidi: isolate`.
-- **`LevelProgress` (scoped, Application):** Hält die geordnete Level-Liste (`Levels`, in `AddGameModule` aus `StandardLevels.All`) und die Ids der gelösten Level. `MarkSolved` ignoriert unbekannte Ids und wiederholte Aufrufe (kein `Changed`). `NextAfter(id)` liefert das folgende Level, für das letzte oder ein unbekanntes `null`. `AllSolved` gilt, wenn alle Level je einmal gelöst sind. Wie `HeroChoice` nur im Speicher: ein Neuladen setzt den Fortschritt zurück.
+- **`HeroChoice` (scoped, Application):** Hält `Avatar` (Standard `HeroAvatar.Max`), den normalisierten `Name` (bis zur Wahl der Standardname des Avatars), `LevelId` und `IsChosen`. `Choose(avatar, rawName, levelId)` bestätigt die Wahl, `SelectLevel(levelId)` wechselt das Level bei gleichem Helden (wirkungslos vor der ersten Wahl oder bei gleicher Id). Seit M5 setzt `Preselect(levelId)` nur das Level, das die Startseite vorwählt: Held, Name und `IsChosen` bleiben unverändert. Es gibt keine Speicherung, kein Logging und keine `ToString`-Überschreibung mit dem Namen.
+- **Namensregeln (`HeroChoice.NormalizeName`):** Entfernt Steuerzeichen, Unicode-Formatzeichen (Zero-Width, Bidi) sowie Zeilen- und Absatztrenner, entfernt Leerraum am Rand, schneidet auf höchstens 20 Textelemente und liefert bei leerem Ergebnis den Standardnamen (`DefaultName`: «Max», «Lisa»). Seit M5 steht die Bereinigung als `TextCleaner.Clean(raw, maxTextElements)` in `Shared` und wird auch für Level-Namen verwendet (§6, Nr. 31). `NameAfterSwitch` setzt beim Heldenwechsel einen leeren oder dem bisherigen Standardnamen gleichen Namen auf den neuen Standardnamen, ein selbst eingegebener bleibt. In der Oberfläche zeigt `HeroBadge` den Namen mit `unicode-bidi: isolate`.
+- **`LevelProgress` (scoped, Application):** Seit M5 `LevelProgress(LevelRepository)`: Es liest die Levels bei jedem Aufruf aus dem Repository (`Levels` = `LevelRepository.All`, Standard-Levels zuerst, dann eigene), damit Ergänzungen und Löschungen sichtbar sind. Es hält die Ids der gelösten Level. `Find(id)` findet jedes Level. `MarkSolved` ignoriert unbekannte Ids und wiederholte Aufrufe (kein `Changed`). `NextAfter(id)` und `AllSolved` gelten nur für die Standard-Levels: `NextAfter` liefert für das letzte Standard-Level, ein eigenes oder ein unbekanntes Level `null`, `AllSolved` gilt, wenn alle Standard-Level je einmal gelöst sind. Ein gelöstes eigenes Level merkt sich sein `Grid`. Auf `LevelRepository.Changed` verliert ein gelöschtes oder mit anderem Grid gespeichertes Level den Haken (`Changed` wird ausgelöst), eine Umbenennung behält ihn (§6, Nr. 40). Wie `HeroChoice` nur im Speicher: ein Neuladen setzt den Fortschritt zurück.
 - **Eingesammelte Items:** `GameSession.UpdateRun` merkt sich `step.Position`, wenn `step.CollectedItem` gesetzt ist. `GameBoard` blendet diese Items aus (`data-collected`, 400 ms hüpfen und ausblenden, bei `prefers-reduced-motion` sofort versteckt). `ItemCounter` zeigt `CollectedCount(kind)` von der Gesamtzahl je Art.
+
+#### Editor und eigene Levels (seit M5)
+
+Die Regeln stehen im Modul `Levels`, die Oberfläche liegt in `Levels.UI` bzw. `Game.UI`. Es gibt keine Regel im Razor-Markup.
+
+```mermaid
+classDiagram
+  class LevelSolver {
+    <<static, Domain>>
+    +ShortestSolution(Grid) int?
+    +CanReachGoal(Grid) bool
+  }
+  class EditorTool {
+    <<enum, Domain>>
+    Start
+    Goal
+    Tree
+    Rock
+    Pond
+    Strawberry
+    Pizza
+    Eraser
+  }
+  class LevelEditing {
+    <<static, Domain>>
+    +NewLevel(id, name) LevelDefinition
+    +FromTemplate(level, id, name) LevelDefinition
+    +Apply(level, tool, position) EditResult
+    +SetRequireAllItems(level, value) LevelDefinition
+    +Resize(level, width, height) ResizeResult
+    +ClearObjects(level) LevelDefinition
+    +NextDefaultNumber(names, format) int
+    +CleanName(raw) string
+    +UniqueName(name, existingNames) string
+    +ExportFileName(name) string
+  }
+  class LevelCheck {
+    <<Application>>
+    +Evaluate(level) LevelCheckResult
+  }
+  class LevelRepository {
+    <<Application, scoped>>
+    +Standard
+    +Custom
+    +All
+    +Find(id) LevelDefinition?
+    +IsCustom(id) bool
+    +LoadAsync()
+    +SaveAsync(level) SaveOutcome
+    +DeleteAsync(id) bool
+    +ImportAsync(json, format) ImportResult
+    +Changed
+  }
+  class ICustomLevelStore {
+    <<interface, Application>>
+    +LoadAsync() levels
+    +SaveAllAsync(levels) bool
+  }
+  class StorageCustomLevelStore {
+    <<Infrastructure>>
+  }
+  class LevelEditorState {
+    <<Application, scoped>>
+    +Draft
+    +Tool
+    +IsDirty
+    +Check
+    +OpenNew()
+    +Open(id) bool
+    +OpenTemplate(standardId) bool
+    +Apply(position)
+    +Resize(width, height)
+    +SaveAsync() SaveOutcome
+  }
+  class IAppStorage {
+    <<interface, Shared>>
+    +GetAsync(key)
+    +SetAsync(key, value) bool
+    +RemoveAsync(key) bool
+  }
+  LevelCheck ..> LevelSolver
+  LevelCheck ..> LevelValidator
+  LevelEditing ..> Grid
+  LevelEditorState --> LevelRepository
+  LevelEditorState ..> LevelEditing
+  LevelEditorState ..> LevelCheck
+  LevelRepository --> ICustomLevelStore
+  LevelRepository ..> LevelCheck
+  StorageCustomLevelStore ..|> ICustomLevelStore
+  StorageCustomLevelStore --> IAppStorage
+```
+
+- **Löser (`LevelSolver`, Domain):** `ShortestSolution(Grid)` liefert die kürzeste Zahl von Zügen oder `null`. Eine BFS vom Start (mit `RequireAllItems` zusätzlich von jeder Erdbeere) liefert die Abstände. Sind Ziel oder eine nötige Erdbeere unerreichbar, endet er sofort mit `null`. Sonst findet eine dynamische Programmierung über (Menge der besuchten Erdbeeren, letzte Erdbeere) die günstigste Besuchsreihenfolge. Wie der Interpreter beendet das Passieren des Ziels den Lauf nicht, solange Erdbeeren fehlen. Pizza zählt nie. Die Zahl der Erdbeeren ist durch den `LevelValidator` auf 10 begrenzt (§6, Nr. 30), damit ist der Aufwand für jedes gültige Level klein (§6, Nr. 37). Er zeigt nie den Weg.
+- **Editor-Regeln (`LevelEditing`, Domain):** Reine Funktionen auf der unveränderlichen `LevelDefinition`, nie eine Exception bei Eingaben des Kindes. `Apply` setzt, ersetzt oder entfernt nach `EditorTool`: Hindernis oder Item ersetzt, was auf dem Feld liegt, dasselbe Werkzeug auf gleichem Inhalt entfernt es. `Start` und `Goal` ziehen um und entfernen, was dort lag. Abgelehnte Klicks liefern dieselbe `LevelDefinition`-Instanz und einen `EditHint` (`StartOnGoal`, `GoalOnStart`, `ObstacleOnStart`, `ObstacleOnGoal`, `ItemOnStart`, `TooManyStrawberries`, `TooManyPizzas`). Ein Item auf dem Ziel ist erlaubt. Entfällt die letzte Erdbeere, schaltet sich `RequireAllItems` aus. `Resize` begrenzt auf 3 bis 20, entfernt Dinge ausserhalb (gezählt als `RemovedCount`), rückt Start und Ziel an den neuen Rand und das Ziel bei Kollision auf das nächste freie Feld. `CleanName` nutzt `TextCleaner.Clean` und schneidet auf 50 UTF-16-Zeichen ohne ein Surrogatpaar zu trennen. `UniqueName` ist nur für den Import. `ExportFileName` erzeugt `[a-z0-9-]`, höchstens 40 Zeichen, mit Ersatz für Umlaute und reservierte Windows-Gerätenamen und der Endung `.heropath.json`.
+- **Prüfung (`LevelCheck`, Application):** `Evaluate(level)` liefert `LevelCheckResult(Errors, Status, MinimumSteps)`. `LevelCheckStatus`: `Valid`, `Invalid`, `GoalUnreachable`, `StrawberriesUnreachable`, `TooManySteps` (kürzester Weg über `LevelLimits.MaxSteps` = 1000). Speichern ist nur bei `Valid` möglich (`CanSave`). Der Editor geht über einen internen `LevelCheckCache`, der den Löser nur neu laufen lässt, wenn sich das `Grid` ändert (das Tippen des Namens validiert nur neu).
+- **Validierung (`LevelValidator`):** Zusätzlich zu M1 `TooManyStrawberries` und `TooManyPizzas` (je 10, für alle Levels) und die Ablehnung von Namen mit Format-, Bidi- oder Zeilentrenner-Zeichen (`TextCleaner.IsHidden`).
+- **`LevelRepository` (scoped, Application):** Hält Standard-Levels (im Konstruktor übergeben, §6, Nr. 39) und eigene Levels (`Custom`, höchstens 20). `LoadAsync` lädt einmal, ein fehlschlagender Speicher ergibt keine eigenen Levels, gespeicherte Ids, die einer Standard-Id gleichen, werden verworfen. `SaveAsync` liefert `SaveOutcome` (`Saved`, `LimitReached`, `Invalid`, `StorageFailed`): `Invalid`, wenn `LevelCheck` das Level nicht speichern lässt, der Name `null` ist oder die Id eine Standard-Id ist. Eine vorhandene Id wird an Ort überschrieben, eine neue angehängt und beim 21. abgelehnt. `DeleteAsync` löscht. `ImportAsync(json, defaultNameFormat)` liest die Datei wie den Speicher, vergibt immer eine neue Id (`LevelIdGenerator`: `custom-` plus 12 Hex-Zeichen aus `RandomNumberGenerator`), bereinigt den Namen und macht ihn unter den eigenen Levels eindeutig (« (2)»). `ImportOutcome`: `Imported`, `InvalidFile`, `NotSavable`, `LimitReached`, `StorageFailed`. Alle vier Operationen laufen hintereinander hinter einer `SemaphoreSlim`. Jede Änderung schreibt zuerst die ganze Liste in den Speicher und ersetzt erst danach die Liste im Arbeitsspeicher, bei `StorageFailed` bleibt alles wie vorher und `Changed` wird nicht ausgelöst.
+- **Speicherformat (`StorageCustomLevelStore`, Infrastructure):** Ein Schlüssel `heropath.levels` (`StorageKeys.CustomLevels`), ein kompaktes JSON-Array im Format von `LevelJson.Write`. Beim Laden gilt der Inhalt als nicht vertrauenswürdig: leerer Wert, länger als 21 × 64 KB Zeichen, kaputtes JSON, Tiefe über 16 oder kein Array ergeben keine Levels. Jedes Element läuft durch `LevelJson.Read` und `LevelCheck.CanSave` und wird übergangen, wenn es kaputt, zu gross, ungültig, unlösbar, ohne Namen oder eine doppelte Id ist. Höchstens 20 bleiben. Übergangene Elemente werden beim Laden nicht gelöscht, sie verschwinden beim nächsten Speichern.
+- **`LevelEditorState` (scoped, Application):** Hält den Entwurf (`Draft`, Name `""` statt `null` solange leer), die Id des geöffneten gespeicherten Levels (`EditingId`), das Werkzeug (Standard `Tree`), `IsDirty`, den letzten Hinweis, die Zahl der durch Verkleinern entfernten Dinge, das Ergebnis der letzten Speicherung und die laufende Prüfung (`Check`). Er öffnet neue Levels (`OpenNew`, Standardname «Mein Level N» über `LevelRepository.NextDefaultName`), gespeicherte (`Open`, nur eigene Levels) und Vorlagen (`OpenTemplate`, nicht dirty, neue Id). Ein Sprachwechsel ändert einen unberührten Standardnamen (`RenameDefault`), einen getippten oder gespeicherten nie. `SaveAsync` tut nichts, während die Prüfung das Speichern verbietet oder ein Speichern läuft. Ein während des Schreibens geänderter Entwurf wird nicht als sauber markiert.
+- **Plattform:** `IAppStorage.SetAsync` und `RemoveAsync` liefern `bool`. `IFileDownload.SaveTextAsync(fileName, content, ct)` liefert ebenfalls `bool`. Der Web-Host implementiert beide (`LocalStorageAppStorage`, `BrowserFileDownload` mit `file-download.js`). Der Import liest die Datei mit Blazors `InputFile` (Grenze 256 KB, danach `LevelJson.MaxJsonLength`), ohne eigenes JavaScript und ohne Plattformschnittstelle.
 
 ### 4.3 MAUI-Bereitschaft (Plattform-Abstraktion)
 
@@ -468,10 +599,11 @@ Die Oberfläche wird so gebaut, dass später ein .NET-MAUI-Blazor-Hybrid-Projekt
 
 | Thema | Web (heute) | MAUI (später) | Abstraktion |
 |---|---|---|---|
-| Speicher | localStorage über JS Interop | Preferences oder Dateisystem | `IAppStorage` |
+| Speicher | localStorage über JS Interop, Schreiben meldet Erfolg (`bool`) | Preferences oder Dateisystem | `IAppStorage` |
 | Standard-Levels | Eingebettete JSON-Ressourcen in `Modules.Levels` | gleich | keine nötig |
 | Sprache | `CultureInfo` plus `IAppStorage` | gleich | `IAppStorage` |
-| Level-Export und -Import | Datei-Download per JS | Teilen oder Dateiauswahl | `ILevelFileService` (Could) |
+| Level-Export | Datei-Download per JS-Modul (`BrowserFileDownload`, `file-download.js`) | Teilen oder Speichern in eine Datei | `IFileDownload` (Stand nach M5, ersetzt den ursprünglich geplanten `ILevelFileService`) |
+| Level-Import | Blazors `InputFile` (Dateiauswahl des Browsers) | Dateiauswahl der Plattform | keine Schnittstelle, `InputFile` im MAUI-WebView ist unverifiziert |
 | Bedienung | Maus, HTML5 Drag & Drop | Touch im WebView | Klick-zum-Hinzufügen als Alternative |
 | Layout | Desktop-first | Hochformat, kleine Bildschirme | Responsives CSS |
 | Start | `index.html` mit Webserver | `BlazorWebView` | nur im Host-Projekt |
@@ -480,12 +612,12 @@ Die Oberfläche wird so gebaut, dass später ein .NET-MAUI-Blazor-Hybrid-Projekt
 
 1. Alle Komponenten, Styles, Grafiken und Texte liegen in den `.UI`-Projekten der Module oder in `Shared.UI`. Die Hosts enthalten nur Startcode, die Registrierung der Module und die Plattformdienste.
 2. Komponenten greifen nie direkt auf `localStorage`, `window`, das Dateisystem oder relative `HttpClient`-Adressen zu. Sie verwenden die Schnittstellen.
-3. Jede Drag-&-Drop-Aktion hat eine Alternative per Klick oder Tipp. HTML5 Drag & Drop ist auf Touch-Geräten im WebView unzuverlässig.
-4. Das Layout ist responsiv (CSS Grid, relative Einheiten, Container Queries), keine festen Pixelbreiten. Tippflächen sind mindestens 44 px gross.
+3. Jede Drag-&-Drop-Aktion hat eine Alternative per Klick oder Tipp. HTML5 Drag & Drop ist auf Touch-Geräten im WebView unzuverlässig. Der Level-Editor kennt kein Drag & Drop, nur Klick.
+4. Das Layout ist responsiv (CSS Grid, relative Einheiten, Container Queries), keine festen Pixelbreiten. Tippflächen sind mindestens 44 px gross. Ausnahme: Die Felder des Editors sind bei 20×20 auf 1366×768 etwa 29 px gross (§6, Nr. 35).
 5. Statische Dateien werden über den Pfad `_content/<Projektname>/...` eingebunden, z. B. `_content/HeroPath.Shared.UI/css/theme.css`.
 6. Die reinen Projekte (`Shared`, `Modules.Levels`, `Modules.Game`) bleiben ohne Plattform- und Blazor-Abhängigkeit.
 
-Hinweise: Der iOS-Build braucht einen Mac. Ob Fluent UI Blazor im Hybrid-Betrieb alle verwendeten Komponenten unterstützt, wird beim Anhängen des MAUI-Hosts geprüft (heute wird Fluent UI nicht verwendet, §6, Nr. 24). Der Start mit `Blazor.start` samt `loadAllSatelliteResources` (§6, Nr. 11) betrifft nur den Web-Host (`index.html`). Das Layout der Spielseite (`PlayPage.razor.css`) ist einspaltig und wird nur unter `@media (max-height: 56rem) and (min-width: 82rem)` zweispaltig (Werkzeuge links, Programm rechts). Breite Spielfelder (Breite mindestens doppelt so gross wie die Höhe) bekommen dort eine schmalere Seitenleiste (`data-wide`). Ein Hochformat-Layout für MAUI gibt es noch nicht (M7).
+Hinweise: Der iOS-Build braucht einen Mac. Ob Fluent UI Blazor im Hybrid-Betrieb alle verwendeten Komponenten unterstützt, wird beim Anhängen des MAUI-Hosts geprüft (heute wird Fluent UI nicht verwendet, §6, Nr. 24). Der Start mit `Blazor.start` samt `loadAllSatelliteResources` (§6, Nr. 11) betrifft nur den Web-Host (`index.html`). Das JS-Modul `file-download.js` liegt im Web-Host unter `wwwroot/js` und wird relativ geladen (`./js/file-download.js`). Ob das auf einem GitHub-Pages-Unterpfad auflöst, ist nicht ausgeführt und unverifiziert. Das Layout der Spielseite (`PlayPage.razor.css`) ist einspaltig und wird nur unter `@media (max-height: 56rem) and (min-width: 82rem)` zweispaltig (Werkzeuge links, Programm rechts). Breite Spielfelder (Breite mindestens doppelt so gross wie die Höhe) bekommen dort eine schmalere Seitenleiste (`data-wide`). Ein Hochformat-Layout für MAUI gibt es noch nicht (M7).
 
 ## 5. Ablauf: Play, Debug und Reset
 
@@ -541,14 +673,14 @@ Abweichungen vom ursprünglichen Entwurf (`Run(tempo)`, `Apply(step)`): Das Temp
 | 3b | `Person` hält nur die `Position`, ohne Name und Avatar. Der `Interpreter` erzeugt die `Person` selbst auf `Grid.Start` | Datenschutz: Der Heldenname gelangt nie in die Domain (Logs, `ToString()`, Exceptions). Name und Avatar sind UI-Zustand. Der Held beginnt immer auf dem Start | `Person` mit `Name` und `Avatar` und `Interpreter(program, grid, person)` wie im ursprünglichen §4.2 |
 | 4 | Native HTML5 Drag & Drop in eigener Komponente, dazu Klick-zum-Hinzufügen | Keine Abhängigkeit, Maus genügt heute, Klick funktioniert auch auf Touch. Umsetzung seit M3 siehe Nr. 20 | SortableJS-Wrapper, MudBlazor DropZone, Blockly, Pointer Events |
 | 5 | Raster mit CSS Grid, Figuren und Items als SVG | Einfach, skalierbar, Animation mit CSS-Transitions | Canvas |
-| 6 | Fluent UI nur für Dialoge, Auswahl, Slider, Buttons, eigenes verspieltes Styling darüber. **Stand nach M4: noch nicht verwendet** (Nr. 24) | Bekannt, wenig Aufwand | Reines eigenes CSS |
+| 6 | Fluent UI nur für Dialoge, Auswahl, Slider, Buttons, eigenes verspieltes Styling darüber. **Stand nach M5: noch nicht verwendet** (Nr. 24, Nr. 32) | Bekannt, wenig Aufwand | Reines eigenes CSS |
 | 7 | Lokalisierung mit `IStringLocalizer` und resx (de, en), inkl. Anzeigename (HeldenWeg / Hero's Path) | Standard in .NET | Eigene JSON-Texte |
 | 8 | Level als JSON, Standard-Levels als eingebettete Ressourcen in `Modules.Levels` | Lesbar, exportierbar, funktioniert in jedem Host | Dateien in `wwwroot` per HttpClient |
-| 9 | Speicherung hinter `IAppStorage`, Web-Implementierung mit localStorage | Reicht für den Einsatz, MAUI kann eigene Implementierung liefern | Keine Speicherung |
+| 9 | Speicherung hinter `IAppStorage`, Web-Implementierung mit localStorage. Seit M5 melden `SetAsync` und `RemoveAsync` per `bool`, ob geschrieben wurde (Nr. 28) | Reicht für den Einsatz, MAUI kann eigene Implementierung liefern | Keine Speicherung |
 | 10 | E2E-Tests mit Playwright für .NET, Screenshots (normal und Graustufen) werden von einem Agenten visuell geprüft | Reproduzierbar, läuft in CI, ohne Node; prüft Layout und Farbenblind-Tauglichkeit | Nur manuell im Browser; Playwright MCP; nativer VS-Code-Browser (nur für Copilot steuerbar) |
 | 11 | Sprachwechsel ohne Neuladen: Alle Satellite-Assemblies werden beim Start geladen (`autostart="false"` und `Blazor.start` mit `configureRuntime` → `withConfig({ loadAllSatelliteResources: true })` in `index.html`) | Blazor WebAssembly lädt die Satellite-Assemblies (resx `en`) sonst nur für die beim Start aktive Kultur, der Wechsel zeigte still weiter Deutsch (bUnit läuft auf der .NET-Runtime und merkt das nicht). Ein Neuladen würde Programm, Lauf und Heldenname (nur im Speicher) verlieren (FR19). Nachteil: Das Flag steht nicht in der öffentlichen `dotnet.d.ts`, der Runtime-Loader liest es aber. Eine neue .NET-Version könnte es ändern. `LanguageTests` (E2E, Wechsel ohne Neuladen) sichert es ab | Neuladen der Seite nach dem Wechsel (`forceLoad: true`, Ansatz in Microsoft Learn «Blazor globalization and localization», Abschnitt «Dynamically set the client-side culture by user preference»; verliert den Zustand); vor `RunAsync` `CurrentCulture` und `CurrentUICulture` verschieden setzen, damit `WebAssemblyCultureProvider.GetCultures` beide Kulturen lädt (stützt sich ebenfalls auf internes Verhalten, schwerer verständlich). Quellen: `WebAssemblyCultureProvider.cs` in `dotnet/aspnetcore`, `loader/assets.ts` in `dotnet/runtime`, Microsoft Learn «Blazor startup», Abschnitt «Configure the .NET WebAssembly runtime» |
 | 12 | `FakeTimeProvider` aus dem Paket `Microsoft.Extensions.TimeProvider.Testing` (Version 10.11.0), nur im Game-Testprojekt | Offizielles Microsoft-Hilfspaket, keine Mocking-Bibliothek. `FakeTimeProvider.Advance()` steuert `Task.Delay(…, timeProvider, token)` korrekt, Tests laufen ohne echte Wartezeit. Keine neue Abhängigkeit in `src/` | Eigener Fake im Testprojekt: `CreateTimer` samt `ITimer` müsste nachgebaut werden, fehleranfällig |
-| 13 | `StandardLevels` als statische Klasse in `Modules.Levels/Infrastructure` (liest eingebettete `Levels/*.json`, `All`, `Get(id)`), kein `ILevelSource` und kein `LevelRepository` bis M5. Stand nach M4: sieben Level, weiterhin statisch, `LevelProgress` liest `StandardLevels.All` | Nur eine Quelle. Interface, eingebettete Quelle und Repository wären drei Typen auf Vorrat. `LevelRepository` (§4.1) bleibt Zielarchitektur und kommt mit M5, wenn eigene Levels über `IAppStorage` dazukommen | `ILevelSource` (Application/Contracts) mit `EmbeddedLevelSource` und `LevelRepository` sofort |
+| 13 | `StandardLevels` als statische Klasse in `Modules.Levels/Infrastructure` (liest eingebettete `Levels/*.json`, `All`, `Get(id)`), kein `ILevelSource`. Stand nach M4: sieben Level, weiterhin statisch, `LevelProgress` las `StandardLevels.All`. **Seit M5:** `LevelRepository` (Nr. 39) bekommt die Standard-Liste von `AddLevelsModule` übergeben und vereint sie mit den eigenen Levels, `LevelProgress` liest aus dem Repository. `StandardLevels` bleibt statisch, ein `ILevelSource` gibt es weiter nicht | Nur eine eingebettete Quelle. Interface, eingebettete Quelle und Repository wären drei Typen auf Vorrat gewesen. Mit M5 kam die zweite Quelle (eigene Levels über `IAppStorage`), sie steht hinter `ICustomLevelStore` | `ILevelSource` (Application/Contracts) mit `EmbeddedLevelSource` und `LevelRepository` sofort |
 | 14 | Verlassen der Spielseite stoppt Play (`Stop`, Status `Paused`) statt Reset | Keine Schleife läuft im Hintergrund weiter. Kommt das Kind zurück (gleiches Level, `Load` ändert nichts), sind Programm, Position und Interpreter noch da und Play oder Debug setzen fort | Reset beim Verlassen: einfacher, aber der Lauf geht verloren; Schleife weiterlaufen lassen: Zustandsänderungen und mögliche Ausnahmen auf einer nicht mehr angezeigten Seite |
 | 15 | **M3 D1:** Programmbearbeitung als reine Funktionen `ProgramEditing` auf der unveränderlichen `ProgramDefinition` (Domain). Jede Operation baut den betroffenen Pfad neu (`RepeatCommand` behält die `Id`) und liefert eine neue Instanz oder `null`. `GameSession` hält nur `ProgramDefinition Program` | Mit xUnit testbar, der Interpreter bekommt dieselbe Instanz, der Konstruktor prüft die Grenzen weiter als Schutznetz, stabile `Id`s für `@key`. Nachteil: Neubau pro Bearbeitung, bei höchstens 200 Bausteinen unerheblich | Veränderbarer Entwurfs-Baum in `Application` mit eigenen Knotenklassen und `ToProgram()`: zweites Modell derselben Sache, Grenzen doppelt |
 | 16 | **M3 D2:** Der Rundenzähler kommt aus dem `Interpreter`: `ExecutionStep.Repeats` (`RepeatProgress(RepeatId, Round, Count)`, aussen nach innen) | Der Interpreter kennt die Runde bereits im `Frame`, es fehlte nur die Repeat-`Id`. Play und Debug haben dieselbe Quelle. Nachteil: Die `record`-Gleichheit vergleicht die Liste per Referenz, im Doc-Kommentar vermerkt. Kein Test vergleicht ganze `ExecutionStep`s | UI rechnet die Runden aus der Schrittfolge nach: Spiellogik in der UI, bei Debug-Sprüngen fehleranfällig |
@@ -562,6 +694,20 @@ Abweichungen vom ursprünglichen Entwurf (`Run(tempo)`, `Apply(step)`): Das Temp
 | 24 | **M4 D4:** Keine Fluent-UI-Komponenten in M4. Die Startseite verwendet eigene Karten (`<button aria-pressed>`), der `LevelPicker` ein natives `<select>`. Fluent UI Blazor ist **noch nicht verwendet**, das Setup von Version 5 ist **unverifiziert** (Quelle: [NuGet-Seite 5.0.0](https://www.nuget.org/packages/Microsoft.FluentUI.AspNetCore.Components/5.0.0); Dienste, `FluentProviders` im Layout und Skript-Einbindung nicht geprüft). Entscheid Nr. 6 bleibt Zielbild | Kein Setup und kein neues Paket, gleicher Stil wie die Palette, MAUI-neutral, bUnit ohne Provider. Nachteil: Falls Fluent UI später doch gewünscht ist, muss der `LevelPicker` ersetzt werden | `FluentSelect` im `LevelPicker`: erste Verwendung des Pakets mit Setup (Dienste, Provider, Skript), Styling gegen den Fluent-Look, bUnit-Setup |
 | 25 | **M4 D5:** `easy-2` übernimmt das bisherige Demo-Layout (3 Hindernisse: Baum, Stein, Teich), `00-demo.json` entfällt | Unit-Tests behalten ihr Layout (`TestLevels` im Code), die E2E-Tests ändern nur den Einstieg (Startseite, Level `easy-2`) und den Level-Namen. Alle drei Hindernisarten sind früh sichtbar | Neue Layouts erfinden und die Koordinaten in allen E2E-Tests umschreiben |
 | 26 | **M4 D7:** Navigation mit relativen Pfaden (`NavigateTo("play")` bzw. `NavigateTo("", replace: true)`) | GitHub Pages liefert die App unter einem Unterpfad (`base href`, `release`-Skill), absolute Pfade wie `/play` würden dort ins Leere führen. `/play` ohne Wahl leitet mit `replace` auf die Startseite um, damit «Zurück» nicht in einer Umleitungsschleife landet | Absolute Pfade: funktionieren nur im Wurzelpfad |
+| 27 | **M5 D1:** Alle eigenen Levels liegen unter einem Schlüssel `heropath.levels` als kompaktes JSON-Array. Beim Laden wird jedes Element einzeln mit `LevelJson.Read` und `LevelCheck.CanSave` geprüft, Grenzen gelten für den ganzen Wert (höchstens 21 × 64 KB Zeichen, JSON-Tiefe 16, nur Arrays). Kaputte Elemente werden übergangen und fallen beim nächsten Speichern weg | Speichern und Löschen ist ein einziger Schreibvorgang, es gibt nie einen halben Stand («Speicher voll»). Die Reihenfolge ist mitgespeichert. Nachteil: Jedes Speichern schreibt alle Levels (höchstens 20 × 64 KB, typisch 20 × 2 KB) | Ein Schlüssel pro Level (`heropath.level.<id>`) plus Index: kleine Schreibvorgänge, aber zwei Schreibvorgänge pro Speichern, Index und Inhalt könnten auseinanderlaufen |
+| 28 | **M5 D2:** `IAppStorage.SetAsync` und `RemoveAsync` liefern `ValueTask<bool>` (`true` = geschrieben). `LocalStorageAppStorage` gibt bei einem abgefangenen Fehler `false` zurück. `LanguageService` ignoriert das Ergebnis | `localStorage.setItem` wirft bei vollem oder blockiertem Speicher einen Fehler (`QuotaExceededError`, kommt als `JSException`), der Editor kann ihn so anzeigen (FR18) und das Level bleibt offen. Nachteil: Vertragsänderung, `InMemoryAppStorage`, `ThrowingAppStorage` und `LanguageServiceTests` mussten angepasst werden | Vertrag unverändert lassen, nach dem Schreiben zurücklesen und vergleichen: kein Vertragsbruch, aber ein Aufruf mehr und bei grossen Werten ein grosser Vergleich |
+| 29 | **M5 D3:** `LevelEditor` ist eine Komponente in `Levels.UI`, die routbare `EditorPage` (`/editor`, `/editor/{LevelId}`) liegt in `Game.UI`. Sie reicht «Ausprobieren» an `HeroChoice` weiter: mit Held `SelectLevel` und `play`, ohne Held `HeroChoice.Preselect(id)` und die Startseite mit dem Fragment `#level-card-{id}` | `Levels` kennt `Game` nicht, «Ausprobieren» braucht aber `HeroChoice`. Die Komponente bleibt wiederverwendbar. Das Fragment braucht kein JavaScript (Microsoft Learn, «ASP.NET Core Blazor routing and navigation», Abschnitt zum Navigieren zu einem Element mit `#`) und ist mit E2E geprüft (die Karte liegt im sichtbaren Bereich). Wird ein eigenes Level gelöscht, das in `HeroChoice.LevelId` steht, ersetzen `EditorPage` und `StartPage` es durch das erste Standard-Level | Seite in `Levels.UI` und «Ausprobieren» navigiert zu `/play?level=<id>`: M4 hat «Level in der URL» bewusst verschoben, und der Held fehlt nach Neuladen trotzdem |
+| 30 | **M5 D4:** `LevelLimits.MaxStrawberries` und `MaxPizzas` (je 10) gelten im `LevelValidator` für alle Levels (Fehler `TooManyStrawberries`, `TooManyPizzas`) | Damit ist auch der Löser für jedes gültige Level beschränkt. Die Standard-Level haben höchstens 3 Erdbeeren, `StandardLevelsTests` bleibt grün. Import und Speicher können kein Level mit 30 Erdbeeren einschleusen | Grenze nur im Editor: Import und Speicher könnten Levels mit vielen Erdbeeren liefern, der Löser bräuchte eine eigene Sicherung |
+| 31 | **M5 D5:** Die Bereinigung aus `HeroChoice.NormalizeName` zieht als `TextCleaner.Clean(raw, maxTextElements)` nach `HeroPath.Shared`, mit `TextCleaner.IsHidden(char)` für Steuer-, Format- und Zeilentrenner-Zeichen. `LevelEditing.CleanName` nutzt sie und schneidet auf 50 UTF-16-Zeichen. Der `LevelValidator` lehnt Namen mit versteckten Zeichen ab, auch beim Laden und Import | Eine Regel an einer Stelle, `HeroChoiceTests` bleiben unverändert grün. `LevelValidator.IsValidName` zählt UTF-16-Zeichen, `TextCleaner` Textelemente, der Editor schneidet zusätzlich auf 50 UTF-16-Zeichen, damit der Validator nie widerspricht | Kopie in `Levels`: zwei Stellen mit derselben Regel |
+| 32 | **M5 D6:** Rückfrage beim Verlassen des Editors mit `NavigationLock` (`OnBeforeInternalNavigation`) und eigenem `ConfirmDialog` (`Shared.UI`, kein `window.confirm`, kein Fluent UI). Der Handler wartet nicht auf den Dialog: Er ruft `PreventNavigation()`, merkt das Ziel und zeigt den Dialog. «Weggehen» merkt das Ziel als erlaubt und navigiert erneut. Die Erlaubnis wird bei jeder Navigation gelöscht. Eigene Navigationen des Editors und «Ausprobieren» sind ausgenommen. Neuladen und Tab-Schliessen bleiben ungeschützt | Microsoft Learn, «ASP.NET Core Blazor navigation», Abschnitte «Handle/prevent location changes» und «NavigationLock component»: Überlappende Navigationen brechen sich gegenseitig ab, deshalb kein Warten im Handler. Das Löschen der Erlaubnis verhindert, dass eine spätere Navigation auf dieselbe Adresse ungefragt durchgeht. Der Dialog hat Fokus auf «Ja», Escape bricht ab, Tab bleibt im Dialog (NFR8). bUnit prüft `PreventNavigation`. Nachteil: Der Zurück-Knopf des Browsers bei ungespeichertem Stand ist nicht per E2E getestet | Im Handler auf den Dialog warten (`TaskCompletionSource`): Ein zweiter Klick bricht den ersten Handler ab, das Verhalten ist unverifiziert |
+| 33 | **M5 D7:** Vertrag `IFileDownload.SaveTextAsync(fileName, content, ct) → ValueTask<bool>` in `Shared/Application/Contracts`. Web: `BrowserFileDownload` lädt das JS-Modul `wwwroot/js/file-download.js` erst beim ersten Export per `import`, übergibt den UTF-8-Text als `DotNetStreamReference`, baut Blob und Anker-Klick und gibt die Objekt-URL eine Sekunde später frei. `JSException`, `JSDisconnectedException` und `InvalidOperationException` ergeben `false`, die Oberfläche zeigt dann eine Fehlermeldung (`editor-export-failed`). `ILevelFileService` aus §4.3 entfällt | `Shared` kennt keine Levels, deshalb ein allgemeiner Name. Muster nach Microsoft Learn, «ASP.NET Core Blazor file downloads», Abschnitt «Download from a stream», selbst geschrieben. Kein globales Skript in `index.html`, ein MAUI-Host implementiert nur den Vertrag. Nachteil: Ob der relative Modulpfad auf einem GitHub-Pages-Unterpfad auflöst, ist nicht ausgeführt | Globale Funktion per `<script>` in `index.html`: `index.html` wächst, ein MAUI-Host bräuchte dieselbe Datei. `ILevelFileService` mit Level-Bezug (ursprünglicher Entwurf): `Shared` müsste Levels kennen |
+| 34 | **M5 D8:** Import mit Blazors `InputFile` (`accept=".json,application/json"`, eine Datei). Zuerst `IBrowserFile.Size` gegen 256 KB, dann Lesen bis `LevelJson.MaxJsonLength` (64 K Zeichen), grössere Dateien ergeben «zu gross», Lesefehler «nicht lesbar». Dateiname und Inhalt gelten als nicht vertrauenswürdig, der Name wird nie angezeigt oder verwendet. Der Import fügt das Level der Liste hinzu und öffnet es nicht. Danach `LevelRepository.ImportAsync` (volle Prüfung, neue Id) | Keine zusätzliche JS-Datei (Anforderung: nach Möglichkeit ohne eigenes JavaScript). Quelle: Microsoft Learn, «ASP.NET Core Blazor file uploads», Abschnitt «Security considerations». Der offene Entwurf bleibt unberührt, deshalb keine Rückfrage. Nachteil: `InputFile` im MAUI-WebView ist unverifiziert (M7) | Im Plan keine weitere Variante ausgeführt. Eigenes JS zum Lesen der Datei wäre die Alternative gewesen, die Anforderung nennt `InputFile` ausdrücklich zuerst |
+| 35 | **M5 D9:** `GameBoard` bekommt `CellClicked` (und `CellLabel`). Mit dem Handler ist jedes Feld ein `<button>` mit `aria-label`, ohne Held. Ohne Handler und in der Vorschau ändert sich nichts. Zellgrösse im Editor: so gross wie Platz ist, höchstens 44 px. Bei 20×20 auf 1366×768 sind es etwa 29 px (E2E prüft mindestens 28 px) | Eine einzige Darstellung des Felds: Vorschau, Spiel und Editor sehen gleich aus. Die 29 px sind die dokumentierte Ausnahme zur 44-px-Regel (NFR7) und gelten nur für Felder, alle anderen Knöpfe bleiben bei 44 px | Eigene Komponente `EditorBoard`: Zellen-Markup und CSS doppelt |
+| 36 | **M5 D10:** Eigene Ids sind `custom-` plus 12 Hex-Zeichen aus `RandomNumberGenerator` (`LevelIdGenerator`, bei Kollision neu gezogen). Import und Vorlage bekommen immer eine neue Id. «Mein Level N» wird über `LevelEditing.NextDefaultNumber(names, format)` mit dem lokalisierten Format aus resx gebildet (kleinste freie Zahl) und folgt einem Sprachwechsel, solange das Kind den Namen nicht getippt, das Level nicht gespeichert und kein gespeichertes Level geöffnet hat. Beim Import wird ein bereits vergebener Name zu «Name (2)» | Passt zu `^[a-z0-9-]{1,40}$`. Die Id wird nie angezeigt und nie aus einer Datei übernommen, das schliesst Überschreiben und Kollisionen mit Standard-Ids aus. Der Standardname ist ein lokalisierter Text, deshalb folgt er der Sprache (NFR9). «(2)» gilt nur für den Import, im Editor getippte Namen dürfen sich wiederholen (die Id unterscheidet) | Im Plan keine Alternative genannt. Der Zusatz «(2)» beim Import und das Mitwandern des Standardnamens wurden erst in der Umsetzung ergänzt, eine verworfene Variante ist nicht dokumentiert |
+| 37 | **M5 D11:** `LevelSolver.ShortestSolution(Grid) → int?` in `Levels/Domain`: eine BFS vom Start und von jeder Erdbeere, bei `RequireAllItems` danach dynamische Programmierung über (Menge, letzte Erdbeere). Der Editor prüft über `LevelCheck` mit einem internen `LevelCheckCache`: Der Löser läuft nur neu, wenn sich das `Grid` ändert. Die Tests der Standard-Level verwenden denselben Löser | Gemessen (`LevelPerformanceTests`, JIT): 20×20 mit 10 verteilten Erdbeeren etwa 0.6 ms, das Laden von 20 solchen Levels etwa 18 ms. Im Browser (E2E, Klick bis neue Mindestschritte, Klick inklusive) 103 bis 104 ms (`artifacts/screenshots/editor-20x20.timing.txt`). Ein Test vergleicht den Löser mit einer Zustandsraum-BFS auf 300 Zufallsfeldern | BFS über (Feld, Erdbeer-Maske), im Plan vorgesehen: umgesetzt und gemessen, etwa 25 ms bzw. 480 ms für dieselben Fälle, deshalb ersetzt. Entprellen der Prüfung (im Plan als Notlösung): nicht nötig |
+| 38 | **M5 D12:** `Program.cs` ruft nach `ApplyStoredCultureAsync` `await host.Services.LoadCustomLevelsAsync()` (Erweiterung in `Levels.UI`). `LevelRepository` ist scoped wie `LanguageService` | Die Startseite kennt die eigenen Levels schon beim ersten Render. Ein nicht lesbarer Speicher ergibt keine eigenen Levels, die App startet trotzdem | Im Plan keine Alternative genannt |
+| 39 | **M5 Umsetzung:** `LevelRepository(store, standard, readLevel)` bekommt die Standard-Levels und die Lesefunktion von `AddLevelsModule` übergeben. Speichern, Löschen, Import und Laden laufen hintereinander hinter einer `SemaphoreSlim`, jede Änderung schreibt zuerst die ganze Liste in den Speicher und ersetzt erst danach die Liste im Arbeitsspeicher | `Application` darf `Infrastructure` nicht verwenden (Schichtregel), deshalb greift der Repository nicht auf `StandardLevels` zu. Die Sperre verhindert verlorene Änderungen bei überlappenden Aufrufen (Limit, Duplikate und Namensnummer werden innerhalb geprüft). «Speicher zuerst» hält Speicher und Anzeige bei `StorageFailed` gleich (Edge Case «Speicher voll») | Im Plan nicht vorgesehen, erst in der Umsetzung und den Reviews entschieden. Eine verworfene Variante ist nicht dokumentiert |
+| 40 | **M5 Umsetzung:** Ein gelöstes eigenes Level verliert den Haken, wenn es gelöscht oder mit einem anderen `Grid` gespeichert wird. Eine Umbenennung behält ihn. `GameSession.Load` ersetzt bei gleichem `Grid` und anderem Namen nur `Level` | Der Haken soll sich auf dasselbe Spielfeld beziehen. Ein anderes Spielfeld unter derselben Id ist eine neue Aufgabe, ein neuer Name nicht (und `Load` leert das Programm nur bei anderem `Grid`). Der Haken bleibt wie in M4 nur im Speicher | Im Plan nicht vorgesehen, erst in der Umsetzung und den Reviews entschieden. Eine verworfene Variante ist nicht dokumentiert |
 
 ## 7. Deployment
 
@@ -586,11 +732,11 @@ Wichtig: Eine Blazor-WebAssembly-App läuft nicht per Doppelklick auf `index.htm
 
 | Ebene | Werkzeug | Inhalt |
 |---|---|---|
-| Domain/Application (`HeroPath.Modules.<X>.Tests`) | xUnit | Bewegung, Hindernisse, Rand, Wiederhole (auch verschachtelt), Items, Ziel, Schrittlimit, Level-Validierung, Lösbarkeit der Standard-Levels (`StandardLevelsTests`, seit M4 alle sieben, die ersten vier mit kürzestem Weg bis 10 Züge); `GameSession` und `ExecutionRunner` mit `FakeTimeProvider`. Seit M3: `ProgramEditingTests` (Baum-Operationen), `ProgramDefinitionTests` (Nummerierung), `InterpreterRepeatProgressTests` (Runden), `GameSessionEditingTests`, `GameSessionDragTests`, `GameMessageTests`, `ExecutionRunnerTests` (leerer Wiederhole-Block). Seit M4: `HeroChoiceTests` (Namensregeln, Heldenwechsel), `LevelProgressTests` (Reihenfolge, gelöst, nächstes Level), `ExecutionRunnerProgressTests` (Erfolg markiert das Level, Fehler nicht), `GameSessionItemsTests` (eingesammelte Items, Reset, Levelwechsel) |
-| Komponenten (`HeroPath.Modules.<X>.Tests`, `HeroPath.Shared.Tests`) | bUnit | `ProgramEditor` (Bausteine hinzufügen, entfernen, verschachteln, Auswahl, ▲▼🗑, −/+), `BlockPalette`, `MessageBox` (alle Codes in DE und EN), `ProgramDragTests` und `ProgramDragStateTests` (Drag-Ereignisse), `ProgramRepeatProgressTests` (Hervorhebung, Runde), `ControlBar`, `GameBoard` Darstellung, Sprachumschaltung. Seit M4: `StartPageTests` (Heldenkarten, Namensfeld, Level-Karten, «Los!»), `PlayPageRedirectTests` (`/play` ohne Wahl leitet um), `LevelPickerTests` (Optionen, Haken, Auswahl), `ItemCounterTests` (Zähler je Art, Einzahl und Mehrzahl) |
+| Domain/Application (`HeroPath.Modules.<X>.Tests`) | xUnit | Bewegung, Hindernisse, Rand, Wiederhole (auch verschachtelt), Items, Ziel, Schrittlimit, Level-Validierung, Lösbarkeit der Standard-Levels (`StandardLevelsTests`, seit M4 alle sieben, die ersten vier mit kürzestem Weg bis 10 Züge); `GameSession` und `ExecutionRunner` mit `FakeTimeProvider`. Seit M3: `ProgramEditingTests` (Baum-Operationen), `ProgramDefinitionTests` (Nummerierung), `InterpreterRepeatProgressTests` (Runden), `GameSessionEditingTests`, `GameSessionDragTests`, `GameMessageTests`, `ExecutionRunnerTests` (leerer Wiederhole-Block). Seit M4: `HeroChoiceTests` (Namensregeln, Heldenwechsel), `LevelProgressTests` (Reihenfolge, gelöst, nächstes Level), `ExecutionRunnerProgressTests` (Erfolg markiert das Level, Fehler nicht), `GameSessionItemsTests` (eingesammelte Items, Reset, Levelwechsel). Seit M5 (Levels): `LevelSolverTests` (Löser, auch gegen eine Zustandsraum-BFS), `LevelEditingTests` (Werkzeugregeln, Verkleinern, Standardnummer), `UniqueNameTests`, `ExportFileNameTests`, `LevelValidatorTests` (Item-Grenzen, versteckte Zeichen im Namen), `LevelCheckTests`, `LevelIdGeneratorTests`, `LevelRepositoryTests` (Laden, Speichern, Überschreiben, Limit 20, Speicherfehler, Löschen, Import), `LevelRepositoryConcurrencyTests` (überlappende Aufrufe), `StorageCustomLevelStoreTests`, `LevelEditorStateTests` und `LevelEditorStateRobustnessTests`, `LevelPerformanceTests` (Messung des Lösers), `LevelLimitsTests`. Seit M5 (andere Projekte): `TextCleanerTests` (Shared), `HeroChoiceTests` mit `Preselect`, `LevelProgressTests` mit eigenen Levels und Haken-Verlust, `StepLimitMirrorTests` (`LevelLimits.MaxSteps` gleich `ProgramLimits.MaxExecutedSteps`), `LanguageServiceTests` mit dem `bool`-Vertrag |
+| Komponenten (`HeroPath.Modules.<X>.Tests`, `HeroPath.Shared.Tests`) | bUnit | `ProgramEditor` (Bausteine hinzufügen, entfernen, verschachteln, Auswahl, ▲▼🗑, −/+), `BlockPalette`, `MessageBox` (alle Codes in DE und EN), `ProgramDragTests` und `ProgramDragStateTests` (Drag-Ereignisse), `ProgramRepeatProgressTests` (Hervorhebung, Runde), `ControlBar`, `GameBoard` Darstellung, Sprachumschaltung. Seit M4: `StartPageTests` (Heldenkarten, Namensfeld, Level-Karten, «Los!»), `PlayPageRedirectTests` (`/play` ohne Wahl leitet um), `LevelPickerTests` (Optionen, Haken, Auswahl), `ItemCounterTests` (Zähler je Art, Einzahl und Mehrzahl). Seit M5: `LevelEditorTests` (Werkzeug, Klick, Hinweise, Rückfragen, `NavigationLock`, Export), `LevelEditorFileTests` (Import und Export mit `FakeFileDownload`), `GameBoardTests` (klickbare Felder nur mit `CellClicked`), `LevelPickerTests` (Gruppe «Meine Levels», Name), `ConfirmDialogTests` (Tastatur, Escape), `EditorPageTests`, `StartPageTests` (Abschnitt «Meine Levels», «Level bauen»), `PlayPageTests` («Bearbeiten»), `LevelsResourcesTests` (Schlüssel und Platzhalter in DE und EN) |
 | Architektur (`HeroPath.ArchitectureTests`) | xUnit | Abhängigkeitsrichtung der Module, reine Projekte ohne Blazor |
-| End-to-End (`HeroPath.E2E`) | Playwright (.NET) | Abläufe über mehrere Komponenten, Browserfehler, Screenshots für den visuellen Check. Läuft nur mit `HEROPATH_E2E=1`. Seit M3: `DragDropTests` (manuelle Mausfolge), `RepeatEditingTests` (nur Klick), `RepeatRunTests` (Runden), `MessageTests` (Meldungen, Schrittlimit über die Browser-Uhr, etwa 1.5 Minuten). Seit M4: `StartPageTests` (Held, Name, Level, `/play` ohne Wahl, Sprachwechsel), `LevelSwitchTests` (LevelPicker, «Nächstes Level», Haken), `ItemTests` (Zähler, Items verschwinden, Pizza in der Erfolgsmeldung), `LevelCoverageTests` (löst alle sieben Level per Klick, «Du hast alle Level geschafft!» in DE und EN). Die Screenshots laufen mit reduzierter Bewegung, die Item-Animation ist darauf nicht sichtbar |
-| Manuell | Browser | Drag & Drop in Firefox (offen, §6 Nr. 20), Animationen (Item-Einsammeln), Probelauf auf dem Ziel-Laptop |
+| End-to-End (`HeroPath.E2E`) | Playwright (.NET) | Abläufe über mehrere Komponenten, Browserfehler, Screenshots für den visuellen Check. Läuft nur mit `HEROPATH_E2E=1`. Seit M3: `DragDropTests` (manuelle Mausfolge), `RepeatEditingTests` (nur Klick), `RepeatRunTests` (Runden), `MessageTests` (Meldungen, Schrittlimit über die Browser-Uhr, etwa 1.5 Minuten). Seit M4: `StartPageTests` (Held, Name, Level, `/play` ohne Wahl, Sprachwechsel), `LevelSwitchTests` (LevelPicker, «Nächstes Level», Haken), `ItemTests` (Zähler, Items verschwinden, Pizza in der Erfolgsmeldung), `LevelCoverageTests` (löst alle sieben Level per Klick, «Du hast alle Level geschafft!» in DE und EN). Die Screenshots laufen mit reduzierter Bewegung, die Item-Animation ist darauf nicht sichtbar. Seit M5: `CustomLevelTests` (gespeicherte Levels vor dem Start, kaputter Eintrag daneben, spielen, Haken, Neuladen), `EditorTests` (bauen, speichern, spielen; Verweigerungen; Grenze 10 Erdbeeren und 20 Levels; Speicherfehler; 20×20 mit Zeitmessung nach `artifacts/screenshots/editor-20x20.timing.txt`, Laptop und Desktop), `EditorManageTests` (Vorlage, Löschen, Alles leeren, «Ausprobieren» mit und ohne Held, «Bearbeiten», Rückfrage beim Verlassen), `LevelFileTests` (Export als Download, Import derselben Datei, ungültige und zu grosse Datei) |
+| Manuell | Browser | Drag & Drop in Firefox (offen, §6 Nr. 20), Animationen (Item-Einsammeln), Probelauf auf dem Ziel-Laptop. Seit M5: Export und Import auf einem GitHub-Pages-Unterpfad und in Firefox oder WebKit (nicht geprüft), Zurück-Knopf des Browsers im ungespeicherten Editor, NFR2 (200 ms) auf dem veröffentlichten WebAssembly-Build |
 
 ## 9. Ordnerstruktur
 
@@ -606,24 +752,24 @@ HeroPath/
 ├─ Directory.Packages.props   Zentrale Paketversionen
 ├─ src/
 │  ├─ Shared/
-│  │  ├─ HeroPath.Shared/              Verträge für Plattformdienste (IAppStorage, StorageKeys)
-│  │  └─ HeroPath.Shared.UI/           Layout, NotFound, Theme, SVG-Grafiken (Graphics: HeroMax, HeroLisa, ItemStrawberry, ItemPizza, …), Sprache, LanguageSwitcher
+│  │  ├─ HeroPath.Shared/              Verträge für Plattformdienste (IAppStorage, IFileDownload, StorageKeys), TextCleaner
+│  │  └─ HeroPath.Shared.UI/           Layout, NotFound, Theme, SVG-Grafiken (Graphics: HeroMax, HeroLisa, ItemStrawberry, ItemPizza, …), Sprache, LanguageSwitcher, ConfirmDialog
 │  ├─ Modules/
 │  │  ├─ Levels/
-│  │  │  ├─ HeroPath.Modules.Levels/     Domain, Application, Infrastructure (sieben eingebettete Standard-Levels, StandardLevels)
-│  │  │  └─ HeroPath.Modules.Levels.UI/  Spielfeld-Ansicht (GameBoard), Level-Auswahl (LevelPicker), später Level-Editor, Texte
+│  │  │  ├─ HeroPath.Modules.Levels/     Domain (Raster, Level, LevelSolver, EditorTool, LevelEditing), Application (LevelValidator, LevelCheck, LevelRepository, LevelEditorState, LevelIdGenerator, Contracts/ICustomLevelStore), Infrastructure (sieben eingebettete Standard-Levels, StandardLevels, LevelJson, StorageCustomLevelStore)
+│  │  │  └─ HeroPath.Modules.Levels.UI/  Spielfeld-Ansicht (GameBoard, auch klickbar im Editor), Level-Auswahl (LevelPicker), Level-Editor (LevelEditor mit EditorToolbar, EditorSizeControl, EditorStatus, CustomLevelList, EditorLevelFiles), AddLevelsModule und LoadCustomLevelsAsync, Texte
 │  │  └─ Game/
 │  │     ├─ HeroPath.Modules.Game/       Domain (Held, Bausteine, Programmbaum, ProgramEditing, Interpreter), Application (GameSession, ExecutionRunner, RunStatus, Tempo, GameMessage, HeroChoice, HeroAvatar, LevelProgress)
-│  │     └─ HeroPath.Modules.Game.UI/    Startseite (StartPage), Spielseite (PlayPage), HeroBadge, HeroFigure, ItemCounter, Palette, Programm-Editor (BlockList, ProgramBlock, DropZone), Meldungsfeld, Steuerung, Services (ProgramDragState), Texte
+│  │     └─ HeroPath.Modules.Game.UI/    Startseite (StartPage), Spielseite (PlayPage), Editor-Seite (EditorPage), HeroBadge, HeroFigure, ItemCounter, Palette, Programm-Editor (BlockList, ProgramBlock, DropZone), Meldungsfeld, Steuerung, Services (ProgramDragState), Texte
 │  └─ Hosts/
-│     ├─ HeroPath.Web/                 Blazor WebAssembly Host (Program.cs, App.razor, index.html, Web-Dienste)
+│     ├─ HeroPath.Web/                 Blazor WebAssembly Host (Program.cs, App.razor, index.html, Services/LocalStorageAppStorage und BrowserFileDownload, wwwroot/js/file-download.js)
 │     ├─ HeroPath.Maui/                (später) MAUI Blazor Hybrid Host
 │     └─ HeroPath.Host/                (optional) Mini-Webserver für den lokalen Einsatz
 ├─ tests/
-│  ├─ HeroPath.Shared.Tests/           xUnit + bUnit (Sprache, LanguageSwitcher, Grafiken)
+│  ├─ HeroPath.Shared.Tests/           xUnit + bUnit (Sprache, LanguageSwitcher, ConfirmDialog, TextCleaner, Grafiken)
 │  ├─ HeroPath.Modules.Levels.Tests/   xUnit + bUnit
 │  ├─ HeroPath.Modules.Game.Tests/     xUnit + bUnit, FakeTimeProvider
-│  ├─ HeroPath.Testing/                Gemeinsame Test-Hilfen (InMemoryAppStorage, ThrowingAppStorage, CultureScope, CultureBunitContext), keine Tests
+│  ├─ HeroPath.Testing/                Gemeinsame Test-Hilfen (InMemoryAppStorage, ThrowingAppStorage, FakeFileDownload, CultureScope, CultureBunitContext), keine Tests
 │  ├─ HeroPath.ArchitectureTests/      Abhängigkeitsregeln
 │  └─ HeroPath.E2E/                    Playwright, Screenshots nach artifacts/screenshots
 └─ docs/

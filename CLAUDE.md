@@ -58,6 +58,7 @@ dotnet publish src/Hosts/HeroPath.Web -c Release
 - A test project without tests makes `dotnet test` fail (MTP exit code 8).
 - Unnecessary `using`s are build errors (IDE0005).
 - Blazor WebAssembly only loads the satellite assemblies of the startup culture, so a runtime language switch needs `loadAllSatelliteResources` in `index.html` (see `localization` skill). bUnit cannot catch this, `LanguageTests` (E2E) does.
+- Writing C# with the Write tool can turn `\uXXXX` escapes in string literals into the real (often invisible) characters. In tests for control, format or bidi characters use `(char)0x202E`-style constants and check the file for stray characters.
 
 ## Skills
 
