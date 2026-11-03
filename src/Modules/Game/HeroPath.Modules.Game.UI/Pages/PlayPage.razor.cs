@@ -1,5 +1,6 @@
 using HeroPath.Modules.Game.Application;
 using HeroPath.Modules.Game.UI.Components;
+using HeroPath.Modules.Game.UI.Services;
 using HeroPath.Modules.Levels.Domain;
 using HeroPath.Modules.Levels.Infrastructure;
 using HeroPath.Modules.Levels.UI.Resources;
@@ -11,7 +12,7 @@ namespace HeroPath.Modules.Game.UI.Pages;
 
 /// <summary>
 /// The play page. Opening it loads the level into the <see cref="GameSession"/> (an equal grid keeps program and run);
-/// leaving it stops a running Play, so no loop keeps running and the run resumes consistently (Paused) on return.
+/// leaving it stops a running Play and ends a drag in progress, so no loop keeps running and the run resumes consistently (Paused) on return.
 /// </summary>
 public partial class PlayPage : SessionComponentBase
 {
@@ -21,6 +22,9 @@ public partial class PlayPage : SessionComponentBase
 
     [Inject]
     private ExecutionRunner Runner { get; set; } = default!;
+
+    [Inject]
+    private ProgramDragState Drag { get; set; } = default!;
 
     [Inject]
     private IStringLocalizer<SharedResources> Localizer { get; set; } = default!;
@@ -41,6 +45,7 @@ public partial class PlayPage : SessionComponentBase
         if (disposing)
         {
             Runner.Stop();
+            Drag.End();
         }
     }
 }

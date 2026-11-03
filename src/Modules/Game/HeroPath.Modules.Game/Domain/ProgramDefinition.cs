@@ -83,13 +83,13 @@ public sealed class ProgramDefinition
         for (var index = 0; index < commands.Count; index++)
         {
             var command = commands[index];
-            List<int> path = [.. prefix, index + 1];
             if (command.Id == id)
             {
-                return new Located(command, path, parentId, index);
+                return new Located(command, [.. prefix, index + 1], parentId, index);
             }
 
-            if (command is RepeatCommand repeat && Locate(repeat.Body, id, repeat.Id, path) is { } inner)
+            if (command is RepeatCommand repeat
+                && Locate(repeat.Body, id, repeat.Id, [.. prefix, index + 1]) is { } inner)
             {
                 return inner;
             }

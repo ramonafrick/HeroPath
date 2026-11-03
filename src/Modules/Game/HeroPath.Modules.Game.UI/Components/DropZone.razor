@@ -3,10 +3,7 @@
 @{
     var dragging = Drag.IsDragging;
     var valid = dragging && Drag.IsValidTarget(Slot);
-    if (!dragging)
-    {
-        _hover = false;
-    }
+    var hover = dragging && _hover;
 }
 <li class="drop-zone"
     aria-hidden="true"
@@ -14,7 +11,7 @@
     data-slot="@SlotText"
     data-end="@(IsEnd ? "true" : null)"
     data-valid="@(dragging ? (valid ? "true" : "false") : null)"
-    data-hover="@(_hover ? "true" : null)"
+    data-hover="@(hover ? "true" : null)"
     @ondragenter="() => _hover = true"
     @ondragenter:preventDefault="valid"
     @ondragover:preventDefault="valid"
@@ -24,7 +21,7 @@
     @if (dragging)
     {
         <span class="zone-line"></span>
-        @if (_hover && !valid)
+        @if (hover && !valid)
         {
             <svg class="zone-no" viewBox="0 0 24 24" focusable="false">
                 <circle cx="12" cy="12" r="9" />

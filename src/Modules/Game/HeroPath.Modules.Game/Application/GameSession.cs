@@ -86,7 +86,7 @@ public sealed class GameSession
     public bool CanAdd => _program.CountAll() < ProgramLimits.MaxProgramCommands;
 
     /// <summary>Whether a repeat block fits into the <see cref="InsertTarget"/>: the program is not full and the nesting depth allows it.</summary>
-    public bool CanAddRepeat => ProgramEditing.CanInsert(_program, NewRepeat(), InsertTarget);
+    public bool CanAddRepeat => ProgramEditing.CanInsertRepeat(_program, InsertTarget);
 
     /// <summary>Position of the hero on the board: after the current step, else the start cell of the loaded grid.</summary>
     public Position HeroPosition => CurrentStep?.Position ?? Grid?.Start ?? default;
@@ -126,15 +126,17 @@ public sealed class GameSession
         CurrentStep = null;
         MarkedCell = null;
         _runMessage = null;
+        _hint = null;
+        HintedId = null;
         RunDiscarded?.Invoke();
         Changed?.Invoke();
     }
 
     /// <summary>Inserts a move block at the <see cref="InsertTarget"/>. Does nothing when the program is full or locked.</summary>
-    public void Add(Direction direction) => Apply(ProgramEditing.Insert(_program, new MoveCommand(direction), InsertTarget));
+    public void Add(Direction direction) => Add(direction, InsertTarget);
 
     /// <summary>Inserts an empty repeat block (count <see cref="DefaultRepeatCount"/>) at the <see cref="InsertTarget"/>. Does nothing when it does not fit or the program is locked.</summary>
-    public void AddRepeat() => Apply(ProgramEditing.Insert(_program, NewRepeat(), InsertTarget));
+    public void AddRepeat() => AddRepeat(InsertTarget);
 
     /// <summary>Inserts a move block at <paramref name="slot"/> (drag &amp; drop). Does nothing when it does not fit, the slot is invalid or the program is locked.</summary>
     public void Add(Direction direction, BlockSlot slot) => Apply(ProgramEditing.Insert(_program, new MoveCommand(direction), slot));
@@ -143,10 +145,10 @@ public sealed class GameSession
     public void AddRepeat(BlockSlot slot) => Apply(ProgramEditing.Insert(_program, NewRepeat(), slot));
 
     /// <summary>Whether a move block can be inserted at <paramref name="slot"/> and the program is editable.</summary>
-    public bool CanAddAt(BlockSlot slot) => IsEditable && ProgramEditing.CanInsert(_program, new MoveCommand(Direction.Up), slot);
+    public bool CanAddAt(BlockSlot slot) => IsEditable && ProgramEditing.CanInsertMove(_program, slot);
 
     /// <summary>Whether an empty repeat block can be inserted at <paramref name="slot"/> and the program is editable.</summary>
-    public bool CanAddRepeatAt(BlockSlot slot) => IsEditable && ProgramEditing.CanInsert(_program, NewRepeat(), slot);
+    public bool CanAddRepeatAt(BlockSlot slot) => IsEditable && ProgramEditing.CanInsertRepeat(_program, slot);
 
     /// <summary>Whether the block can move to <paramref name="slot"/> (a real change) and the program is editable.</summary>
     public bool CanMove(Guid id, BlockSlot slot) => IsEditable && ProgramEditing.CanMove(_program, id, slot);
@@ -217,6 +219,11 @@ public sealed class GameSession
     internal void ShowEmptyRepeatHint(RepeatCommand repeat)
     {
         if (_program.PathOf(repeat.Id) is not { } path)
+        {
+            return;
+        }
+
+        if (HintedId == repeat.Id && _hint is not null)
         {
             return;
         }

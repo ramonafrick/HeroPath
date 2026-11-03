@@ -33,5 +33,6 @@ public sealed record ExecutionStep(
     ObstacleKind? HitObstacle = null,
     int MissingItems = 0)
 {
+    /// <summary>The repeat blocks enclosing the move of <see cref="CommandId"/>, outermost first. See the type remarks.</summary>
     public IReadOnlyList<RepeatProgress> Repeats { get; init; } = [];
 }

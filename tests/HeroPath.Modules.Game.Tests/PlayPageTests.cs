@@ -2,6 +2,7 @@ using HeroPath.Modules.Game.Application;
 using HeroPath.Modules.Game.Domain;
 using HeroPath.Modules.Game.UI;
 using HeroPath.Modules.Game.UI.Pages;
+using HeroPath.Modules.Game.UI.Services;
 using HeroPath.Modules.Levels.Domain;
 using HeroPath.Shared.Application.Contracts;
 using HeroPath.Shared.UI;
@@ -88,6 +89,19 @@ public class PlayPageTests : CultureBunitContext
         Assert.Equal(1, Session.CurrentStep!.StepNumber);
         Assert.Equal(new Position(1, 5), Session.HeroPosition);
         Assert.Equal(TestLevels.DemoSolution.Length, Session.Program.Commands.Count);
+    }
+
+    [Fact]
+    public async Task Dispose_DuringDrag_EndsTheDrag()
+    {
+        Render<PlayPage>();
+        var drag = Services.GetRequiredService<ProgramDragState>();
+        drag.Start(new DragSource.NewMove(Direction.Up));
+        Assert.True(drag.IsDragging);
+
+        await DisposeComponentsAsync();
+
+        Assert.False(drag.IsDragging);
     }
 
     [Fact]

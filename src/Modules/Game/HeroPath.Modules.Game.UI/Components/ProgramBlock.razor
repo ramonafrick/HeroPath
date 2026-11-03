@@ -1,50 +1,33 @@
 @inherits DragAwareComponentBase
 
-@{
-    var isMove = Command is MoveCommand;
-    var number = string.Join(".", Path);
-    var isSelected = Session.SelectedId == Command.Id;
-    var isCurrent = Session.CurrentStep?.CommandId == Command.Id;
-    var isError = isCurrent && Session.Status == RunStatus.Failed;
-    var isHinted = Session.HintedId == Command.Id;
-    var editable = Session.IsEditable;
-    var progress = Session.CurrentStep?.Repeats.FirstOrDefault(r => r.RepeatId == Command.Id);
-    var isActiveRepeat = Command is RepeatCommand && progress is not null;
-    var name = Command switch
-    {
-        MoveCommand move => Localizer[$"Block_{move.Direction}"].Value,
-        RepeatCommand repeat => Localizer["Block_Repeat", repeat.Count].Value,
-        _ => string.Empty,
-    };
-}
 <li class="program-block"
     data-testid="program-block"
-    data-path="@number"
-    data-kind="@(isMove ? "move" : "repeat")"
-    data-selected="@(isSelected ? "true" : "false")"
+    data-path="@Number"
+    data-kind="@(IsMove ? "move" : "repeat")"
+    data-selected="@(IsSelected ? "true" : "false")"
     data-command-id="@Command.Id"
     data-direction="@((Command as MoveCommand)?.Direction.ToSlug())"
-    data-current="@(isCurrent ? "true" : null)"
-    data-error="@(isError ? "true" : null)"
-    data-hint="@(isHinted ? "true" : null)"
-    data-active-repeat="@(isActiveRepeat ? "true" : null)">
+    data-current="@(IsCurrent ? "true" : null)"
+    data-error="@(IsError ? "true" : null)"
+    data-hint="@(IsHinted ? "true" : null)"
+    data-active-repeat="@(IsActiveRepeat ? "true" : null)">
     <div class="block-row"
-         draggable="@(editable ? "true" : "false")"
-         data-testid="@($"block-row-{number}")"
+         draggable="@(IsEditable ? "true" : "false")"
+         data-testid="@($"block-row-{Number}")"
          data-dragging="@(Drag.Source is DragSource.Existing { Id: var dragged } && dragged == Command.Id ? "true" : null)"
          @ondragstart="StartDrag"
          @ondragend="Drag.End">
         <button type="button"
                 class="block-select"
-                data-testid="@($"program-select-{number}")"
-                aria-pressed="@(isSelected ? "true" : "false")"
-                aria-label="@Localizer["Program_Block", number, name]"
+                data-testid="@($"program-select-{Number}")"
+                aria-pressed="@(IsSelected ? "true" : "false")"
+                aria-label="@Localizer["Program_Block", Number, Name]"
                 @onclick="() => Session.Select(Command.Id)">
-            <span class="program-number" aria-hidden="true">@number</span>
+            <span class="program-number" aria-hidden="true">@Number</span>
             @if (Command is MoveCommand moveCommand)
             {
                 <DirectionIcon Direction="moveCommand.Direction" />
-                <span class="program-text">@name</span>
+                <span class="program-text">@Name</span>
             }
             else
             {
@@ -56,31 +39,31 @@
         {
             <button type="button"
                     class="block-action"
-                    data-testid="@($"repeat-minus-{number}")"
-                    aria-label="@Localizer["Repeat_Decrease", number]"
-                    disabled="@(!editable || header.Count <= ProgramLimits.MinRepeatCount)"
+                    data-testid="@($"repeat-minus-{Number}")"
+                    aria-label="@Localizer["Repeat_Decrease", Number]"
+                    disabled="@(!IsEditable || header.Count <= ProgramLimits.MinRepeatCount)"
                     @onclick="() => Session.SetRepeatCount(header.Id, header.Count - 1)">
                 <ProgramIcon Kind="ProgramIconKind.Minus" />
             </button>
-            <span class="repeat-count" data-testid="@($"repeat-count-{number}")">@header.Count</span>
+            <span class="repeat-count" data-testid="@($"repeat-count-{Number}")">@header.Count</span>
             <button type="button"
                     class="block-action"
-                    data-testid="@($"repeat-plus-{number}")"
-                    aria-label="@Localizer["Repeat_Increase", number]"
-                    disabled="@(!editable || header.Count >= ProgramLimits.MaxRepeatCount)"
+                    data-testid="@($"repeat-plus-{Number}")"
+                    aria-label="@Localizer["Repeat_Increase", Number]"
+                    disabled="@(!IsEditable || header.Count >= ProgramLimits.MaxRepeatCount)"
                     @onclick="() => Session.SetRepeatCount(header.Id, header.Count + 1)">
                 <ProgramIcon Kind="ProgramIconKind.Plus" />
             </button>
             <span class="repeat-after">@Localizer["Repeat_After"]</span>
-            @if (progress is { } round)
+            @if (Progress is { } round)
             {
-                <span class="repeat-round" data-testid="@($"repeat-round-{number}")">@Localizer["Repeat_Round", round.Round, round.Count]</span>
+                <span class="repeat-round" data-testid="@($"repeat-round-{Number}")">@Localizer["Repeat_Round", round.Round, round.Count]</span>
             }
         }
-        @if (isCurrent)
+        @if (IsCurrent)
         {
-            <svg class="program-marker" role="img" aria-label="@Localizer[isError ? "Program_Error" : "Program_Current"]" viewBox="0 0 24 24" focusable="false">
-                @if (isError)
+            <svg class="program-marker" role="img" aria-label="@Localizer[IsError ? "Program_Error" : "Program_Current"]" viewBox="0 0 24 24" focusable="false">
+                @if (IsError)
                 {
                     <path class="marker-shape" d="M12 2.5 L22.5 21 H1.5 Z" />
                     <path class="marker-glyph" d="M12 9 V14.5 M12 17.8 V18" />
@@ -92,20 +75,20 @@
                 }
             </svg>
         }
-        @if (isHinted)
+        @if (IsHinted)
         {
             <svg class="program-marker" role="img" aria-label="@Localizer["Program_Hint"]" viewBox="0 0 24 24" focusable="false">
                 <circle class="marker-shape" cx="12" cy="12" r="10" />
                 <path class="marker-glyph" d="M12 11 V17 M12 6.8 V7" />
             </svg>
         }
-        @if (isSelected)
+        @if (IsSelected)
         {
             <div class="block-actions">
                 <button type="button"
                         class="block-action"
                         data-testid="program-up"
-                        aria-label="@Localizer["Program_MoveUp", number]"
+                        aria-label="@Localizer["Program_MoveUp", Number]"
                         disabled="@(!Session.CanMoveUp(Command.Id))"
                         @onclick="() => Session.MoveUp(Command.Id)">
                     <ProgramIcon Kind="ProgramIconKind.Up" />
@@ -113,7 +96,7 @@
                 <button type="button"
                         class="block-action"
                         data-testid="program-down"
-                        aria-label="@Localizer["Program_MoveDown", number]"
+                        aria-label="@Localizer["Program_MoveDown", Number]"
                         disabled="@(!Session.CanMoveDown(Command.Id))"
                         @onclick="() => Session.MoveDown(Command.Id)">
                     <ProgramIcon Kind="ProgramIconKind.Down" />
@@ -121,8 +104,8 @@
                 <button type="button"
                         class="block-action"
                         data-testid="program-remove"
-                        aria-label="@Localizer["Program_Remove", number]"
-                        disabled="@(!editable)"
+                        aria-label="@Localizer["Program_Remove", Number]"
+                        disabled="@(!IsEditable)"
                         @onclick="() => Session.Remove(Command.Id)">
                     <ProgramIcon Kind="ProgramIconKind.Remove" />
                 </button>
@@ -131,14 +114,8 @@
     </div>
     @if (Command is RepeatCommand repeatCommand)
     {
-        <ol class="repeat-body" data-testid="@($"repeat-body-{number}")">
-            @for (var index = 0; index < repeatCommand.Body.Count; index++)
-            {
-                var child = repeatCommand.Body[index];
-                <DropZone @key="(child.Id, 1)" Slot="new BlockSlot(repeatCommand.Id, index)" ParentNumber="@number" />
-                <ProgramBlock @key="child.Id" Command="child" Path="[.. Path, index + 1]" />
-            }
-            <DropZone Slot="new BlockSlot(repeatCommand.Id, repeatCommand.Body.Count)" ParentNumber="@number" IsEnd="true" />
+        <ol class="repeat-body" data-testid="@($"repeat-body-{Number}")">
+            <BlockList ParentId="repeatCommand.Id" ParentNumber="@Number" Commands="repeatCommand.Body" PathPrefix="Path" />
         </ol>
     }
 </li>

@@ -484,4 +484,74 @@ public class ProgramEditingTests
 
         Assert.Equal("3(u)", Show(program));
     }
+
+    private static (ProgramDefinition Program, Guid[] Ids, Guid?[] Parents) NestedSample()
+    {
+        var inner = Repeat(2, Move(Direction.Left), Move(Direction.Right));
+        var outer = Repeat(3, Move(Direction.Down), inner, Move(Direction.Up));
+        var empty = Repeat(2);
+        var program = Program(Move(), outer, Move(Direction.Right), empty, Repeat(4, Move(Direction.Left)));
+        Guid[] ids = [.. Flatten(program.Commands).Select(c => c.Id), Guid.NewGuid()];
+        Guid?[] parents = [null, .. Flatten(program.Commands).OfType<RepeatCommand>().Select(r => (Guid?)r.Id), Guid.NewGuid()];
+        return (program, ids, parents);
+    }
+
+    private static IEnumerable<Command> Flatten(IEnumerable<Command> commands) =>
+        commands.SelectMany(c => c is RepeatCommand r ? new[] { c }.Concat(Flatten(r.Body)) : [c]);
+
+    [Fact]
+    public void CanMove_MatchesMove_ForEverySlotOfANestedProgram()
+    {
+        var (program, ids, parents) = NestedSample();
+        var checkedSlots = 0;
+
+        foreach (var id in ids)
+        {
+            foreach (var parent in parents)
+            {
+                for (var index = -1; index <= 7; index++)
+                {
+                    var slot = new BlockSlot(parent, index);
+                    Assert.True(
+                        ProgramEditing.Move(program, id, slot) is not null == ProgramEditing.CanMove(program, id, slot),
+                        $"id {id}, slot {parent}:{index}");
+                    checkedSlots++;
+                }
+            }
+        }
+
+        Assert.True(checkedSlots > 500);
+    }
+
+    [Fact]
+    public void CanMoveUpAndDown_MatchMoveUpAndDown_ForEveryBlock()
+    {
+        var (program, ids, _) = NestedSample();
+
+        foreach (var id in ids)
+        {
+            Assert.Equal(ProgramEditing.MoveUp(program, id) is not null, ProgramEditing.CanMoveUp(program, id));
+            Assert.Equal(ProgramEditing.MoveDown(program, id) is not null, ProgramEditing.CanMoveDown(program, id));
+        }
+    }
+
+    [Fact]
+    public void CanInsertMoveAndRepeat_MatchCanInsert_ForEverySlot()
+    {
+        var (program, _, parents) = NestedSample();
+        var full = new ProgramDefinition([.. Enumerable.Range(0, ProgramLimits.MaxProgramCommands).Select(_ => (Command)Move())]);
+
+        foreach (var candidate in new[] { program, full, ProgramDefinition.Empty })
+        {
+            foreach (var parent in parents)
+            {
+                for (var index = -1; index <= 7; index++)
+                {
+                    var slot = new BlockSlot(parent, index);
+                    Assert.Equal(ProgramEditing.CanInsert(candidate, Move(), slot), ProgramEditing.CanInsertMove(candidate, slot));
+                    Assert.Equal(ProgramEditing.CanInsert(candidate, Repeat(3), slot), ProgramEditing.CanInsertRepeat(candidate, slot));
+                }
+            }
+        }
+    }
 }

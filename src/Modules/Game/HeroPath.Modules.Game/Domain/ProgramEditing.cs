@@ -30,12 +30,14 @@ public static class ProgramEditing
             return null;
         }
 
-        return Edit(program, slot.ParentId, list =>
-        {
-            list.Insert(slot.Index, block);
-            return true;
-        });
+        return Edit(program, slot.ParentId, list => list.Insert(slot.Index, block));
     }
+
+    /// <summary>Whether a new move block fits into <paramref name="slot"/> (same rules as <see cref="CanInsert"/>, without building a block).</summary>
+    public static bool CanInsertMove(ProgramDefinition program, BlockSlot slot) => CanInsertNew(program, slot, 0);
+
+    /// <summary>Whether a new, empty repeat block fits into <paramref name="slot"/> (same rules as <see cref="CanInsert"/>, without building a block).</summary>
+    public static bool CanInsertRepeat(ProgramDefinition program, BlockSlot slot) => CanInsertNew(program, slot, 1);
 
     /// <summary>Removes the block with its body, or returns <c>null</c> for an unknown id.</summary>
     public static ProgramDefinition? Remove(ProgramDefinition program, Guid id)
@@ -47,11 +49,7 @@ public static class ProgramEditing
             return null;
         }
 
-        return Edit(program, at.ParentId, list =>
-        {
-            list.RemoveAt(at.Index);
-            return true;
-        });
+        return Edit(program, at.ParentId, list => list.RemoveAt(at.Index));
     }
 
     /// <summary>
@@ -79,7 +77,39 @@ public static class ProgramEditing
     }
 
     /// <summary>Whether <see cref="Move"/> would change the program.</summary>
-    public static bool CanMove(ProgramDefinition program, Guid id, BlockSlot slot) => Move(program, id, slot) is not null;
+    public static bool CanMove(ProgramDefinition program, Guid id, BlockSlot slot)
+    {
+        ArgumentNullException.ThrowIfNull(program);
+
+        if (program.SlotOf(id) is not { } from || program.Find(id) is not { } block)
+        {
+            return false;
+        }
+
+        var sameList = slot.ParentId == from.ParentId;
+        var index = sameList && slot.Index > from.Index ? slot.Index - 1 : slot.Index;
+        if (sameList && index == from.Index)
+        {
+            return false;
+        }
+
+        if (slot.ParentId is { } parentId
+            && block is RepeatCommand moved
+            && (moved.Id == parentId || ContainsId(moved.Body, parentId)))
+        {
+            return false;
+        }
+
+        if (program.DepthAt(slot.ParentId) is not { } depth || ListOf(program, slot.ParentId) is not { } list)
+        {
+            return false;
+        }
+
+        var count = sameList ? list.Count - 1 : list.Count;
+        return index >= 0
+            && index <= count
+            && depth + CommandNesting.DepthOf([block]) <= ProgramLimits.MaxRepeatNestingDepth;
+    }
 
     /// <summary>
     /// Moves the block one place up among its siblings. As the first block of a repeat body it leaves the body and lands directly
@@ -96,10 +126,12 @@ public static class ProgramEditing
         DownTarget(program, id) is { } slot ? Move(program, id, slot) : null;
 
     /// <summary>Whether <see cref="MoveUp"/> would change the program.</summary>
-    public static bool CanMoveUp(ProgramDefinition program, Guid id) => MoveUp(program, id) is not null;
+    public static bool CanMoveUp(ProgramDefinition program, Guid id) =>
+        UpTarget(program, id) is { } slot && CanMove(program, id, slot);
 
     /// <summary>Whether <see cref="MoveDown"/> would change the program.</summary>
-    public static bool CanMoveDown(ProgramDefinition program, Guid id) => MoveDown(program, id) is not null;
+    public static bool CanMoveDown(ProgramDefinition program, Guid id) =>
+        DownTarget(program, id) is { } slot && CanMove(program, id, slot);
 
     /// <summary>
     /// Sets the count of a repeat block. Returns <c>null</c> for an unknown id, a block that is not a repeat, a count outside
@@ -117,11 +149,7 @@ public static class ProgramEditing
             return null;
         }
 
-        return Edit(program, at.ParentId, list =>
-        {
-            list[at.Index] = new RepeatCommand(count, repeat.Body, repeat.Id);
-            return true;
-        });
+        return Edit(program, at.ParentId, list => list[at.Index] = new RepeatCommand(count, repeat.Body, repeat.Id));
     }
 
     private static BlockSlot? UpTarget(ProgramDefinition program, Guid id)
@@ -152,6 +180,7 @@ public static class ProgramEditing
 
         if (at.Index < siblings.Count - 1)
         {
+            // Slot indexes refer to the program before the move: the slot after the next sibling is Index + 2.
             return at with { Index = at.Index + 2 };
         }
 
@@ -160,21 +189,34 @@ public static class ProgramEditing
             : null;
     }
 
+    private static bool CanInsertNew(ProgramDefinition program, BlockSlot slot, int blockDepth)
+    {
+        ArgumentNullException.ThrowIfNull(program);
+
+        return program.CountAll() < ProgramLimits.MaxProgramCommands && FitsAt(program, blockDepth, slot);
+    }
+
     private static bool FitsAt(ProgramDefinition program, Command block, BlockSlot slot) =>
+        FitsAt(program, CommandNesting.DepthOf([block]), slot);
+
+    private static bool FitsAt(ProgramDefinition program, int blockDepth, BlockSlot slot) =>
         program.DepthAt(slot.ParentId) is { } depth
         && ListOf(program, slot.ParentId) is { } list
         && slot.Index >= 0
         && slot.Index <= list.Count
-        && depth + CommandNesting.DepthOf([block]) <= ProgramLimits.MaxRepeatNestingDepth;
+        && depth + blockDepth <= ProgramLimits.MaxRepeatNestingDepth;
+
+    private static bool ContainsId(IReadOnlyList<Command> commands, Guid id) =>
+        commands.Any(c => c.Id == id || (c is RepeatCommand repeat && ContainsId(repeat.Body, id)));
 
     private static IReadOnlyList<Command>? ListOf(ProgramDefinition program, Guid? parentId) => parentId is null
         ? program.Commands
         : (program.Find(parentId.Value) as RepeatCommand)?.Body;
 
-    private static ProgramDefinition? Edit(ProgramDefinition program, Guid? parentId, Func<List<Command>, bool> edit) =>
+    private static ProgramDefinition? Edit(ProgramDefinition program, Guid? parentId, Action<List<Command>> edit) =>
         EditList(program.Commands, parentId, edit) is { } commands ? new ProgramDefinition(commands) : null;
 
-    private static List<Command>? EditList(IReadOnlyList<Command> commands, Guid? parentId, Func<List<Command>, bool> edit)
+    private static List<Command>? EditList(IReadOnlyList<Command> commands, Guid? parentId, Action<List<Command>> edit)
     {
         if (parentId is null)
         {
@@ -200,9 +242,10 @@ public static class ProgramEditing
         return null;
     }
 
-    private static List<Command>? Apply(IReadOnlyList<Command> commands, Func<List<Command>, bool> edit)
+    private static List<Command> Apply(IReadOnlyList<Command> commands, Action<List<Command>> edit)
     {
         var copy = commands.ToList();
-        return edit(copy) ? copy : null;
+        edit(copy);
+        return copy;
     }
 }

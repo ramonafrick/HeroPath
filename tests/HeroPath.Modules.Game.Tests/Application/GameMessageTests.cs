@@ -198,6 +198,33 @@ public class GameMessageTests
     }
 
     [Fact]
+    public void Load_DifferentGrid_ClearsEmptyRepeatHint()
+    {
+        _session.AddRepeat();
+        _runner.StepOnce();
+        Assert.NotNull(_session.HintedId);
+
+        _session.Load(new Grid(5, 5, new Position(0, 0), new Position(4, 4), [], [], false));
+
+        Assert.Null(_session.HintedId);
+        Assert.NotEqual(GameMessageCode.EmptyRepeat, _session.Message?.Code);
+    }
+
+    [Fact]
+    public void RefusedStart_WithSameHintAgain_RaisesNoChanged()
+    {
+        _session.AddRepeat();
+        _runner.StepOnce();
+        var changes = 0;
+        _session.Changed += () => changes++;
+
+        _runner.StepOnce();
+
+        Assert.Equal(0, changes);
+        Assert.Equal(GameMessageCode.EmptyRepeat, _session.Message?.Code);
+    }
+
+    [Fact]
     public void Edit_AfterEmptyRepeatHint_ClearsHintAndMark()
     {
         _session.AddRepeat();

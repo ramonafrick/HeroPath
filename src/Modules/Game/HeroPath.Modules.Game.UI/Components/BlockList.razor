@@ -1,0 +1,7 @@
+@for (var index = 0; index < Commands.Count; index++)
+{
+    var command = Commands[index];
+    <DropZone @key="@ZoneBeforeKey(command)" Slot="new BlockSlot(ParentId, index)" ParentNumber="@ParentNumber" />
+    <ProgramBlock @key="@BlockKey(command)" Command="command" Path="[.. PathPrefix, index + 1]" />
+}
+<DropZone @key="@EndZoneKey" Slot="new BlockSlot(ParentId, Commands.Count)" ParentNumber="@ParentNumber" IsEnd="true" />

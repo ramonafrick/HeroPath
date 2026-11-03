@@ -39,7 +39,7 @@ public sealed class ExecutionRunner
     /// </summary>
     public async Task PlayAsync()
     {
-        if (!CanStart || IsRefusedByEmptyRepeat())
+        if (!CanStart || TryRefuseStart())
         {
             return;
         }
@@ -81,7 +81,7 @@ public sealed class ExecutionRunner
     /// <summary>Executes exactly one step (Debug). Does nothing while running, after an end state or for an empty program.</summary>
     public void StepOnce()
     {
-        if (!CanStart || IsRefusedByEmptyRepeat())
+        if (!CanStart || TryRefuseStart())
         {
             return;
         }
@@ -123,7 +123,7 @@ public sealed class ExecutionRunner
         cancellation?.Dispose();
     }
 
-    private bool IsRefusedByEmptyRepeat()
+    private bool TryRefuseStart()
     {
         if (_session.Status != RunStatus.Ready || _session.Program.FindEmptyRepeat() is not { } repeat)
         {

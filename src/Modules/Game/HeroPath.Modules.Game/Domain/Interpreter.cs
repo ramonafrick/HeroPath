@@ -47,13 +47,13 @@ public sealed class Interpreter
             return _terminal;
         }
 
-        if (State == ExecutionState.Ready && Validate() is { } invalid)
-        {
-            return Finish(invalid);
-        }
-
         if (State == ExecutionState.Ready)
         {
+            if (Validate() is { } invalid)
+            {
+                return Finish(invalid);
+            }
+
             _frames.Push(new Frame(_program.Commands, 1, null));
             _pending = NextMove();
             _pendingRepeats = Snapshot();

@@ -20,16 +20,33 @@ public partial class DropZone : DragAwareComponentBase
 
     private string SlotText => $"{ParentNumber}:{Slot.Index}";
 
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        Drag.Changed += ResetHover;
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            Drag.Changed -= ResetHover;
+        }
+
+        base.Dispose(disposing);
+    }
+
+    private void ResetHover()
+    {
+        if (!Drag.IsDragging)
+        {
+            _hover = false;
+        }
+    }
+
     private void HandleDrop()
     {
         _hover = false;
-        if (Drag.IsValidTarget(Slot))
-        {
-            Drag.Drop(Slot);
-        }
-        else
-        {
-            Drag.End();
-        }
+        Drag.Drop(Slot);
     }
 }
