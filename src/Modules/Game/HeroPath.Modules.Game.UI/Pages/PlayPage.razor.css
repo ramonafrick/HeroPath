@@ -63,6 +63,18 @@
         grid-template-rows: minmax(0, 1fr);
         column-gap: 1rem;
     }
+
+    .play-page[data-wide="true"] {
+        grid-template-columns: auto minmax(18rem, 36rem);
+    }
+
+    .play-page[data-wide="true"] .board-area {
+        max-width: calc(100vw - 39.75rem);
+    }
+
+    .play-page[data-wide="true"] .side-panel {
+        column-gap: 0.75rem;
+    }
 }
 
 .next-level {

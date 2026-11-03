@@ -8,7 +8,7 @@
 
 @if (Choice.IsChosen && Session.Grid is { } grid && Session.Level is { } level)
 {
-    <main class="play-page">
+    <main class="play-page" data-wide="@(grid.Width >= 2 * grid.Height ? "true" : null)">
         <section class="board-area" data-has-items="@(grid.Items.Count > 0 ? "true" : null)" style="--board-cols: @grid.Width; --board-rows: @grid.Height;">
             <div class="board-head">
                 <h2 class="level-name" data-testid="level-name">@LevelsLocalizer[$"Level_{level.Id}"]</h2>

@@ -72,6 +72,10 @@
     border-width: 0;
 }
 
+.game-board[data-preview="true"] .item {
+    inset: 4%;
+}
+
 .item {
     position: absolute;
     inset: 15%;

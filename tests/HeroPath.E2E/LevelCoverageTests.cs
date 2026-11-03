@@ -58,7 +58,7 @@ public class LevelCoverageTests(AppFixture app)
 
         var box = await page.GetByTestId("level-preview-castle-maze").GetByTestId("board-preview").BoundingBoxAsync();
         Assert.NotNull(box);
-        Assert.True(box.Width >= 150, $"The castle maze preview is only {box.Width} px wide.");
+        Assert.True(box.Width >= 15 * 14, $"The castle maze preview is only {box.Width} px wide (cells below 14 px).");
 
         Assert.False(await page.EvaluateAsync<bool>("document.documentElement.scrollWidth > window.innerWidth"));
         await Screenshots.CaptureAsync(page, "start-page.laptop.en");
@@ -89,6 +89,27 @@ public class LevelCoverageTests(AppFixture app)
         await Expect(page.GetByTestId("control-play")).ToHaveTextAsync("Play");
         await LayoutAssertions.AssertNoPageScrollAsync(page);
         await Screenshots.CaptureAsync(page, $"play-{levelId}.{viewport}.en");
+
+        Assert.Empty(errors.Errors);
+    }
+
+    [Fact]
+    public async Task PlayPage_WideBoard_UsesMoreWidth_AndKeepsProgramUsable_OnLaptop()
+    {
+        Assert.SkipUnless(E2EEnvironment.Enabled, "Set HEROPATH_E2E=1 to run E2E tests.");
+
+        await using var context = await app.NewContextAsync("de-CH", 1366, 768);
+        var page = await context.NewPageAsync();
+        var errors = BrowserErrors.Track(page);
+
+        await page.StartGameAsync(errors, "long-road");
+        var box = await page.GetByTestId("game-board").BoundingBoxAsync();
+        Assert.NotNull(box);
+        Assert.True(box.Width / 15 >= 48, $"The long road cells are only {box.Width / 15} px wide.");
+
+        await LevelSolutions.SolveAsync(page, "long-road");
+        await LayoutAssertions.AssertRepeatHeadersOnOneLineAsync(page);
+        await LayoutAssertions.AssertNoPageScrollAsync(page);
 
         Assert.Empty(errors.Errors);
     }

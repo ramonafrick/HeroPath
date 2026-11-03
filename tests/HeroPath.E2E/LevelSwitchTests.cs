@@ -53,6 +53,9 @@ public class LevelSwitchTests(AppFixture app)
         await Expect(page.GetByTestId("level-solved-easy-1")).ToBeVisibleAsync();
         await Expect(page.GetByTestId("level-card-easy-2")).ToHaveAttributeAsync("data-solved", "false");
         await Screenshots.CaptureAsync(page, "start-page-solved.laptop.de");
+        await page.GetByTestId("language-en").ClickAsync();
+        await Expect(page.GetByTestId("start-go")).ToHaveTextAsync("Let's go!");
+        await Screenshots.CaptureAsync(page, "start-page-solved.laptop.en");
 
         Assert.Empty(errors.Errors);
     }
