@@ -22,6 +22,10 @@ public partial class CustomLevelList : LocalizedComponentBase
     [Parameter]
     public EventCallback NewRequested { get; set; }
 
+    /// <summary>Raised with the id of the level whose delete button was clicked. The parent asks before it deletes.</summary>
+    [Parameter]
+    public EventCallback<string> DeleteRequested { get; set; }
+
     [Inject]
     private IStringLocalizer<LevelsResources> Localizer { get; set; } = default!;
 }

@@ -76,4 +76,12 @@
     <value>Radiergummi</value>
     <comment>Accessible name of the eraser tool graphic.</comment>
   </data>
+  <data name="Confirm_Yes" xml:space="preserve">
+    <value>Ja</value>
+    <comment>Generic confirm button of the confirm dialog.</comment>
+  </data>
+  <data name="Confirm_Cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+    <comment>Generic cancel button of the confirm dialog.</comment>
+  </data>
 </root>

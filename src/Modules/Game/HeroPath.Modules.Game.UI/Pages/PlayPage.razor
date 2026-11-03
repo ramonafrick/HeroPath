@@ -33,6 +33,10 @@
                              IsSolved="Progress.IsSolved"
                              IsCustom="Repository.IsCustom"
                              SelectedIdChanged="SwitchLevel" />
+                @if (Repository.IsCustom(level.Id))
+                {
+                    <button type="button" class="play-edit" data-testid="play-edit" @onclick="() => Edit(level.Id)">@GameLocalizer["Play_Edit"]</button>
+                }
                 <BlockPalette />
                 <ControlBar />
                 <MessageBox />

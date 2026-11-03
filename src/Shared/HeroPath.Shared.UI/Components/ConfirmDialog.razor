@@ -1,0 +1,22 @@
+@inherits LocalizedComponentBase
+
+@if (Visible)
+{
+    <div class="confirm-backdrop" data-testid="confirm-backdrop" @onkeydown="HandleKeyDown">
+        <span class="confirm-sentinel" tabindex="0" aria-hidden="true" @onfocus="FocusLast"></span>
+        <div class="confirm-dialog"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="@_titleId"
+             aria-describedby="@_messageId"
+             data-testid="confirm-dialog">
+            <h2 id="@_titleId" class="confirm-title" data-testid="confirm-title">@Title</h2>
+            <p id="@_messageId" class="confirm-message" data-testid="confirm-message">@Message</p>
+            <div class="confirm-actions">
+                <button type="button" class="confirm-button confirm-yes" data-testid="confirm-yes" @ref="_firstButton" @onclick="Confirm">@(ConfirmLabel ?? Localizer["Confirm_Yes"].Value)</button>
+                <button type="button" class="confirm-button confirm-no" data-testid="confirm-no" @ref="_lastButton" @onclick="Cancel">@(CancelLabel ?? Localizer["Confirm_Cancel"].Value)</button>
+            </div>
+        </div>
+        <span class="confirm-sentinel" tabindex="0" aria-hidden="true" @onfocus="FocusFirst"></span>
+    </div>
+}

@@ -70,6 +70,55 @@ public sealed class LevelEditorState
         return true;
     }
 
+    /// <summary>
+    /// Opens an unsaved copy of a standard level with a fresh id and the next free default name. The standard level stays untouched; the copy
+    /// counts as not dirty until it is changed. Returns <c>false</c> (and changes nothing) for ids that are not standard levels.
+    /// </summary>
+    public bool OpenTemplate(string templateId, Func<int, string> defaultNameFormat)
+    {
+        ArgumentNullException.ThrowIfNull(defaultNameFormat);
+        if (_repository.Standard.FirstOrDefault(level => level.Id == templateId) is not { } template)
+        {
+            return false;
+        }
+
+        Open(LevelEditing.FromTemplate(template, NewId(), _repository.NextDefaultName(defaultNameFormat)), editingId: null);
+        return true;
+    }
+
+    /// <summary>Removes all obstacles and items and switches «all strawberries needed» off. Start, goal and size stay.</summary>
+    public void ClearObjects()
+    {
+        ClearMessages();
+        if (Draft.Obstacles.Count > 0 || Draft.Items.Count > 0 || Draft.RequireAllItems)
+        {
+            Replace(LevelEditing.ClearObjects(Draft));
+        }
+
+        Changed?.Invoke();
+    }
+
+    /// <summary>
+    /// Deletes a saved custom level. When it is the level open in the editor, the editor starts a new level (not dirty), because the
+    /// draft would otherwise be saved again under the deleted id. Returns <c>false</c> when nothing was deleted (unknown id or storage failure).
+    /// </summary>
+    public async Task<bool> DeleteAsync(string id, Func<int, string> defaultNameFormat, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(id);
+        ArgumentNullException.ThrowIfNull(defaultNameFormat);
+        if (!await _repository.DeleteAsync(id, cancellationToken))
+        {
+            return false;
+        }
+
+        if (EditingId == id)
+        {
+            OpenNew(defaultNameFormat);
+        }
+
+        return true;
+    }
+
     public void SelectTool(EditorTool tool)
     {
         if (!Enum.IsDefined(tool))

@@ -194,4 +194,50 @@ public class HeroChoiceTests
     [InlineData("\u200E\u200FZoe\u2060", "Zoe")]
     public void NormalizeName_InvisibleFormatAndSeparatorCharacters_AreRemoved(string raw, string expected) =>
         Assert.Equal(expected, HeroChoice.NormalizeName(raw, HeroAvatar.Max));
+
+    [Fact]
+    public void Preselect_BeforeAChoice_SetsTheLevelWithoutChoosing()
+    {
+        var choice = new HeroChoice();
+        var changes = 0;
+        choice.Changed += () => changes++;
+
+        choice.Preselect("custom-abc");
+        choice.Preselect("custom-abc");
+
+        Assert.Equal("custom-abc", choice.LevelId);
+        Assert.False(choice.IsChosen);
+        Assert.Equal(HeroAvatar.Max, choice.Avatar);
+        Assert.Equal("Max", choice.Name);
+        Assert.Equal(1, changes);
+    }
+
+    [Fact]
+    public void Preselect_AfterAChoice_KeepsHeroAndNameAndStaysChosen()
+    {
+        var choice = new HeroChoice();
+        choice.Choose(HeroAvatar.Lisa, "Zoe", "easy-1");
+
+        choice.Preselect("easy-2");
+
+        Assert.Equal("easy-2", choice.LevelId);
+        Assert.True(choice.IsChosen);
+        Assert.Equal(HeroAvatar.Lisa, choice.Avatar);
+        Assert.Equal("Zoe", choice.Name);
+    }
+
+    [Fact]
+    public void Preselect_NullLevelId_Throws() =>
+        Assert.Throws<ArgumentNullException>(() => new HeroChoice().Preselect(null!));
+
+    [Fact]
+    public void SelectLevel_BeforeAChoice_StillDoesNothingAfterPreselect()
+    {
+        var choice = new HeroChoice();
+        choice.Preselect("easy-1");
+
+        choice.SelectLevel("easy-2");
+
+        Assert.Equal("easy-1", choice.LevelId);
+    }
 }

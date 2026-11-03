@@ -120,7 +120,7 @@ public sealed class GameSession
 
     /// <summary>
     /// Loads a level. Loading the same level again (same id and equal grid) is a no-op, so returning to the page or
-    /// re-rendering keeps program and run. A different level discards the run (status <see cref="RunStatus.Ready"/>, hero on the
+    /// re-rendering keeps program and run (a level that only differs in its name replaces <see cref="Level"/> and keeps the rest, e.g. a renamed custom level). A different level discards the run (status <see cref="RunStatus.Ready"/>, hero on the
     /// new start, editable) and also clears the program, the selection and the hints.
     /// </summary>
     public void Load(LevelDefinition level)
@@ -134,6 +134,7 @@ public sealed class GameSession
         var grid = level.ToGrid();
         if (Level is { } loaded && loaded.Id == level.Id && grid.Equals(Grid))
         {
+            Level = level;
             return;
         }
 

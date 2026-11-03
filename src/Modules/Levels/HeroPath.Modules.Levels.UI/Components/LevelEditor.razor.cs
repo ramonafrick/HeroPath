@@ -3,6 +3,7 @@ using HeroPath.Modules.Levels.Domain;
 using HeroPath.Modules.Levels.UI.Resources;
 using HeroPath.Shared.UI.Components;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.Extensions.Localization;
 
 namespace HeroPath.Modules.Levels.UI.Components;
@@ -20,10 +21,22 @@ public partial class LevelEditor : LocalizedComponentBase
     private string _nameText = string.Empty;
     private Grid? _grid;
     private LevelDefinition? _gridFor;
+    private Pending _pending;
+    private string? _pendingId;
+    private string? _pendingName;
+    private string? _leaveTarget;
+    private string? _allowedTarget;
+    private bool _trying;
+    private bool _deleteFailed;
+    private int _templateKey;
 
     /// <summary>The id of the custom level to open. <c>null</c> or an unknown id starts a new level.</summary>
     [Parameter]
     public string? LevelId { get; set; }
+
+    /// <summary>Raised with the id of the level after «Try it» saved it. Without a handler the button is not shown.</summary>
+    [Parameter]
+    public EventCallback<string> OnTryOut { get; set; }
 
     [Inject]
     private LevelEditorState State { get; set; } = default!;
@@ -51,6 +64,17 @@ public partial class LevelEditor : LocalizedComponentBase
         }
     }
 
+    private enum Pending
+    {
+        None,
+        New,
+        Template,
+        Open,
+        Delete,
+        Clear,
+        Leave,
+    }
+
     private bool HasStrawberry => State.Draft.Items.Any(item => item.Kind == ItemKind.Strawberry);
 
     private string? HintText
@@ -75,6 +99,39 @@ public partial class LevelEditor : LocalizedComponentBase
             };
         }
     }
+
+    private string DialogTitle => _pending switch
+    {
+        Pending.Delete => Localizer["Confirm_Delete_Title"].Value,
+        Pending.Clear => Localizer["Confirm_Clear_Title"].Value,
+        Pending.Leave => Localizer["Confirm_Leave_Title"].Value,
+        Pending.None => string.Empty,
+        _ => Localizer["Confirm_Discard_Title"].Value,
+    };
+
+    private string DialogMessage => _pending switch
+    {
+        Pending.Delete => Localizer["Confirm_Delete_Message", _pendingName ?? string.Empty].Value,
+        Pending.Clear => Localizer["Confirm_Clear_Message"].Value,
+        Pending.Leave => Localizer["Confirm_Leave_Message"].Value,
+        Pending.None => string.Empty,
+        _ => Localizer["Confirm_Discard_Message"].Value,
+    };
+
+    private string? DialogConfirmLabel => _pending switch
+    {
+        Pending.Delete => Localizer["Confirm_Delete_Yes"].Value,
+        Pending.Clear => Localizer["Confirm_Clear_Yes"].Value,
+        Pending.Leave => Localizer["Confirm_Leave_Yes"].Value,
+        Pending.None => null,
+        _ => Localizer["Confirm_Discard_Yes"].Value,
+    };
+
+    private string? DialogCancelLabel => _pending switch
+    {
+        Pending.Leave or Pending.Open or Pending.New or Pending.Template => Localizer["Confirm_Stay"].Value,
+        _ => null,
+    };
 
     private string? SavedText => State.LastSave switch
     {
@@ -134,37 +191,167 @@ public partial class LevelEditor : LocalizedComponentBase
 
     private void RequireAllChanged(ChangeEventArgs args) => State.SetRequireAllItems(args.Value is true);
 
-    private void OpenLevel(string id)
+    private void AskNew() => AskDiscard(Pending.New, null);
+
+    private void AskOpen(string id) => AskDiscard(Pending.Open, id);
+
+    private void TemplateChosen(ChangeEventArgs args)
     {
-        if (!State.Open(id))
+        _templateKey++;
+        if (args.Value is string { Length: > 0 } id)
         {
+            AskDiscard(Pending.Template, id);
+        }
+    }
+
+    private void AskDiscard(Pending pending, string? id)
+    {
+        _deleteFailed = false;
+        _pendingId = id;
+        if (State.IsDirty)
+        {
+            _pending = pending;
             return;
         }
 
-        _nameText = State.Draft.Name ?? string.Empty;
-        GoTo(id);
+        Perform(pending, id);
     }
 
-    private void NewLevel()
+    private void AskClear() => _pending = Pending.Clear;
+
+    private void AskDelete(string id)
     {
-        State.OpenNew(DefaultName);
+        _deleteFailed = false;
+        _pendingId = id;
+        _pendingName = Repository.Find(id)?.Name;
+        _pending = Pending.Delete;
+    }
+
+    private Task BeforeNavigation(LocationChangingContext context)
+    {
+        if (_trying || !State.IsDirty || IsAllowed(context.TargetLocation))
+        {
+            return Task.CompletedTask;
+        }
+
+        context.PreventNavigation();
+        _leaveTarget = context.TargetLocation;
+        _pending = Pending.Leave;
+        return Task.CompletedTask;
+    }
+
+    private bool IsAllowed(string target) =>
+        _allowedTarget is { } allowed && Navigation.ToAbsoluteUri(allowed) == Navigation.ToAbsoluteUri(target);
+
+    private void CancelPending()
+    {
+        _pending = Pending.None;
+        _pendingId = null;
+        _pendingName = null;
+        _leaveTarget = null;
+    }
+
+    private async Task ConfirmPendingAsync()
+    {
+        var pending = _pending;
+        var id = _pendingId;
+        var target = _leaveTarget;
+        CancelPending();
+        switch (pending)
+        {
+            case Pending.Delete when id is not null:
+                await DeleteAsync(id);
+                break;
+            case Pending.Clear:
+                State.ClearObjects();
+                break;
+            case Pending.Leave when target is not null:
+                _allowedTarget = target;
+                Navigation.NavigateTo(target);
+                break;
+            default:
+                Perform(pending, id);
+                break;
+        }
+    }
+
+    private void Perform(Pending pending, string? id)
+    {
+        switch (pending)
+        {
+            case Pending.New:
+                State.OpenNew(DefaultName);
+                break;
+            case Pending.Template when id is not null:
+                if (!State.OpenTemplate(id, DefaultName))
+                {
+                    return;
+                }
+
+                break;
+            case Pending.Open when id is not null:
+                if (!State.Open(id))
+                {
+                    return;
+                }
+
+                break;
+            default:
+                return;
+        }
+
         _nameText = State.Draft.Name ?? string.Empty;
-        GoTo(null);
+        GoTo(State.EditingId);
+    }
+
+    private async Task DeleteAsync(string id)
+    {
+        var wasOpen = State.EditingId == id;
+        if (!await State.DeleteAsync(id, DefaultName, _disposed.Token))
+        {
+            _deleteFailed = Repository.Find(id) is not null;
+            return;
+        }
+
+        if (wasOpen)
+        {
+            _nameText = State.Draft.Name ?? string.Empty;
+            GoTo(null);
+        }
     }
 
     private async Task SaveAsync()
     {
         var outcome = await State.SaveAsync(_disposed.Token);
-        if (outcome == SaveOutcome.Saved && LevelId is null && State.EditingId is { } id)
+        if (outcome == SaveOutcome.Saved && _openedFor is null && State.EditingId is { } id)
         {
             GoTo(id, replace: true);
+        }
+    }
+
+    private async Task TryOutAsync()
+    {
+        _trying = true;
+        try
+        {
+            var outcome = await State.SaveAsync(_disposed.Token);
+            if (outcome == SaveOutcome.Saved && State.EditingId is { } id)
+            {
+                await OnTryOut.InvokeAsync(id);
+            }
+        }
+        finally
+        {
+            _trying = false;
         }
     }
 
     private void GoTo(string? id, bool replace = false)
     {
         _openedFor = id;
-        Navigation.NavigateTo(id is null ? "editor" : $"editor/{id}", replace: replace);
+        var target = id is null ? "editor" : $"editor/{id}";
+        _allowedTarget = target;
+        Navigation.NavigateTo(target, replace: replace);
     }
 
     private string CellLabel(Position position)

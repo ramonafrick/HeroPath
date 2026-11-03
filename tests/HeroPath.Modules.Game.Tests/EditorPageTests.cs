@@ -1,3 +1,4 @@
+using HeroPath.Modules.Game.Application;
 using HeroPath.Modules.Game.UI;
 using HeroPath.Modules.Game.UI.Pages;
 using HeroPath.Modules.Levels.Application;
@@ -5,6 +6,7 @@ using HeroPath.Modules.Levels.Domain;
 using HeroPath.Shared.Application.Contracts;
 using HeroPath.Shared.UI;
 using HeroPath.Shared.UI.Localization;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HeroPath.Modules.Game.Tests;
@@ -12,11 +14,13 @@ namespace HeroPath.Modules.Game.Tests;
 [Collection("Culture")]
 public class EditorPageTests : CultureBunitContext
 {
+    private readonly InMemoryAppStorage _storage = new();
+
     public EditorPageTests()
     {
         Services.AddSharedUI();
         Services.AddGameModule();
-        Services.AddSingleton<IAppStorage, InMemoryAppStorage>();
+        Services.AddSingleton<IAppStorage>(_storage);
     }
 
     private static CancellationToken Token => Xunit.TestContext.Current.CancellationToken;
@@ -83,5 +87,83 @@ public class EditorPageTests : CultureBunitContext
         page.WaitForAssertion(() => Assert.Equal("Build a level", page.Find("h2").TextContent));
         Assert.Equal("tree", page.Find("[data-testid=edit-cell-4-4]").GetAttribute("data-kind"));
         Assert.Equal("Mein Weg", page.Find("[data-testid=editor-name]").GetAttribute("value"));
+    }
+
+    private HeroChoice Choice => Services.GetRequiredService<HeroChoice>();
+
+    private NavigationManager Navigation => Services.GetRequiredService<NavigationManager>();
+
+    [Fact]
+    public void TryOut_WithAHero_SelectsTheLevelAndOpensThePlayPage()
+    {
+        Choice.Choose(HeroAvatar.Lisa, "Zoe", "easy-1");
+        var page = Render<EditorPage>();
+        var id = Services.GetRequiredService<LevelEditorState>().Draft.Id;
+
+        page.Find("[data-testid=editor-try]").Click();
+
+        page.WaitForAssertion(() => Assert.Equal(Navigation.BaseUri + "play", Navigation.Uri));
+        Assert.Equal(id, Choice.LevelId);
+        Assert.Equal(HeroAvatar.Lisa, Choice.Avatar);
+        Assert.Equal("Zoe", Choice.Name);
+        Assert.Single(Services.GetRequiredService<LevelRepository>().Custom);
+    }
+
+    [Fact]
+    public void TryOut_WithoutAHero_PreselectsTheLevelAndOpensTheStartPage()
+    {
+        Navigation.NavigateTo("editor");
+        var page = Render<EditorPage>();
+        var id = Services.GetRequiredService<LevelEditorState>().Draft.Id;
+
+        page.Find("[data-testid=editor-try]").Click();
+
+        page.WaitForAssertion(() => Assert.Equal(Navigation.BaseUri, Navigation.Uri));
+        Assert.False(Choice.IsChosen);
+        Assert.Equal(id, Choice.LevelId);
+    }
+
+    [Fact]
+    public void TryOut_WhenSavingFails_StaysOnThePageAndChangesNoChoice()
+    {
+        _storage.FailWrites = true;
+        Choice.Choose(HeroAvatar.Max, null, "easy-1");
+        Navigation.NavigateTo("editor");
+        var page = Render<EditorPage>();
+
+        page.Find("[data-testid=editor-try]").Click();
+
+        page.WaitForAssertion(() => Assert.Equal("StorageFailed", page.Find("[data-testid=editor-saved]").GetAttribute("data-outcome")));
+        Assert.Equal(Navigation.BaseUri + "editor", Navigation.Uri);
+        Assert.Equal("easy-1", Choice.LevelId);
+    }
+
+    [Fact]
+    public async Task Delete_OfTheChosenLevel_FallsBackToTheFirstStandardLevel()
+    {
+        await SaveCustomLevelAsync("custom-a", "Eins");
+        Choice.Choose(HeroAvatar.Max, null, "custom-a");
+        var page = Render<EditorPage>();
+
+        page.Find("[data-testid=custom-level-delete-custom-a]").Click();
+        page.Find("[data-testid=confirm-yes]").Click();
+
+        page.WaitForAssertion(() => Assert.Equal("free-field", Choice.LevelId));
+        Assert.True(Choice.IsChosen);
+    }
+
+    [Fact]
+    public async Task Delete_OfAnotherLevel_KeepsTheChosenLevel()
+    {
+        await SaveCustomLevelAsync("custom-a", "Eins");
+        await SaveCustomLevelAsync("custom-b", "Zwei");
+        Choice.Choose(HeroAvatar.Max, null, "custom-a");
+        var page = Render<EditorPage>();
+
+        page.Find("[data-testid=custom-level-delete-custom-b]").Click();
+        page.Find("[data-testid=confirm-yes]").Click();
+
+        page.WaitForAssertion(() => Assert.Empty(page.FindAll("[data-testid=custom-level-custom-b]")));
+        Assert.Equal("custom-a", Choice.LevelId);
     }
 }

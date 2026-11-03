@@ -319,6 +319,35 @@ public class GameSessionTests
     }
 
     [Fact]
+    public void Load_SameIdAndGridWithANewName_KeepsProgramAndRunButTakesTheNewLevel()
+    {
+        var (session, runner) = Started(Direction.Up, Direction.Up);
+        runner.StepOnce();
+        var grid = session.Grid;
+        var renamed = TestLevels.Demo with { Name = "Neuer Name" };
+
+        session.Load(renamed);
+
+        Assert.Same(renamed, session.Level);
+        Assert.Same(grid, session.Grid);
+        Assert.Equal(2, session.Program.Commands.Count);
+        Assert.Equal(RunStatus.Paused, session.Status);
+    }
+
+    [Fact]
+    public void Load_EditedLevelWithAnObstacleMoved_ClearsTheProgramAndTakesTheNewGrid()
+    {
+        var (session, _) = Started(Direction.Up, Direction.Up);
+        var edited = TestLevels.Demo with { Obstacles = [] };
+
+        session.Load(edited);
+
+        Assert.Empty(session.Program.Commands);
+        Assert.Equal(RunStatus.Ready, session.Status);
+        Assert.Empty(session.Grid!.Obstacles);
+    }
+
+    [Fact]
     public void Load_SameIdButDifferentGrid_IsADifferentLevel()
     {
         var (session, _) = Started(Direction.Up);

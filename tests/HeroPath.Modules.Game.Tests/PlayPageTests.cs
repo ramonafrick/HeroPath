@@ -352,4 +352,92 @@ public class PlayPageTests : CultureBunitContext
         Assert.Empty(page.FindAll("[data-testid=next-level]"));
         Assert.StartsWith("✓", page.Find("[data-testid=level-picker-option-custom-a]").TextContent.Trim());
     }
+
+    [Fact]
+    public void EditButton_IsNotShownForAStandardLevel()
+    {
+        var page = Render<PlayPage>();
+
+        Assert.Empty(page.FindAll("[data-testid=play-edit]"));
+    }
+
+    [Fact]
+    public async Task EditButton_ForACustomLevel_OpensTheEditorWithThatLevel()
+    {
+        await SaveCustomLevelAsync();
+        Choice.SelectLevel("custom-a");
+        var page = Render<PlayPage>();
+
+        var button = page.Find("[data-testid=play-edit]");
+        Assert.Equal("Bearbeiten", button.TextContent);
+        button.Click();
+
+        var navigation = Services.GetRequiredService<NavigationManager>();
+        Assert.Equal(navigation.BaseUri + "editor/custom-a", navigation.Uri);
+    }
+
+    [Fact]
+    public async Task EditButton_FollowsTheLevelSwitchedInThePicker()
+    {
+        await SaveCustomLevelAsync();
+        var page = Render<PlayPage>();
+        Assert.Empty(page.FindAll("[data-testid=play-edit]"));
+
+        page.Find("[data-testid=level-picker]").Change("custom-a");
+        Assert.NotNull(page.Find("[data-testid=play-edit]"));
+
+        page.Find("[data-testid=level-picker]").Change("easy-1");
+        Assert.Empty(page.FindAll("[data-testid=play-edit]"));
+    }
+
+    [Fact]
+    public async Task Render_AfterTheLevelWasEdited_LoadsTheNewVersionAndClearsAProgramThatNoLongerFits()
+    {
+        await SaveCustomLevelAsync();
+        Choice.SelectLevel("custom-a");
+        var repository = Services.GetRequiredService<LevelRepository>();
+        var first = Render<PlayPage>();
+        Session.Add(Direction.Right);
+        await DisposeComponentsAsync();
+
+        var edited = TestLevels.Empty("custom-a", 4, 3, new Position(0, 0), new Position(3, 0)) with { Name = "Neuer Name" };
+        Assert.Equal(SaveOutcome.Saved, await repository.SaveAsync(edited, Xunit.TestContext.Current.CancellationToken));
+        var second = Render<PlayPage>();
+
+        Assert.Equal(12, second.FindAll("[data-testid^=cell-]").Count);
+        Assert.Equal("Neuer Name", second.Find("[data-testid=level-name]").TextContent);
+        Assert.Empty(Session.Program.Commands);
+    }
+
+    [Fact]
+    public async Task Render_AfterOnlyTheNameWasEdited_KeepsTheProgramAndShowsTheNewName()
+    {
+        await SaveCustomLevelAsync();
+        Choice.SelectLevel("custom-a");
+        var repository = Services.GetRequiredService<LevelRepository>();
+        var first = Render<PlayPage>();
+        Session.Add(Direction.Right);
+        await DisposeComponentsAsync();
+
+        var renamed = repository.Find("custom-a")! with { Name = "Neuer Name" };
+        Assert.Equal(SaveOutcome.Saved, await repository.SaveAsync(renamed, Xunit.TestContext.Current.CancellationToken));
+        var second = Render<PlayPage>();
+
+        Assert.Equal("Neuer Name", second.Find("[data-testid=level-name]").TextContent);
+        Assert.Single(Session.Program.Commands);
+        Assert.NotNull(first);
+    }
+
+    [Fact]
+    public void Render_WhenTheChosenLevelWasDeleted_RedirectsToTheStartPage()
+    {
+        Choice.SelectLevel("custom-gone");
+        var navigation = Services.GetRequiredService<NavigationManager>();
+        navigation.NavigateTo("play");
+
+        var page = Render<PlayPage>();
+
+        Assert.Equal(navigation.BaseUri, navigation.Uri);
+        Assert.Empty(page.FindAll("[data-testid=side-panel]"));
+    }
 }

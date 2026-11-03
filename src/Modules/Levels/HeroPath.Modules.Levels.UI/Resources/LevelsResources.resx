@@ -296,4 +296,84 @@
     <value>Pizza</value>
     <comment>Content of a cell with a pizza slice.</comment>
   </data>
+  <data name="Editor_Clear" xml:space="preserve">
+    <value>Alles leeren</value>
+    <comment>Button that removes all obstacles and items from the draft.</comment>
+  </data>
+  <data name="Editor_Try" xml:space="preserve">
+    <value>Ausprobieren</value>
+    <comment>Button that saves the level and opens it for playing.</comment>
+  </data>
+  <data name="Editor_Template_Label" xml:space="preserve">
+    <value>Vorlage wählen</value>
+    <comment>Label of the select that copies a standard level into the editor.</comment>
+  </data>
+  <data name="Editor_Template_Placeholder" xml:space="preserve">
+    <value>Ein Level als Start nehmen …</value>
+    <comment>First, empty option of the template select.</comment>
+  </data>
+  <data name="Editor_Delete" xml:space="preserve">
+    <value>Löschen</value>
+    <comment>Button that deletes a custom level from the list.</comment>
+  </data>
+  <data name="Editor_List_Delete" xml:space="preserve">
+    <value>{0} löschen</value>
+    <comment>{0} = level name. Accessible name of the delete button of a list entry.</comment>
+  </data>
+  <data name="Editor_Delete_Failed" xml:space="preserve">
+    <value>Das Level konnte nicht gelöscht werden. Dein Browser lässt das Speichern gerade nicht zu.</value>
+    <comment>Shown when the storage could not be written while deleting.</comment>
+  </data>
+  <data name="Confirm_Delete_Title" xml:space="preserve">
+    <value>Level löschen?</value>
+    <comment>Title of the delete confirmation.</comment>
+  </data>
+  <data name="Confirm_Delete_Message" xml:space="preserve">
+    <value>Level «{0}» wirklich löschen? Das kannst du nicht rückgängig machen.</value>
+    <comment>{0} = level name (user text).</comment>
+  </data>
+  <data name="Confirm_Delete_Yes" xml:space="preserve">
+    <value>Ja, löschen</value>
+    <comment>Confirm button of the delete confirmation.</comment>
+  </data>
+  <data name="Confirm_Clear_Title" xml:space="preserve">
+    <value>Alles leeren?</value>
+    <comment>Title of the clear confirmation.</comment>
+  </data>
+  <data name="Confirm_Clear_Message" xml:space="preserve">
+    <value>Alle Hindernisse, Erdbeeren und Pizzastücke werden entfernt. Start, Ziel und Grösse bleiben.</value>
+    <comment>Message of the clear confirmation.</comment>
+  </data>
+  <data name="Confirm_Clear_Yes" xml:space="preserve">
+    <value>Ja, leeren</value>
+    <comment>Confirm button of the clear confirmation.</comment>
+  </data>
+  <data name="Confirm_Leave_Title" xml:space="preserve">
+    <value>Weggehen?</value>
+    <comment>Title of the confirmation when leaving the editor with unsaved changes.</comment>
+  </data>
+  <data name="Confirm_Leave_Message" xml:space="preserve">
+    <value>Deine Änderungen sind noch nicht gespeichert. Trotzdem weggehen?</value>
+    <comment>Message when leaving the editor with unsaved changes.</comment>
+  </data>
+  <data name="Confirm_Leave_Yes" xml:space="preserve">
+    <value>Ja, weggehen</value>
+    <comment>Confirm button when leaving the editor.</comment>
+  </data>
+  <data name="Confirm_Discard_Title" xml:space="preserve">
+    <value>Änderungen verwerfen?</value>
+    <comment>Title when opening another level while there are unsaved changes.</comment>
+  </data>
+  <data name="Confirm_Discard_Message" xml:space="preserve">
+    <value>Deine Änderungen sind noch nicht gespeichert. Willst du sie wegwerfen?</value>
+    <comment>Message when opening another level, a template or a new level with unsaved changes.</comment>
+  </data>
+  <data name="Confirm_Discard_Yes" xml:space="preserve">
+    <value>Ja, wegwerfen</value>
+    <comment>Confirm button of the discard confirmation.</comment>
+  </data>
+  <data name="Confirm_Stay" xml:space="preserve">
+    <value>Nein, weiterbauen</value>
+    <comment>Cancel button of the leave and discard confirmations.</comment>
+  </data>
 </root>

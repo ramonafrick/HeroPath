@@ -13,7 +13,7 @@ Docs: `docs/Architektur C4.md` (§3 containers, §4 components, §6 decisions, �
 src/
   Shared/
     HeroPath.Shared/                 pure C#: cross-module contracts (IAppStorage, …), TextCleaner
-    HeroPath.Shared.UI/              RCL: MainLayout, NotFound, theme, SVG graphics, localization, LanguageSwitcher
+    HeroPath.Shared.UI/              RCL: MainLayout, NotFound, theme, SVG graphics, localization, LanguageSwitcher, ConfirmDialog
   Modules/
     Levels/
       HeroPath.Modules.Levels/       pure C#: Domain/ (Position, Grid, ObstacleKind, ItemKind, LevelDefinition, LevelLimits, LevelSolver, EditorTool, LevelEditing)
@@ -29,7 +29,7 @@ src/
     HeroPath.Web/                    Blazor WASM host: Program.cs, App.razor (router), index.html, web platform services
     HeroPath.Maui/                   (later, do not create)
 tests/
-  HeroPath.Shared.Tests/             xUnit + bUnit for Shared and Shared.UI (LanguageService, LanguageSwitcher)
+  HeroPath.Shared.Tests/             xUnit + bUnit for Shared and Shared.UI (LanguageService, LanguageSwitcher, ConfirmDialog)
   HeroPath.Modules.Levels.Tests/     xUnit + bUnit for Levels and Levels.UI
   HeroPath.Modules.Game.Tests/       xUnit + bUnit for Game and Game.UI
   HeroPath.Testing/                  plain class library, no tests: shared fakes (InMemoryAppStorage, ThrowingAppStorage,
@@ -66,8 +66,8 @@ When you add a project-level rule, add it to `DependencyRuleTests.Rules`.
 | Texts of one module | `Modules.<X>.UI/Resources/<X>Resources.resx` (+ `.en.resx`) |
 | Component base classes (language / session / drag subscription) | `Shared.UI/Components` (`LocalizedComponentBase`), `Modules.Game.UI/Components` (`SessionComponentBase`, `DragAwareComponentBase`) |
 | UI-only state shared by components (drag state) | `Modules.<X>.UI/Services` (`ProgramDragState`) |
-| Routable page that needs both modules (EditorPage hosts the Levels.UI `LevelEditor`, later «Try it» needs `HeroChoice`) | `Modules.Game.UI/Pages`; the reusable component stays in `Modules.Levels.UI/Components` |
-| Layout, theme, SVG graphics, app title, LanguageSwitcher | `Shared.UI` |
+| Routable page that needs both modules (EditorPage hosts the Levels.UI `LevelEditor`; «Try it» needs `HeroChoice`) | `Modules.Game.UI/Pages`; the reusable component stays in `Modules.Levels.UI/Components` |
+| Layout, theme, SVG graphics, app title, LanguageSwitcher, ConfirmDialog | `Shared.UI` |
 | Platform contract (storage, files) | `Shared/Application/Contracts` |
 | Platform implementation (localStorage via JS interop) | `Hosts/HeroPath.Web/Services` |
 

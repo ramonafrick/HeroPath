@@ -61,6 +61,22 @@ public sealed class HeroChoice
         Changed?.Invoke();
     }
 
+    /// <summary>
+    /// Sets the level the start page pre-selects without confirming a choice: <see cref="IsChosen"/>, hero and name stay as they are.
+    /// Used when the editor sends the child to a level before a hero was chosen, and when a deleted level has to be replaced.
+    /// </summary>
+    public void Preselect(string levelId)
+    {
+        ArgumentNullException.ThrowIfNull(levelId);
+        if (levelId == _levelId)
+        {
+            return;
+        }
+
+        _levelId = levelId;
+        Changed?.Invoke();
+    }
+
     /// <summary>The name a hero has when the child types nothing.</summary>
     public static string DefaultName(HeroAvatar avatar) => avatar switch
     {

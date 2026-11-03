@@ -165,3 +165,52 @@
 .editor-saved[data-outcome="Invalid"] {
     border-style: dashed;
 }
+
+.editor-template {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.editor-template-select {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.25rem 0.5rem;
+    font: inherit;
+    color: var(--hp-text);
+    background: var(--hp-surface);
+    border: 3px solid var(--hp-outline);
+    border-radius: 0.75rem;
+    cursor: pointer;
+}
+
+.editor-secondary,
+.editor-try-button {
+    box-sizing: border-box;
+    min-height: 2.75rem;
+    padding: 0 1rem;
+    font: inherit;
+    font-weight: 700;
+    color: var(--hp-text);
+    background: var(--hp-surface);
+    border: 3px solid var(--hp-outline);
+    border-radius: 0.75rem;
+    cursor: pointer;
+}
+
+.editor-try-button {
+    min-height: 3rem;
+    font-size: 1.25rem;
+    background: var(--hp-goal);
+}
+
+.editor-try-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.editor-secondary:hover,
+.editor-try-button:hover:not(:disabled) {
+    background: var(--hp-cell);
+}

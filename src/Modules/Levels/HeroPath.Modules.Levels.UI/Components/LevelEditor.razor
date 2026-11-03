@@ -1,6 +1,16 @@
 @using HeroPath.Modules.Levels.Application
 @using HeroPath.Shared.UI.Components
+@using Microsoft.AspNetCore.Components.Routing
 @inherits LocalizedComponentBase
+
+<NavigationLock OnBeforeInternalNavigation="BeforeNavigation" ConfirmExternalNavigation="false" />
+<ConfirmDialog Visible="_pending != Pending.None"
+               Title="@DialogTitle"
+               Message="@DialogMessage"
+               ConfirmLabel="@DialogConfirmLabel"
+               CancelLabel="@DialogCancelLabel"
+               OnConfirm="ConfirmPendingAsync"
+               OnCancel="CancelPending" />
 
 <div class="editor" data-testid="level-editor">
     <section class="editor-board" aria-labelledby="editor-intro" style="--board-cols: @State.Draft.Width; --board-rows: @State.Draft.Height;">
@@ -30,6 +40,10 @@
                                    Value="State.Draft.Height"
                                    ValueChanged="height => State.Resize(State.Draft.Width, height)" />
             </section>
+
+            <div class="editor-clear">
+                <button type="button" class="editor-secondary" data-testid="editor-clear" @onclick="AskClear">@Localizer["Editor_Clear"]</button>
+            </div>
 
             <div class="editor-message" data-testid="editor-hint" aria-live="polite">@HintText</div>
         </div>
@@ -74,6 +88,14 @@
                         disabled="@(!State.CanSave)"
                         aria-describedby="@(State.Check.CanSave ? null : "editor-save-reason")"
                         @onclick="SaveAsync">@Localizer["Editor_Save"]</button>
+                @if (OnTryOut.HasDelegate)
+                {
+                    <button type="button"
+                            class="editor-try-button"
+                            data-testid="editor-try"
+                            disabled="@(!State.CanSave)"
+                            @onclick="TryOutAsync">@Localizer["Editor_Try"]</button>
+                }
                 @if (!State.Check.CanSave)
                 {
                     <span id="editor-save-reason" class="editor-save-reason" data-testid="editor-save-reason">@Localizer["Editor_Save_Blocked"]</span>
@@ -84,10 +106,31 @@
                 <div class="editor-saved" data-testid="editor-saved" data-outcome="@State.LastSave" role="status">@saved</div>
             }
 
+            <div class="editor-template">
+                <label class="editor-label" for="editor-template">@Localizer["Editor_Template_Label"]</label>
+                <select @key="_templateKey"
+                        id="editor-template"
+                        class="editor-template-select"
+                        data-testid="editor-template"
+                        @onchange="TemplateChosen">
+                    <option value="" selected>@Localizer["Editor_Template_Placeholder"]</option>
+                    @foreach (var level in Repository.Standard)
+                    {
+                        <option @key="level.Id" value="@level.Id" data-testid="@($"editor-template-{level.Id}")">@Localizer.NameOf(level)</option>
+                    }
+                </select>
+            </div>
+
+            @if (_deleteFailed)
+            {
+                <div class="editor-saved" data-testid="editor-delete-failed" data-outcome="StorageFailed" role="alert">@Localizer["Editor_Delete_Failed"]</div>
+            }
+
             <CustomLevelList Levels="Repository.Custom"
                              OpenId="@State.EditingId"
-                             LevelOpened="OpenLevel"
-                             NewRequested="NewLevel" />
+                             LevelOpened="AskOpen"
+                             NewRequested="AskNew"
+                             DeleteRequested="AskDelete" />
         </div>
     </div>
 </div>

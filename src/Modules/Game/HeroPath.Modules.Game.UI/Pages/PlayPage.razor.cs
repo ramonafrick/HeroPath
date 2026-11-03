@@ -75,6 +75,8 @@ public partial class PlayPage : SessionComponentBase
         }
     }
 
+    private void Edit(string id) => Navigation.NavigateTo($"editor/{id}");
+
     private void SwitchLevel(string id)
     {
         if (Progress.Find(id) is { } level)

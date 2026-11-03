@@ -351,4 +351,40 @@ public class StartPageTests : CultureBunitContext
 
         Assert.DoesNotContain("Zoe", storage.Values[StorageKeys.CustomLevels], StringComparison.Ordinal);
     }
+
+    [Fact]
+    public async Task Render_WithAPreselectedCustomLevel_ShowsItsCardSelected_WithoutAChoice()
+    {
+        await AddCustomLevelsAsync(("custom-a", "Mein Burgweg"));
+        Choice.Preselect("custom-a");
+
+        var page = Render<StartPage>();
+
+        Assert.Equal("true", page.Find("[data-testid=level-card-custom-a]").GetAttribute("aria-pressed"));
+        Assert.Equal("false", page.Find("[data-testid=level-card-free-field]").GetAttribute("aria-pressed"));
+        Assert.False(Choice.IsChosen);
+    }
+
+    [Fact]
+    public void Render_WithAPreselectedLevelThatNoLongerExists_FallsBackToTheFirstLevel()
+    {
+        Choice.Preselect("custom-gone");
+
+        var page = Render<StartPage>();
+
+        Assert.Equal("true", page.Find("[data-testid=level-card-free-field]").GetAttribute("aria-pressed"));
+    }
+
+    [Fact]
+    public async Task Go_AfterAPreselection_ChoosesThePreselectedCustomLevel()
+    {
+        await AddCustomLevelsAsync(("custom-a", "Mein Burgweg"));
+        Choice.Preselect("custom-a");
+        var page = Render<StartPage>();
+
+        page.Find("[data-testid=start-go]").Click();
+
+        Assert.True(Choice.IsChosen);
+        Assert.Equal("custom-a", Choice.LevelId);
+    }
 }

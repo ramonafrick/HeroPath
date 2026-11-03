@@ -15,13 +15,18 @@
         <ul class="list-items">
             @foreach (var level in Levels)
             {
-                <li @key="level.Id">
+                <li @key="level.Id" class="list-row">
                     <button type="button"
                             class="list-entry"
                             data-testid="@($"custom-level-{level.Id}")"
                             aria-current="@(level.Id == OpenId ? "true" : null)"
                             aria-label="@Localizer["Editor_List_Open", level.Name ?? string.Empty]"
                             @onclick="() => LevelOpened.InvokeAsync(level.Id)">@level.Name</button>
+                    <button type="button"
+                            class="list-delete"
+                            data-testid="@($"custom-level-delete-{level.Id}")"
+                            aria-label="@Localizer["Editor_List_Delete", level.Name ?? string.Empty]"
+                            @onclick="() => DeleteRequested.InvokeAsync(level.Id)">@Localizer["Editor_Delete"]</button>
                 </li>
             }
         </ul>

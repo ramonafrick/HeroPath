@@ -13,7 +13,8 @@
 }
 
 .new-level,
-.list-entry {
+.list-entry,
+.list-delete {
     box-sizing: border-box;
     min-height: 2.75rem;
     padding: 0 0.75rem;
@@ -27,7 +28,8 @@
 }
 
 .new-level:hover,
-.list-entry:hover {
+.list-entry:hover,
+.list-delete:hover {
     background: var(--hp-cell);
 }
 
@@ -46,8 +48,19 @@
     list-style: none;
 }
 
+.list-row {
+    display: flex;
+    gap: 0.375rem;
+}
+
+.list-delete {
+    flex: none;
+    border-style: dashed;
+}
+
 .list-entry {
-    width: 100%;
+    flex: 1 1 auto;
+    min-width: 0;
     text-align: left;
     overflow-wrap: anywhere;
 }

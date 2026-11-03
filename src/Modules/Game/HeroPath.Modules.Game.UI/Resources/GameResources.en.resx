@@ -298,4 +298,8 @@
     <value>Back to the start page</value>
     <comment>Link from the editor page back to the start page.</comment>
   </data>
+  <data name="Play_Edit" xml:space="preserve">
+    <value>Edit</value>
+    <comment>Button on the play page that opens the current custom level in the editor.</comment>
+  </data>
 </root>

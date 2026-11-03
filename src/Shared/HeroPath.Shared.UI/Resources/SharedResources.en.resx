@@ -76,4 +76,12 @@
     <value>Eraser</value>
     <comment>Accessible name of the eraser tool graphic.</comment>
   </data>
+  <data name="Confirm_Yes" xml:space="preserve">
+    <value>Yes</value>
+    <comment>Generic confirm button of the confirm dialog.</comment>
+  </data>
+  <data name="Confirm_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+    <comment>Generic cancel button of the confirm dialog.</comment>
+  </data>
 </root>

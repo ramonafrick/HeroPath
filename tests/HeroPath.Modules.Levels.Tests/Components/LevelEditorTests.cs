@@ -1,3 +1,4 @@
+using Bunit.TestDoubles;
 using HeroPath.Modules.Levels.Application;
 using HeroPath.Modules.Levels.Domain;
 using HeroPath.Modules.Levels.UI;
@@ -5,6 +6,7 @@ using HeroPath.Modules.Levels.UI.Components;
 using HeroPath.Shared.Application.Contracts;
 using HeroPath.Shared.UI;
 using HeroPath.Shared.UI.Localization;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HeroPath.Modules.Levels.Tests.Components;
@@ -442,5 +444,354 @@ public class LevelEditorTests : CultureBunitContext
         Assert.Equal("true", cut.Find("[data-testid=editor-tool-pond]").GetAttribute("aria-pressed"));
         Assert.True(State.IsDirty);
         Assert.Equal("Cell 3, 3: Pond", cut.Find("[data-testid=edit-cell-2-2]").GetAttribute("aria-label"));
+    }
+
+    private BunitNavigationManager Navigation => (BunitNavigationManager)Services.GetRequiredService<NavigationManager>();
+
+    private static void ChooseTemplate(IRenderedComponent<LevelEditor> cut, string id) =>
+        cut.Find("[data-testid=editor-template]").Change(id);
+
+    private static int DialogCount(IRenderedComponent<LevelEditor> cut) => cut.FindAll("[data-testid=confirm-dialog]").Count;
+
+    private static string DialogMessage(IRenderedComponent<LevelEditor> cut) => Text(cut, "confirm-message");
+
+    private void MakeDirty(IRenderedComponent<LevelEditor> cut)
+    {
+        Click(cut, "edit-cell-4-4");
+        Assert.True(State.IsDirty);
+    }
+
+    [Fact]
+    public void Template_ListsAllSevenStandardLevelsWithLocalizedNames()
+    {
+        var cut = RenderEditor();
+
+        var options = cut.FindAll("[data-testid^=editor-template-]");
+
+        Assert.Equal(Repository.Standard.Select(level => $"editor-template-{level.Id}"), options.Select(o => o.GetAttribute("data-testid")));
+        Assert.Equal(7, options.Count);
+        Assert.Equal("Freies Feld", Text(cut, "editor-template-free-field"));
+    }
+
+    [Fact]
+    public void Template_Choose_OpensAnUnsavedCopyAndLeavesTheOriginalAlone()
+    {
+        var cut = RenderEditor();
+        var original = Repository.Find("easy-1")!;
+
+        ChooseTemplate(cut, "easy-1");
+
+        Assert.Equal(0, DialogCount(cut));
+        Assert.NotEqual("easy-1", State.Draft.Id);
+        Assert.Null(State.EditingId);
+        Assert.Equal("Mein Level 1", cut.Find("[data-testid=editor-name]").GetAttribute("value"));
+        Assert.Equal(original.Obstacles.Count, State.Draft.Obstacles.Count);
+        var tree = original.Obstacles[0];
+        Assert.Equal(tree.Kind.ToString().ToLowerInvariant(), cut.Find($"[data-testid=edit-cell-{tree.X}-{tree.Y}]").GetAttribute("data-kind"));
+        Assert.Same(original, Repository.Find("easy-1"));
+        Assert.Empty(Repository.Custom);
+        Assert.EndsWith("/editor", Navigation.Uri);
+    }
+
+    [Fact]
+    public void Template_Choose_WhileDirty_AsksFirstAndCancelKeepsTheDraft()
+    {
+        var cut = RenderEditor();
+        MakeDirty(cut);
+        var draft = State.Draft;
+
+        ChooseTemplate(cut, "easy-1");
+
+        Assert.Equal(1, DialogCount(cut));
+        Assert.Equal("Änderungen verwerfen?", Text(cut, "confirm-title"));
+        Assert.Same(draft, State.Draft);
+
+        Click(cut, "confirm-no");
+
+        Assert.Equal(0, DialogCount(cut));
+        Assert.Same(draft, State.Draft);
+        Assert.True(State.IsDirty);
+    }
+
+    [Fact]
+    public void Template_Choose_WhileDirty_ConfirmReplacesTheDraft()
+    {
+        var cut = RenderEditor();
+        MakeDirty(cut);
+
+        ChooseTemplate(cut, "easy-1");
+        Click(cut, "confirm-yes");
+
+        Assert.Equal(0, DialogCount(cut));
+        Assert.False(State.IsDirty);
+        Assert.NotEqual("easy-1", State.Draft.Id);
+        Assert.Equal(Repository.Find("easy-1")!.Obstacles.Count, State.Draft.Obstacles.Count);
+    }
+
+    [Fact]
+    public void Template_ChooseTwiceInARow_WorksBothTimes()
+    {
+        var cut = RenderEditor();
+
+        ChooseTemplate(cut, "easy-1");
+        var first = State.Draft.Id;
+        ChooseTemplate(cut, "easy-1");
+
+        Assert.NotEqual(first, State.Draft.Id);
+    }
+
+    [Fact]
+    public async Task NewAndOpen_WhileDirty_AskFirst_AndWhileCleanDoNot()
+    {
+        await Repository.SaveAsync(CustomLevelSamples.Valid("custom-a", "Eins"), Xunit.TestContext.Current.CancellationToken);
+        var cut = RenderEditor();
+        Click(cut, "editor-new");
+        Assert.Equal(0, DialogCount(cut));
+
+        MakeDirty(cut);
+        Click(cut, "editor-new");
+        Assert.Equal(1, DialogCount(cut));
+        Click(cut, "confirm-no");
+        Assert.True(State.IsDirty);
+
+        Click(cut, "custom-level-custom-a");
+        Assert.Equal(1, DialogCount(cut));
+        Assert.Equal("Änderungen verwerfen?", Text(cut, "confirm-title"));
+        Click(cut, "confirm-yes");
+
+        Assert.Equal("custom-a", State.EditingId);
+        Assert.False(State.IsDirty);
+        Assert.EndsWith("/editor/custom-a", Navigation.Uri);
+    }
+
+    [Fact]
+    public async Task Delete_AsksWithTheLevelNameAsText_AndCancelKeepsTheLevel()
+    {
+        await Repository.SaveAsync(CustomLevelSamples.Valid("custom-a", "<i>Eins</i>"), Xunit.TestContext.Current.CancellationToken);
+        var cut = RenderEditor();
+
+        Click(cut, "custom-level-delete-custom-a");
+
+        Assert.Equal(1, DialogCount(cut));
+        Assert.Equal("Level «<i>Eins</i>» wirklich löschen? Das kannst du nicht rückgängig machen.", DialogMessage(cut));
+        Assert.Empty(cut.FindAll("[data-testid=confirm-message] i"));
+        Assert.Equal("Ja, löschen", Text(cut, "confirm-yes"));
+
+        Click(cut, "confirm-no");
+
+        Assert.Equal(0, DialogCount(cut));
+        Assert.Single(Repository.Custom);
+        Assert.NotNull(cut.Find("[data-testid=custom-level-custom-a]"));
+    }
+
+    [Fact]
+    public async Task Delete_Confirm_RemovesTheLevelFromListAndRepository_AndKeepsAnotherOpenDraft()
+    {
+        await Repository.SaveAsync(CustomLevelSamples.Valid("custom-a", "Eins"), Xunit.TestContext.Current.CancellationToken);
+        await Repository.SaveAsync(CustomLevelSamples.Valid("custom-b", "Zwei"), Xunit.TestContext.Current.CancellationToken);
+        var cut = RenderEditor();
+        MakeDirty(cut);
+        var draft = State.Draft;
+
+        Click(cut, "custom-level-delete-custom-a");
+        Click(cut, "confirm-yes");
+
+        cut.WaitForAssertion(() => Assert.Empty(cut.FindAll("[data-testid=custom-level-custom-a]")));
+        Assert.Equal(["custom-b"], Repository.Custom.Select(level => level.Id));
+        Assert.Same(draft, State.Draft);
+        Assert.True(State.IsDirty);
+    }
+
+    [Fact]
+    public async Task Delete_TheOpenLevel_StartsANewCleanLevelAndNavigatesToTheEmptyEditor()
+    {
+        await Repository.SaveAsync(CustomLevelSamples.Valid("custom-a", "Eins"), Xunit.TestContext.Current.CancellationToken);
+        var cut = RenderEditor("custom-a");
+
+        Click(cut, "custom-level-delete-custom-a");
+        Click(cut, "confirm-yes");
+
+        cut.WaitForAssertion(() => Assert.Null(State.EditingId));
+        Assert.False(State.IsDirty);
+        Assert.Equal("Mein Level 1", cut.Find("[data-testid=editor-name]").GetAttribute("value"));
+        Assert.EndsWith("/editor", Navigation.Uri);
+        Assert.DoesNotContain(Navigation.History, entry => entry.State == NavigationState.Prevented);
+    }
+
+    [Fact]
+    public async Task Delete_StorageFailure_ShowsAMessageAndKeepsTheLevel()
+    {
+        await Repository.SaveAsync(CustomLevelSamples.Valid("custom-a", "Eins"), Xunit.TestContext.Current.CancellationToken);
+        var cut = RenderEditor();
+        _storage.FailWrites = true;
+
+        Click(cut, "custom-level-delete-custom-a");
+        Click(cut, "confirm-yes");
+
+        cut.WaitForAssertion(() => Assert.Contains("nicht gelöscht", Text(cut, "editor-delete-failed")));
+        Assert.Single(Repository.Custom);
+    }
+
+    [Fact]
+    public void Clear_AsksAndCancelKeepsEverything()
+    {
+        var cut = RenderEditor();
+        MakeDirty(cut);
+
+        Click(cut, "editor-clear");
+
+        Assert.Equal("Alles leeren?", Text(cut, "confirm-title"));
+        Click(cut, "confirm-no");
+        Assert.Equal(0, DialogCount(cut));
+        Assert.Equal("tree", cut.Find("[data-testid=edit-cell-4-4]").GetAttribute("data-kind"));
+    }
+
+    [Fact]
+    public void Clear_Confirm_RemovesObstaclesAndItems()
+    {
+        var cut = RenderEditor();
+        MakeDirty(cut);
+        Click(cut, "editor-tool-strawberry");
+        Click(cut, "edit-cell-5-5");
+
+        Click(cut, "editor-clear");
+        Click(cut, "confirm-yes");
+
+        Assert.Equal(0, DialogCount(cut));
+        Assert.Equal("empty", cut.Find("[data-testid=edit-cell-4-4]").GetAttribute("data-kind"));
+        Assert.Equal("empty", cut.Find("[data-testid=edit-cell-5-5]").GetAttribute("data-kind"));
+        Assert.Equal("start", cut.Find("[data-testid=edit-cell-0-9]").GetAttribute("data-kind"));
+    }
+
+    [Fact]
+    public void TryOut_IsHiddenWithoutAHandler()
+    {
+        var cut = RenderEditor();
+
+        Assert.Empty(cut.FindAll("[data-testid=editor-try]"));
+    }
+
+    [Fact]
+    public void TryOut_SavesFirstAndThenRaisesTheCallbackWithTheLevelId()
+    {
+        string? tried = null;
+        var savedBeforeCallback = 0;
+        var cut = Render<LevelEditor>(p => p.Add(c => c.OnTryOut, EventCallback.Factory.Create<string>(this, id =>
+        {
+            tried = id;
+            savedBeforeCallback = Repository.Custom.Count;
+        })));
+
+        Click(cut, "editor-try");
+
+        cut.WaitForAssertion(() => Assert.NotNull(tried));
+        Assert.Equal(State.Draft.Id, tried);
+        Assert.Equal(1, savedBeforeCallback);
+    }
+
+    [Fact]
+    public void TryOut_WhenTheLevelCannotBeSaved_IsDisabled()
+    {
+        var cut = Render<LevelEditor>(p => p.Add(c => c.OnTryOut, EventCallback.Factory.Create<string>(this, _ => { })));
+        cut.Find("[data-testid=editor-name]").Input("   ");
+
+        Assert.True(cut.Find("[data-testid=editor-try]").HasAttribute("disabled"));
+    }
+
+    [Fact]
+    public void TryOut_WhenSavingFails_RaisesNoCallbackAndShowsTheError()
+    {
+        var raised = 0;
+        var cut = Render<LevelEditor>(p => p.Add(c => c.OnTryOut, EventCallback.Factory.Create<string>(this, _ => raised++)));
+        _storage.FailWrites = true;
+
+        Click(cut, "editor-try");
+
+        cut.WaitForAssertion(() => Assert.Equal("StorageFailed", cut.Find("[data-testid=editor-saved]").GetAttribute("data-outcome")));
+        Assert.Equal(0, raised);
+        Assert.Empty(Repository.Custom);
+    }
+
+    [Fact]
+    public void TryOut_DoesNotAskEvenWhenTheCallbackNavigates()
+    {
+        var cut = Render<LevelEditor>(p => p.Add(c => c.OnTryOut, EventCallback.Factory.Create<string>(this, _ => Navigation.NavigateTo("play"))));
+        MakeDirty(cut);
+
+        Click(cut, "editor-try");
+
+        cut.WaitForAssertion(() => Assert.EndsWith("/play", Navigation.Uri));
+        Assert.Equal(0, DialogCount(cut));
+    }
+
+    [Fact]
+    public void NavigationLock_WhenClean_LetsTheChildLeave()
+    {
+        var cut = RenderEditor();
+
+        Navigation.NavigateTo("play");
+
+        Assert.Equal(0, DialogCount(cut));
+        Assert.EndsWith("/play", Navigation.Uri);
+    }
+
+    [Fact]
+    public void NavigationLock_WhenDirty_PreventsAndAsks_CancelStays()
+    {
+        var cut = RenderEditor();
+        MakeDirty(cut);
+
+        Navigation.NavigateTo("play");
+
+        cut.WaitForAssertion(() => Assert.Equal(1, DialogCount(cut)));
+        Assert.Equal("Weggehen?", Text(cut, "confirm-title"));
+        Assert.Equal("Deine Änderungen sind noch nicht gespeichert. Trotzdem weggehen?", DialogMessage(cut));
+        Assert.DoesNotContain("/play", Navigation.Uri);
+
+        Click(cut, "confirm-no");
+
+        Assert.Equal(0, DialogCount(cut));
+        Assert.DoesNotContain("/play", Navigation.Uri);
+        Assert.True(State.IsDirty);
+        Assert.Equal("tree", cut.Find("[data-testid=edit-cell-4-4]").GetAttribute("data-kind"));
+    }
+
+    [Fact]
+    public void NavigationLock_WhenDirty_ConfirmLeavesToTheTarget()
+    {
+        var cut = RenderEditor();
+        MakeDirty(cut);
+        Navigation.NavigateTo("play");
+        cut.WaitForAssertion(() => Assert.Equal(1, DialogCount(cut)));
+
+        Click(cut, "confirm-yes");
+
+        Assert.EndsWith("/play", Navigation.Uri);
+    }
+
+    [Fact]
+    public void NavigationLock_AfterSaving_NoLongerAsks()
+    {
+        var cut = RenderEditor();
+        MakeDirty(cut);
+        Click(cut, "editor-save");
+        cut.WaitForAssertion(() => Assert.False(State.IsDirty));
+
+        Navigation.NavigateTo("play");
+
+        Assert.Equal(0, DialogCount(cut));
+        Assert.EndsWith("/play", Navigation.Uri);
+    }
+
+    [Fact]
+    public void FirstSave_ReplacesTheUrlWithoutAsking()
+    {
+        var cut = RenderEditor();
+        MakeDirty(cut);
+
+        Click(cut, "editor-save");
+
+        cut.WaitForAssertion(() => Assert.EndsWith($"/editor/{State.Draft.Id}", Navigation.Uri));
+        Assert.Equal(0, DialogCount(cut));
     }
 }

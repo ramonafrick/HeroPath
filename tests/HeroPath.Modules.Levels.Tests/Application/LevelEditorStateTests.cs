@@ -402,6 +402,172 @@ public class LevelEditorStateTests
         Assert.Equal(6, raised);
     }
 
+    [Fact]
+    public void OpenTemplate_CreatesAnUnsavedCopyWithNewIdAndDefaultName()
+    {
+        var opened = _state.OpenTemplate("std-a", DefaultName);
+
+        Assert.True(opened);
+        Assert.NotEqual("std-a", _state.Draft.Id);
+        Assert.Matches("^custom-[0-9a-f]{12}$", _state.Draft.Id);
+        Assert.Equal("Mein Level 1", _state.Draft.Name);
+        Assert.Equal(_standard[0].Obstacles, _state.Draft.Obstacles);
+        Assert.Equal(_standard[0].Items, _state.Draft.Items);
+        Assert.Null(_state.EditingId);
+        Assert.False(_state.IsDirty);
+        Assert.Empty(_repository.Custom);
+    }
+
+    [Fact]
+    public async Task OpenTemplate_ChangesAndSaving_LeaveTheStandardLevelUntouched()
+    {
+        _state.OpenTemplate("std-a", DefaultName);
+        _state.SelectTool(EditorTool.Rock);
+        _state.Apply(new Position(3, 3));
+        await _state.SaveAsync(Token);
+
+        Assert.Single(_repository.Custom);
+        Assert.NotEqual(_state.Draft.Obstacles, _repository.Standard[0].Obstacles);
+        Assert.Equal(_standard[0], _repository.Standard[0]);
+        Assert.Equal(_state.Draft.Id, _repository.Custom[0].Id);
+    }
+
+    [Fact]
+    public void OpenTemplate_TwiceGivesDifferentIds()
+    {
+        _state.OpenTemplate("std-a", DefaultName);
+        var first = _state.Draft.Id;
+
+        _state.OpenTemplate("std-a", DefaultName);
+
+        Assert.NotEqual(first, _state.Draft.Id);
+    }
+
+    [Theory]
+    [InlineData("unknown")]
+    [InlineData("")]
+    public void OpenTemplate_UnknownId_ChangesNothing(string id)
+    {
+        _state.OpenNew(DefaultName);
+        _state.SelectTool(EditorTool.Rock);
+        _state.Apply(new Position(5, 5));
+        var draft = _state.Draft;
+
+        var opened = _state.OpenTemplate(id, DefaultName);
+
+        Assert.False(opened);
+        Assert.Same(draft, _state.Draft);
+        Assert.True(_state.IsDirty);
+    }
+
+    [Fact]
+    public void OpenTemplate_ReplacesADirtyDraftAndMakesItClean()
+    {
+        _state.OpenNew(DefaultName);
+        ClickAll(EditorTool.Rock, new Position(5, 5));
+        Assert.True(_state.IsDirty);
+
+        _state.OpenTemplate("std-a", DefaultName);
+
+        Assert.False(_state.IsDirty);
+    }
+
+    [Fact]
+    public void ClearObjects_RemovesObstaclesItemsAndRequireAll_AndMarksDirty()
+    {
+        _state.OpenNew(DefaultName);
+        ClickAll(EditorTool.Tree, new Position(4, 4));
+        ClickAll(EditorTool.Strawberry, new Position(5, 5));
+        _state.SetRequireAllItems(true);
+        var start = _state.Draft.Start;
+
+        _state.ClearObjects();
+
+        Assert.Empty(_state.Draft.Obstacles);
+        Assert.Empty(_state.Draft.Items);
+        Assert.False(_state.Draft.RequireAllItems);
+        Assert.Equal(start, _state.Draft.Start);
+        Assert.True(_state.IsDirty);
+        Assert.True(_state.Check.CanSave);
+    }
+
+    [Fact]
+    public void ClearObjects_OnAnEmptyLevel_ChangesNothingAndStaysClean()
+    {
+        _state.OpenNew(DefaultName);
+        var draft = _state.Draft;
+
+        _state.ClearObjects();
+
+        Assert.Same(draft, _state.Draft);
+        Assert.False(_state.IsDirty);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_TheOpenLevel_OpensANewCleanLevel()
+    {
+        _state.OpenNew(DefaultName);
+        await _state.SaveAsync(Token);
+        var deletedId = _state.Draft.Id;
+        ClickAll(EditorTool.Rock, new Position(5, 5));
+        Assert.True(_state.IsDirty);
+
+        var deleted = await _state.DeleteAsync(deletedId, DefaultName, Token);
+
+        Assert.True(deleted);
+        Assert.Empty(_repository.Custom);
+        Assert.NotEqual(deletedId, _state.Draft.Id);
+        Assert.Null(_state.EditingId);
+        Assert.False(_state.IsDirty);
+        Assert.Equal("Mein Level 1", _state.Draft.Name);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_AnotherLevel_KeepsTheOpenDraft()
+    {
+        await _repository.SaveAsync(CustomLevelSamples.Valid("custom-a", "A"), Token);
+        await _repository.SaveAsync(CustomLevelSamples.Valid("custom-b", "B"), Token);
+        _state.Open("custom-a");
+        ClickAll(EditorTool.Rock, new Position(3, 3));
+        var draft = _state.Draft;
+
+        var deleted = await _state.DeleteAsync("custom-b", DefaultName, Token);
+
+        Assert.True(deleted);
+        Assert.Same(draft, _state.Draft);
+        Assert.Equal("custom-a", _state.EditingId);
+        Assert.True(_state.IsDirty);
+        Assert.Equal(["custom-a"], _repository.Custom.Select(level => level.Id));
+    }
+
+    [Fact]
+    public async Task DeleteAsync_UnknownId_ReturnsFalseAndKeepsTheDraft()
+    {
+        _state.OpenNew(DefaultName);
+        var draft = _state.Draft;
+
+        var deleted = await _state.DeleteAsync("custom-nope", DefaultName, Token);
+
+        Assert.False(deleted);
+        Assert.Same(draft, _state.Draft);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_StorageFailure_ReturnsFalseAndKeepsLevelAndDraft()
+    {
+        await _repository.SaveAsync(CustomLevelSamples.Valid("custom-a", "A"), Token);
+        _state.Open("custom-a");
+        var draft = _state.Draft;
+        _storage.FailWrites = true;
+
+        var deleted = await _state.DeleteAsync("custom-a", DefaultName, Token);
+
+        Assert.False(deleted);
+        Assert.Single(_repository.Custom);
+        Assert.Same(draft, _state.Draft);
+        Assert.Equal("custom-a", _state.EditingId);
+    }
+
     private sealed class SlowStore : ICustomLevelStore
     {
         private readonly TaskCompletionSource _gate = new();
