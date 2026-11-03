@@ -1,8 +1,8 @@
 namespace HeroPath.Modules.Game.Domain;
 
-public sealed class MoveCommand(Direction direction, Guid? id = null) : ICommand
+/// <summary>A block that moves the person one cell in <see cref="Direction"/>.</summary>
+public sealed class MoveCommand(Direction direction, Guid? id = null) : Command(id)
 {
-    public Guid Id { get; } = id ?? Guid.NewGuid();
-
+    /// <summary>Direction of the move.</summary>
     public Direction Direction { get; } = direction;
 }

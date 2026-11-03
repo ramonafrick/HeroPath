@@ -1,11 +1,14 @@
-using System.Collections.ObjectModel;
+using System.Collections.Frozen;
 
 namespace HeroPath.Modules.Levels.Domain;
 
+/// <summary>
+/// Immutable playing field with start, goal, obstacles and items. The constructor throws on rule
+/// violations as a defensive net; <c>LevelValidator</c> reports the same rules as values.
+/// </summary>
 public sealed class Grid
 {
-    private readonly Dictionary<Position, ObstacleKind> _obstacles = [];
-    private readonly Dictionary<Position, ItemKind> _items = [];
+    private readonly FrozenDictionary<Position, ItemKind> _items;
 
     public Grid(
         int width,
@@ -44,47 +47,27 @@ public sealed class Grid
             throw new ArgumentException("Start and goal must differ.", nameof(goal));
         }
 
+        var occupied = new HashSet<Position>();
+        var obstacleCells = new Dictionary<Position, ObstacleKind>();
         foreach (var obstacle in obstacles)
         {
             var position = obstacle.GetPosition();
-            if (!IsInside(position))
-            {
-                throw new ArgumentOutOfRangeException(nameof(obstacles), position, "Obstacle is outside the grid.");
-            }
-
-            if (position == start || position == goal)
-            {
-                throw new ArgumentException($"Obstacle at {position} blocks start or goal.", nameof(obstacles));
-            }
-
-            if (!_obstacles.TryAdd(position, obstacle.Kind))
-            {
-                throw new ArgumentException($"More than one obstacle at {position}.", nameof(obstacles));
-            }
+            Place(position, "Obstacle", nameof(obstacles), occupied, blocksGoal: true);
+            obstacleCells.Add(position, obstacle.Kind);
         }
 
         var itemList = new List<LevelItem>();
+        var itemCells = new Dictionary<Position, ItemKind>();
         foreach (var item in items)
         {
             var position = item.GetPosition();
-            if (!IsInside(position))
-            {
-                throw new ArgumentOutOfRangeException(nameof(items), position, "Item is outside the grid.");
-            }
-
-            if (position == start)
-            {
-                throw new ArgumentException($"Item at {position} lies on the start.", nameof(items));
-            }
-
-            if (_obstacles.ContainsKey(position) || !_items.TryAdd(position, item.Kind))
-            {
-                throw new ArgumentException($"Cell {position} is already occupied.", nameof(items));
-            }
-
+            Place(position, "Item", nameof(items), occupied, blocksGoal: false);
+            itemCells.Add(position, item.Kind);
             itemList.Add(item);
         }
 
+        Obstacles = obstacleCells.ToFrozenDictionary();
+        _items = itemCells.ToFrozenDictionary();
         Items = itemList.AsReadOnly();
         RequiredItemCount = itemList.Count(i => i.Kind == ItemKind.Strawberry);
 
@@ -104,18 +87,37 @@ public sealed class Grid
 
     public bool RequireAllItems { get; }
 
+    /// <summary>Items in definition order.</summary>
     public IReadOnlyList<LevelItem> Items { get; }
 
-    public IReadOnlyDictionary<Position, ObstacleKind> Obstacles => new ReadOnlyDictionary<Position, ObstacleKind>(_obstacles);
+    public IReadOnlyDictionary<Position, ObstacleKind> Obstacles { get; }
 
+    /// <summary>Number of strawberries; pizzas are optional and not counted.</summary>
     public int RequiredItemCount { get; }
 
-    public bool IsInside(Position position) =>
-        position.X >= 0 && position.X < Width && position.Y >= 0 && position.Y < Height;
+    public bool IsInside(Position position) => position.IsInside(Width, Height);
 
     public ObstacleKind? GetObstacle(Position position) =>
-        _obstacles.TryGetValue(position, out var kind) ? kind : null;
+        Obstacles.TryGetValue(position, out var kind) ? kind : null;
 
     public ItemKind? GetItem(Position position) =>
         _items.TryGetValue(position, out var kind) ? kind : null;
+
+    private void Place(Position position, string what, string parameterName, HashSet<Position> occupied, bool blocksGoal)
+    {
+        if (!IsInside(position))
+        {
+            throw new ArgumentOutOfRangeException(parameterName, position, $"{what} is outside the grid.");
+        }
+
+        if (position == Start || (blocksGoal && position == Goal))
+        {
+            throw new ArgumentException($"{what} at {position} blocks start or goal.", parameterName);
+        }
+
+        if (!occupied.Add(position))
+        {
+            throw new ArgumentException($"Cell {position} is already occupied.", parameterName);
+        }
+    }
 }

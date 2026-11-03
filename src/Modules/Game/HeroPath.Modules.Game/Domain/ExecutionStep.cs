@@ -11,8 +11,9 @@ namespace HeroPath.Modules.Game.Domain;
 /// (the end of the program is detected in the same step as the last move).
 /// </para>
 /// <para>
-/// <c>StepNumber</c>: count of successfully executed moves so far (failed moves are not counted, so a failing
-/// step carries the number of the last successful one; the failing move is number StepNumber + 1).
+/// <c>StepNumber</c>: for Obstacle, OutOfBounds and StepLimitExceeded the number of the attempted move (executed
+/// moves + 1), matching the highlighted CommandId; for running steps, GoalNotReached, ItemsMissing and Succeeded the
+/// number of the last executed move; 0 for EmptyProgram and EmptyRepeat.
 /// </para>
 /// <para><c>MissingItems</c>: strawberries still missing, only set together with ItemsMissing, otherwise 0.</para>
 /// </summary>

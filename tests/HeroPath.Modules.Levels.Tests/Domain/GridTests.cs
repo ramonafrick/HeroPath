@@ -53,6 +53,15 @@ public class GridTests
     }
 
     [Fact]
+    public void Obstacles_ReturnsSameViewEachTime()
+    {
+        var grid = Create(obstacles: [new LevelObstacle(2, 1, ObstacleKind.Rock)]);
+
+        Assert.Same(grid.Obstacles, grid.Obstacles);
+        Assert.Equal(ObstacleKind.Rock, Assert.Single(grid.Obstacles).Value);
+    }
+
+    [Fact]
     public void GetItem_HitAndMiss()
     {
         var grid = Create(items: [new LevelItem(2, 1, ItemKind.Pizza)]);
@@ -83,17 +92,14 @@ public class GridTests
         Assert.True(grid.RequireAllItems);
     }
 
-    [Fact]
-    public void Constructor_RequireAllItemsWithOnlyPizza_Throws()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Constructor_RequireAllItemsWithoutStrawberry_Throws(bool withPizza)
     {
-        Assert.Throws<ArgumentException>(() =>
-            Create(items: [new LevelItem(1, 0, ItemKind.Pizza)], requireAllItems: true));
-    }
+        LevelItem[] items = withPizza ? [new LevelItem(1, 0, ItemKind.Pizza)] : [];
 
-    [Fact]
-    public void Constructor_RequireAllItemsWithoutItems_Throws()
-    {
-        Assert.Throws<ArgumentException>(() => Create(requireAllItems: true));
+        Assert.Throws<ArgumentException>(() => Create(items: items, requireAllItems: true));
     }
 
     [Theory]
@@ -118,15 +124,23 @@ public class GridTests
     }
 
     [Fact]
-    public void Constructor_StartOutside_Throws()
+    public void Constructor_ItemOnGoal_Works()
     {
-        Assert.ThrowsAny<ArgumentException>(() => Create(start: new Position(5, 0)));
+        var grid = Create(items: [new LevelItem(4, 3, ItemKind.Strawberry)]);
+
+        Assert.Equal(ItemKind.Strawberry, grid.GetItem(_goal));
     }
 
     [Fact]
-    public void Constructor_GoalOutside_Throws()
+    public void Constructor_StartOutside_ThrowsArgumentOutOfRange()
     {
-        Assert.ThrowsAny<ArgumentException>(() => Create(goal: new Position(0, 4)));
+        Assert.Throws<ArgumentOutOfRangeException>(() => Create(start: new Position(5, 0)));
+    }
+
+    [Fact]
+    public void Constructor_GoalOutside_ThrowsArgumentOutOfRange()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => Create(goal: new Position(0, 4)));
     }
 
     [Fact]
@@ -136,68 +150,32 @@ public class GridTests
     }
 
     [Fact]
-    public void Constructor_ObstacleOutside_Throws()
+    public void Constructor_ObstacleOutside_ThrowsArgumentOutOfRange()
     {
-        Assert.ThrowsAny<ArgumentException>(() => Create(obstacles: [new LevelObstacle(5, 1, ObstacleKind.Tree)]));
+        Assert.Throws<ArgumentOutOfRangeException>(() => Create(obstacles: [new LevelObstacle(5, 1, ObstacleKind.Tree)]));
     }
 
     [Fact]
-    public void Constructor_ItemOutside_Throws()
+    public void Constructor_ItemOutside_ThrowsArgumentOutOfRange()
     {
-        Assert.ThrowsAny<ArgumentException>(() => Create(items: [new LevelItem(1, -1, ItemKind.Pizza)]));
+        Assert.Throws<ArgumentOutOfRangeException>(() => Create(items: [new LevelItem(1, -1, ItemKind.Pizza)]));
     }
 
-    [Fact]
-    public void Constructor_ObstacleOnStart_Throws()
+    public static TheoryData<string, LevelObstacle[], LevelItem[]> ConflictingPlacements => new()
     {
-        Assert.Throws<ArgumentException>(() => Create(obstacles: [new LevelObstacle(0, 0, ObstacleKind.Tree)]));
-    }
+        { "obstacle on start", [new(0, 0, ObstacleKind.Tree)], [] },
+        { "obstacle on goal", [new(4, 3, ObstacleKind.Pond)], [] },
+        { "item on start", [], [new(0, 0, ItemKind.Strawberry)] },
+        { "two obstacles on one cell", [new(2, 1, ObstacleKind.Tree), new(2, 1, ObstacleKind.Rock)], [] },
+        { "two items on one cell", [], [new(2, 1, ItemKind.Strawberry), new(2, 1, ItemKind.Pizza)] },
+        { "obstacle and item on one cell", [new(2, 1, ObstacleKind.Tree)], [new(2, 1, ItemKind.Pizza)] },
+    };
 
-    [Fact]
-    public void Constructor_ObstacleOnGoal_Throws()
+    [Theory]
+    [MemberData(nameof(ConflictingPlacements))]
+    public void Constructor_ConflictingPlacement_Throws(string description, LevelObstacle[] obstacles, LevelItem[] items)
     {
-        Assert.Throws<ArgumentException>(() => Create(obstacles: [new LevelObstacle(4, 3, ObstacleKind.Pond)]));
-    }
-
-    [Fact]
-    public void Constructor_ItemOnStart_Throws()
-    {
-        Assert.Throws<ArgumentException>(() => Create(items: [new LevelItem(0, 0, ItemKind.Strawberry)]));
-    }
-
-    [Fact]
-    public void Constructor_ItemOnGoal_Works()
-    {
-        var grid = Create(items: [new LevelItem(4, 3, ItemKind.Strawberry)]);
-
-        Assert.Equal(ItemKind.Strawberry, grid.GetItem(_goal));
-    }
-
-    [Fact]
-    public void Constructor_TwoObstaclesOnSameCell_Throws()
-    {
-        Assert.Throws<ArgumentException>(() => Create(obstacles:
-        [
-            new LevelObstacle(2, 1, ObstacleKind.Tree),
-            new LevelObstacle(2, 1, ObstacleKind.Rock),
-        ]));
-    }
-
-    [Fact]
-    public void Constructor_TwoItemsOnSameCell_Throws()
-    {
-        Assert.Throws<ArgumentException>(() => Create(items:
-        [
-            new LevelItem(2, 1, ItemKind.Strawberry),
-            new LevelItem(2, 1, ItemKind.Pizza),
-        ]));
-    }
-
-    [Fact]
-    public void Constructor_ObstacleAndItemOnSameCell_Throws()
-    {
-        Assert.Throws<ArgumentException>(() => Create(
-            obstacles: [new LevelObstacle(2, 1, ObstacleKind.Tree)],
-            items: [new LevelItem(2, 1, ItemKind.Pizza)]));
+        Assert.NotNull(description);
+        Assert.Throws<ArgumentException>(() => Create(obstacles: obstacles, items: items));
     }
 }

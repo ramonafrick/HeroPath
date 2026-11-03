@@ -18,6 +18,7 @@ public sealed class Interpreter
     private MoveCommand? _pending;
     private ExecutionStep? _terminal;
 
+    /// <summary>Creates an interpreter whose person starts on the grid start cell. Create a new one to reset.</summary>
     public Interpreter(ProgramDefinition program, Grid grid)
     {
         ArgumentNullException.ThrowIfNull(program);
@@ -28,12 +29,16 @@ public sealed class Interpreter
         _person = new Person(grid.Start);
     }
 
+    /// <summary>Current state; <see cref="ExecutionState.Ready"/> until the first <see cref="Step"/>.</summary>
     public ExecutionState State { get; private set; } = ExecutionState.Ready;
 
+    /// <summary>Current position of the person.</summary>
     public Position Position => _person.Position;
 
+    /// <summary>Cells whose items have been collected so far.</summary>
     public IReadOnlySet<Position> CollectedItems => _collected;
 
+    /// <summary>Executes exactly one move. After a terminal state, returns the same terminal step without changes.</summary>
     public ExecutionStep Step()
     {
         if (_terminal is not null)
@@ -57,18 +62,18 @@ public sealed class Interpreter
         var command = _pending!;
         if (_executedSteps >= ProgramLimits.MaxExecutedSteps)
         {
-            return Finish(Failure(command.Id, ExecutionError.StepLimitExceeded));
+            return Finish(Failure(command.Id, ExecutionError.StepLimitExceeded, _executedSteps + 1));
         }
 
         var result = _person.Move(command.Direction, _grid);
         if (result.Outcome == MoveOutcome.OutOfBounds)
         {
-            return Finish(Failure(command.Id, ExecutionError.OutOfBounds));
+            return Finish(Failure(command.Id, ExecutionError.OutOfBounds, _executedSteps + 1));
         }
 
         if (result.Outcome == MoveOutcome.Blocked)
         {
-            return Finish(Failure(command.Id, ExecutionError.Obstacle) with { HitObstacle = result.Hit });
+            return Finish(Failure(command.Id, ExecutionError.Obstacle, _executedSteps + 1) with { HitObstacle = result.Hit });
         }
 
         _executedSteps++;
@@ -97,37 +102,39 @@ public sealed class Interpreter
     {
         if (_program.Commands.Count == 0)
         {
-            return Failure(Guid.Empty, ExecutionError.EmptyProgram);
+            return Failure(Guid.Empty, ExecutionError.EmptyProgram, 0);
         }
 
         return FindEmptyRepeat(_program.Commands) is { } repeat
-            ? Failure(repeat.Id, ExecutionError.EmptyRepeat)
+            ? Failure(repeat.Id, ExecutionError.EmptyRepeat, 0)
             : null;
     }
 
-    private static RepeatCommand? FindEmptyRepeat(IReadOnlyList<ICommand> commands)
+    private static RepeatCommand? FindEmptyRepeat(IReadOnlyList<Command> commands)
     {
         foreach (var command in commands)
         {
-            if (command is RepeatCommand repeat)
+            if (command is not RepeatCommand repeat)
             {
-                if (repeat.Body.Count == 0)
-                {
-                    return repeat;
-                }
+                continue;
+            }
 
-                if (FindEmptyRepeat(repeat.Body) is { } inner)
-                {
-                    return inner;
-                }
+            if (repeat.Body.Count == 0)
+            {
+                return repeat;
+            }
+
+            if (FindEmptyRepeat(repeat.Body) is { } inner)
+            {
+                return inner;
             }
         }
 
         return null;
     }
 
-    private ExecutionStep Failure(Guid commandId, ExecutionError error) =>
-        new(commandId, _executedSteps, _person.Position, ExecutionState.Failed, error);
+    private ExecutionStep Failure(Guid commandId, ExecutionError error, int stepNumber) =>
+        new(commandId, stepNumber, _person.Position, ExecutionState.Failed, error);
 
     private ExecutionStep Finish(ExecutionStep step)
     {
@@ -171,22 +178,22 @@ public sealed class Interpreter
                 continue;
             }
 
-            var command = frame.Commands[frame.Index++];
-            if (command is MoveCommand move)
+            switch (frame.Commands[frame.Index++])
             {
-                return move;
+                case MoveCommand move:
+                    return move;
+                case RepeatCommand repeat:
+                    _frames.Push(new Frame(repeat.Body, repeat.Count));
+                    break;
             }
-
-            var repeat = (RepeatCommand)command;
-            _frames.Push(new Frame(repeat.Body, repeat.Count));
         }
 
         return null;
     }
 
-    private sealed class Frame(IReadOnlyList<ICommand> commands, int remaining)
+    private sealed class Frame(IReadOnlyList<Command> commands, int remaining)
     {
-        public IReadOnlyList<ICommand> Commands { get; } = commands;
+        public IReadOnlyList<Command> Commands { get; } = commands;
 
         public int Index { get; set; }
 

@@ -131,6 +131,54 @@ public class LevelJsonTests
     }
 
     [Fact]
+    public void Read_InputLongerThanLimit_ReturnsInvalidJsonWithoutParsing()
+    {
+        var padded = ExampleJson + new string(' ', LevelJson.MaxJsonLength);
+
+        var result = LevelJson.Read(padded);
+
+        Assert.False(result.IsValid);
+        Assert.Equal(LevelValidationErrorKind.InvalidJson, Assert.Single(result.Errors).Kind);
+    }
+
+    [Fact]
+    public void Read_InputAtLimit_IsParsed()
+    {
+        var padded = ExampleJson + new string(' ', LevelJson.MaxJsonLength - ExampleJson.Length);
+
+        Assert.Equal(LevelJson.MaxJsonLength, padded.Length);
+        Assert.True(LevelJson.Read(padded).IsValid);
+    }
+
+    [Theory]
+    [InlineData(6, true)]
+    [InlineData(7, true)]
+    [InlineData(8, false)]
+    [InlineData(20, false)]
+    public void Read_NestedUnknownProperty_HonorsMaxDepth(int arrayDepth, bool expectedValid)
+    {
+        var nested = new string('[', arrayDepth) + new string(']', arrayDepth);
+        var json = ExampleJson.Replace("\"schemaVersion\": 1,", $"\"schemaVersion\": 1, \"extra\": {nested},");
+
+        var result = LevelJson.Read(json);
+
+        Assert.Equal(expectedValid, result.IsValid);
+        if (!expectedValid)
+        {
+            Assert.Equal(LevelValidationErrorKind.InvalidJson, Assert.Single(result.Errors).Kind);
+        }
+    }
+
+    [Fact]
+    public void Read_InvalidIdInJson_ReturnsInvalidId()
+    {
+        var result = LevelJson.Read(ExampleJson.Replace("\"free-field\"", "\"Free Field\""));
+
+        Assert.False(result.IsValid);
+        Assert.Equal(LevelValidationErrorKind.InvalidId, Assert.Single(result.Errors).Kind);
+    }
+
+    [Fact]
     public void Read_UnknownEnumValue_ReturnsInvalidJson()
     {
         var result = LevelJson.Read(ExampleJson.Replace("\"tree\"", "\"lava\""));
@@ -170,7 +218,7 @@ public class LevelJsonTests
     }
 
     [Fact]
-    public void Read_NullLists_ReturnsMissingListErrors()
+    public void Read_NullLists_ReturnsInvalidListErrors()
     {
         var json = ExampleJson
             .Replace("[ { \"x\": 4, \"y\": 5, \"kind\": \"tree\" } ]", "null")
@@ -180,19 +228,19 @@ public class LevelJsonTests
 
         Assert.False(result.IsValid);
         var kinds = result.Errors.Select(e => e.Kind).ToList();
-        Assert.Contains(LevelValidationErrorKind.ObstaclesMissing, kinds);
-        Assert.Contains(LevelValidationErrorKind.ItemsMissing, kinds);
+        Assert.Contains(LevelValidationErrorKind.ObstaclesInvalid, kinds);
+        Assert.Contains(LevelValidationErrorKind.ItemsInvalid, kinds);
     }
 
     [Fact]
-    public void Read_ListsOmitted_ReturnsMissingListErrors()
+    public void Read_ListsOmitted_ReturnsInvalidListErrors()
     {
         const string json = """{ "schemaVersion": 1, "id": "a", "width": 10, "height": 10, "start": { "x": 0, "y": 0 }, "goal": { "x": 9, "y": 9 } }""";
 
         var kinds = LevelJson.Read(json).Errors.Select(e => e.Kind).ToList();
 
-        Assert.Contains(LevelValidationErrorKind.ObstaclesMissing, kinds);
-        Assert.Contains(LevelValidationErrorKind.ItemsMissing, kinds);
+        Assert.Contains(LevelValidationErrorKind.ObstaclesInvalid, kinds);
+        Assert.Contains(LevelValidationErrorKind.ItemsInvalid, kinds);
     }
 
     [Fact]

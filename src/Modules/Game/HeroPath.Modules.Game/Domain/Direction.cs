@@ -2,6 +2,7 @@ using HeroPath.Modules.Levels.Domain;
 
 namespace HeroPath.Modules.Game.Domain;
 
+/// <summary>Direction of a move. Y grows downward, so Up decreases Y.</summary>
 public enum Direction
 {
     Up,
@@ -10,10 +11,12 @@ public enum Direction
     Right,
 }
 
+/// <summary>Grid offsets for <see cref="Direction"/>.</summary>
 public static class DirectionExtensions
 {
     extension(Direction direction)
     {
+        /// <summary>Unit offset of the direction.</summary>
         public Position Offset => direction switch
         {
             Direction.Up => new(0, -1),
@@ -23,6 +26,7 @@ public static class DirectionExtensions
             _ => throw new ArgumentOutOfRangeException(nameof(direction)),
         };
 
+        /// <summary>The position one cell from <paramref name="position"/> in this direction; not checked against the grid.</summary>
         public Position MoveFrom(Position position)
         {
             var offset = direction.Offset;

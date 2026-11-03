@@ -20,9 +20,9 @@ public class InterpreterTests
     private static MoveCommand[] Moves(Direction direction, int count) =>
         [.. Enumerable.Range(0, count).Select(_ => Move(direction))];
 
-    private static RepeatCommand Repeat(int count, params ICommand[] body) => new(count, body);
+    private static RepeatCommand Repeat(int count, params Command[] body) => new(count, body);
 
-    private static ProgramDefinition Program(params ICommand[] commands) => new(commands);
+    private static ProgramDefinition Program(params Command[] commands) => new(commands);
 
     private static List<ExecutionStep> RunToEnd(Interpreter interpreter)
     {
@@ -38,12 +38,12 @@ public class InterpreterTests
         return steps;
     }
 
-    private static ICommand[] GoalSequence() =>
+    private static Command[] GoalSequence() =>
         [.. Moves(Direction.Up, 4), .. Moves(Direction.Right, 4)];
 
     private static ProgramDefinition BackAndForth(int moves)
     {
-        var commands = new List<ICommand>();
+        var commands = new List<Command>();
         var pairs = moves / 2;
         for (; pairs >= 400; pairs -= 400)
         {
@@ -184,21 +184,26 @@ public class InterpreterTests
         Assert.Equal(kind, failed.HitObstacle);
         Assert.Equal(blocked.Id, failed.CommandId);
         Assert.Equal(new Position(0, 3), failed.Position);
-        Assert.Equal(1, failed.StepNumber);
+        Assert.Equal(2, failed.StepNumber);
     }
 
-    [Fact]
-    public void Step_OutOfBounds_FailsWithMoveIdAndUnchangedPosition()
+    [Theory]
+    [InlineData(Direction.Up, 2, 0)]
+    [InlineData(Direction.Down, 2, 4)]
+    [InlineData(Direction.Left, 0, 2)]
+    [InlineData(Direction.Right, 4, 2)]
+    public void Step_OutOfBounds_FailsWithAttemptedStepAndUnchangedPosition(Direction direction, int x, int y)
     {
-        var outside = Move(Direction.Left);
-        var interpreter = new Interpreter(Program(outside), CreateGrid());
+        var outside = Move(direction);
+        var interpreter = new Interpreter(Program(outside), CreateGrid(start: new(x, y)));
 
         var step = interpreter.Step();
 
         Assert.Equal(ExecutionState.Failed, step.State);
         Assert.Equal(ExecutionError.OutOfBounds, step.Error);
         Assert.Equal(outside.Id, step.CommandId);
-        Assert.Equal(_start, step.Position);
+        Assert.Equal(1, step.StepNumber);
+        Assert.Equal(new Position(x, y), step.Position);
         Assert.Null(step.HitObstacle);
     }
 
@@ -272,7 +277,7 @@ public class InterpreterTests
         var grid = CreateGrid(
             requireAllItems: true,
             items: [new LevelItem(1, 4, ItemKind.Strawberry), new LevelItem(2, 4, ItemKind.Strawberry), new LevelItem(3, 4, ItemKind.Strawberry)]);
-        ICommand[] commands = [Move(Direction.Right), .. Moves(Direction.Up, 4), .. Moves(Direction.Right, 3)];
+        Command[] commands = [Move(Direction.Right), .. Moves(Direction.Up, 4), .. Moves(Direction.Right, 3)];
         var interpreter = new Interpreter(Program(commands), grid);
 
         var steps = RunToEnd(interpreter);
@@ -361,7 +366,7 @@ public class InterpreterTests
         var last = steps[^1];
         Assert.Equal(ExecutionError.StepLimitExceeded, last.Error);
         Assert.Equal(ExecutionState.Failed, last.State);
-        Assert.Equal(ProgramLimits.MaxExecutedSteps, last.StepNumber);
+        Assert.Equal(ProgramLimits.MaxExecutedSteps + 1, last.StepNumber);
         Assert.Equal(steps[^2].Position, last.Position);
     }
 

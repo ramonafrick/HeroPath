@@ -2,10 +2,13 @@ using HeroPath.Modules.Levels.Domain;
 
 namespace HeroPath.Modules.Game.Domain;
 
+/// <summary>The hero on the grid. Holds only the position; run state lives in the <see cref="Interpreter"/>.</summary>
 public sealed class Person(Position start)
 {
+    /// <summary>Current position.</summary>
     public Position Position { get; private set; } = start;
 
+    /// <summary>Moves one cell if the target is inside the grid and free; otherwise the position stays unchanged.</summary>
     public MoveResult Move(Direction direction, Grid grid)
     {
         ArgumentNullException.ThrowIfNull(grid);

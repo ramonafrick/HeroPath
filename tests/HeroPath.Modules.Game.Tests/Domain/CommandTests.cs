@@ -62,7 +62,7 @@ public class CommandTests
     [Fact]
     public void RepeatCommand_Body_IsDefensiveCopy()
     {
-        var source = new List<ICommand> { Move() };
+        var source = new List<Command> { Move() };
         var repeat = new RepeatCommand(2, source);
 
         source.Add(Move());
@@ -107,7 +107,7 @@ public class CommandTests
     [Fact]
     public void ProgramDefinition_IsDefensiveCopy()
     {
-        var source = new List<ICommand> { Move() };
+        var source = new List<Command> { Move() };
         var program = new ProgramDefinition(source);
 
         source.Clear();
@@ -130,17 +130,37 @@ public class CommandTests
     }
 
     [Fact]
-    public void ProgramDefinition_DepthTwo_IsAccepted()
+    public void ProgramDefinition_ExactlyMaxCommands_IsAccepted()
     {
-        var program = new ProgramDefinition([new RepeatCommand(2, [new RepeatCommand(2, [Move()])])]);
+        var program = new ProgramDefinition(Moves(ProgramLimits.MaxProgramCommands));
 
-        Assert.Single(program.Commands);
+        Assert.Equal(ProgramLimits.MaxProgramCommands, program.Commands.Count);
     }
 
     [Fact]
-    public void ProgramDefinition_DepthThree_Throws()
+    public void ProgramDefinition_OneMoreThanMaxCommands_Throws()
     {
-        Assert.Throws<ArgumentOutOfRangeException>(() => new ProgramDefinition(
-            [new RepeatCommand(2, [new RepeatCommand(2, [new RepeatCommand(2, [Move()])])])]));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new ProgramDefinition(Moves(ProgramLimits.MaxProgramCommands + 1)));
     }
+
+    [Theory]
+    [InlineData(2, true)]
+    [InlineData(3, false)]
+    public void ProgramDefinition_CountsNestedCommandsRecursively(int topLevelMoves, bool accepted)
+    {
+        var inner = new RepeatCommand(2, Moves(98));
+        var outer = new RepeatCommand(2, [inner, .. Moves(98)]);
+        Command[] commands = [outer, .. Moves(topLevelMoves)];
+
+        if (accepted)
+        {
+            Assert.Equal(topLevelMoves + 1, new ProgramDefinition(commands).Commands.Count);
+        }
+        else
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => new ProgramDefinition(commands));
+        }
+    }
+
+    private static Command[] Moves(int count) => [.. Enumerable.Range(0, count).Select(_ => (Command)Move())];
 }

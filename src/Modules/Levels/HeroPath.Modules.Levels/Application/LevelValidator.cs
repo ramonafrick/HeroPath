@@ -1,112 +1,99 @@
+using System.Text.RegularExpressions;
 using HeroPath.Modules.Levels.Domain;
 
 namespace HeroPath.Modules.Levels.Application;
 
-public static class LevelValidator
+/// <summary>Checks a <see cref="LevelDefinition"/> against all level rules and collects every violation.</summary>
+public static partial class LevelValidator
 {
+    /// <summary>Never throws for a non-null level, even if lists or entries are null.</summary>
     public static IReadOnlyList<LevelValidationError> Validate(LevelDefinition level)
     {
         ArgumentNullException.ThrowIfNull(level);
 
         var errors = new List<LevelValidationError>();
 
-        if (level.SchemaVersion != LevelDefinition.CurrentSchemaVersion)
-        {
-            errors.Add(new(LevelValidationErrorKind.UnsupportedSchemaVersion));
-        }
+        AddIf(level.SchemaVersion != LevelDefinition.CurrentSchemaVersion, LevelValidationErrorKind.UnsupportedSchemaVersion);
+        AddIf(level.Id is null || !IdPattern().IsMatch(level.Id), LevelValidationErrorKind.InvalidId);
+        AddIf(level.Name is not null && !IsValidName(level.Name), LevelValidationErrorKind.InvalidName);
+        AddIf(level.Width is < LevelLimits.MinGridSize or > LevelLimits.MaxGridSize, LevelValidationErrorKind.WidthOutOfRange);
+        AddIf(level.Height is < LevelLimits.MinGridSize or > LevelLimits.MaxGridSize, LevelValidationErrorKind.HeightOutOfRange);
+        AddIf(!level.Start.IsInside(level.Width, level.Height), LevelValidationErrorKind.StartOutsideGrid, level.Start);
+        AddIf(!level.Goal.IsInside(level.Width, level.Height), LevelValidationErrorKind.GoalOutsideGrid, level.Goal);
+        AddIf(level.Start == level.Goal, LevelValidationErrorKind.StartEqualsGoal, level.Start);
 
-        if (level.Width is < LevelLimits.MinGridSize or > LevelLimits.MaxGridSize)
-        {
-            errors.Add(new(LevelValidationErrorKind.WidthOutOfRange));
-        }
+        var obstaclesValid = IsListValid(level.Obstacles);
+        var itemsValid = IsListValid(level.Items);
+        AddIf(!obstaclesValid, LevelValidationErrorKind.ObstaclesInvalid);
+        AddIf(!itemsValid, LevelValidationErrorKind.ItemsInvalid);
 
-        if (level.Height is < LevelLimits.MinGridSize or > LevelLimits.MaxGridSize)
+        var objectCount = (obstaclesValid ? level.Obstacles.Count : 0) + (itemsValid ? level.Items.Count : 0);
+        var maxObjects = Math.Clamp(level.Width, LevelLimits.MinGridSize, LevelLimits.MaxGridSize)
+            * Math.Clamp(level.Height, LevelLimits.MinGridSize, LevelLimits.MaxGridSize);
+        if (objectCount > maxObjects)
         {
-            errors.Add(new(LevelValidationErrorKind.HeightOutOfRange));
-        }
-
-        var startInside = IsInside(level, level.Start);
-        var goalInside = IsInside(level, level.Goal);
-
-        if (!startInside)
-        {
-            errors.Add(new(LevelValidationErrorKind.StartOutsideGrid, level.Start));
-        }
-
-        if (!goalInside)
-        {
-            errors.Add(new(LevelValidationErrorKind.GoalOutsideGrid, level.Goal));
-        }
-
-        if (level.Start == level.Goal)
-        {
-            errors.Add(new(LevelValidationErrorKind.StartEqualsGoal, level.Start));
+            errors.Add(new(LevelValidationErrorKind.TooManyObjects));
+            return errors;
         }
 
         var occupied = new HashSet<Position>();
-
-        if (level.Obstacles is null || level.Obstacles.Any(o => o is null))
+        if (obstaclesValid)
         {
-            errors.Add(new(LevelValidationErrorKind.ObstaclesMissing));
-        }
-        else
-        {
-            foreach (var position in level.Obstacles.Select(o => o.GetPosition()))
+            foreach (var obstacle in level.Obstacles)
             {
-                if (!IsInside(level, position))
-                {
-                    errors.Add(new(LevelValidationErrorKind.ObstacleOutsideGrid, position));
-                    continue;
-                }
-
-                if (position == level.Start)
-                {
-                    errors.Add(new(LevelValidationErrorKind.ObstacleOnStart, position));
-                }
-                else if (position == level.Goal)
-                {
-                    errors.Add(new(LevelValidationErrorKind.ObstacleOnGoal, position));
-                }
-                else if (!occupied.Add(position))
-                {
-                    errors.Add(new(LevelValidationErrorKind.CellOccupiedTwice, position));
-                }
+                CheckObject(obstacle.GetPosition(), isObstacle: true);
             }
         }
 
-        if (level.Items is null || level.Items.Any(i => i is null))
+        if (itemsValid)
         {
-            errors.Add(new(LevelValidationErrorKind.ItemsMissing));
-        }
-        else
-        {
-            foreach (var position in level.Items.Select(i => i.GetPosition()))
+            foreach (var item in level.Items)
             {
-                if (!IsInside(level, position))
-                {
-                    errors.Add(new(LevelValidationErrorKind.ItemOutsideGrid, position));
-                    continue;
-                }
-
-                if (position == level.Start)
-                {
-                    errors.Add(new(LevelValidationErrorKind.ItemOnStart, position));
-                }
-                else if (!occupied.Add(position))
-                {
-                    errors.Add(new(LevelValidationErrorKind.CellOccupiedTwice, position));
-                }
+                CheckObject(item.GetPosition(), isObstacle: false);
             }
 
-            if (level.RequireAllItems && level.Items.All(i => i.Kind != ItemKind.Strawberry))
-            {
-                errors.Add(new(LevelValidationErrorKind.RequiredItemsMissing));
-            }
+            AddIf(level.RequireAllItems && level.Items.All(i => i.Kind != ItemKind.Strawberry), LevelValidationErrorKind.RequiredItemsMissing);
         }
 
         return errors;
+
+        void AddIf(bool condition, LevelValidationErrorKind kind, Position? position = null)
+        {
+            if (condition)
+            {
+                errors.Add(new(kind, position));
+            }
+        }
+
+        void CheckObject(Position position, bool isObstacle)
+        {
+            if (!position.IsInside(level.Width, level.Height))
+            {
+                errors.Add(new(isObstacle ? LevelValidationErrorKind.ObstacleOutsideGrid : LevelValidationErrorKind.ItemOutsideGrid, position));
+            }
+            else if (position == level.Start)
+            {
+                errors.Add(new(isObstacle ? LevelValidationErrorKind.ObstacleOnStart : LevelValidationErrorKind.ItemOnStart, position));
+            }
+            else if (isObstacle && position == level.Goal)
+            {
+                errors.Add(new(LevelValidationErrorKind.ObstacleOnGoal, position));
+            }
+            else if (!occupied.Add(position))
+            {
+                errors.Add(new(LevelValidationErrorKind.CellOccupiedTwice, position));
+            }
+        }
     }
 
-    private static bool IsInside(LevelDefinition level, Position position) =>
-        position.X >= 0 && position.X < level.Width && position.Y >= 0 && position.Y < level.Height;
+    private static bool IsListValid<T>(IReadOnlyList<T>? list) where T : class =>
+        list is not null && !list.Any(entry => entry is null);
+
+    private static bool IsValidName(string name) =>
+        name.Length is >= 1 and <= LevelLimits.MaxNameLength
+        && !string.IsNullOrWhiteSpace(name)
+        && !name.Any(char.IsControl);
+
+    [GeneratedRegex(@"^[a-z0-9-]{1,40}\z")]
+    private static partial Regex IdPattern();
 }
