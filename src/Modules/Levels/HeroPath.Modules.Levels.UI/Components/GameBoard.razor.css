@@ -1,5 +1,5 @@
 .game-board {
-    --hp-board-reserved: 9rem;
+    --hp-board-reserved: 10.25rem;
     position: relative;
     box-sizing: border-box;
     display: grid;
@@ -61,4 +61,13 @@
 .hero ::deep svg {
     width: 80%;
     height: 80%;
+}
+
+.game-board[data-preview="true"] {
+    width: 100%;
+    box-shadow: 0 0 0 2px var(--hp-outline);
+}
+
+.game-board[data-preview="true"] .cell {
+    border-width: 0;
 }

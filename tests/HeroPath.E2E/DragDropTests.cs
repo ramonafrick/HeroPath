@@ -228,8 +228,7 @@ public class DragDropTests(AppFixture app)
 
     private static async Task OpenAsync(IPage page, BrowserErrors errors)
     {
-        await page.GotoAsync("/");
-        await page.WaitForRenderedAsync("[data-testid=game-board]", errors);
+        await page.StartGameAsync(errors);
     }
 
     private static ILocator Zone(IPage page, string slot) => page.Locator($"[data-testid=drop-zone][data-slot='{slot}']");

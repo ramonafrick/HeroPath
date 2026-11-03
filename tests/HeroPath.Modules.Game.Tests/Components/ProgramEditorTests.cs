@@ -325,7 +325,7 @@ public class ProgramEditorTests : CultureBunitContext
     [Fact]
     public void Render_NotEditable_DisablesEditButtons()
     {
-        _session.Load(TestLevels.DemoGrid());
+        _session.Load(TestLevels.Demo);
         _session.AddRepeat();
         _session.Select(_session.Program.Commands[0].Id);
         _session.Add(Direction.Up);
@@ -343,7 +343,7 @@ public class ProgramEditorTests : CultureBunitContext
     [Fact]
     public void Click_WhileLocked_DoesNotSelect()
     {
-        _session.Load(TestLevels.DemoGrid());
+        _session.Load(TestLevels.Demo);
         _session.Add(Direction.Up);
         Services.GetRequiredService<ExecutionRunner>().StepOnce();
         var editor = Render<ProgramEditor>();
@@ -391,7 +391,7 @@ public class ProgramEditorTests : CultureBunitContext
     [Fact]
     public void Debug_MarksCurrentBlockAndMovesWithEachStep()
     {
-        _session.Load(TestLevels.DemoGrid());
+        _session.Load(TestLevels.Demo);
         TestLevels.Fill(_session, Direction.Up, Direction.Up, Direction.Right);
         var runner = Services.GetRequiredService<ExecutionRunner>();
         var editor = Render<ProgramEditor>();
@@ -410,7 +410,7 @@ public class ProgramEditorTests : CultureBunitContext
     [Fact]
     public void Debug_MarksMoveInsideRepeatBody()
     {
-        _session.Load(TestLevels.DemoGrid());
+        _session.Load(TestLevels.Demo);
         _session.AddRepeat();
         _session.Select(_session.Program.Commands[0].Id);
         _session.Add(Direction.Up);
@@ -432,7 +432,7 @@ public class ProgramEditorTests : CultureBunitContext
     [Fact]
     public void Failure_MarksFailedBlockWithError()
     {
-        _session.Load(TestLevels.DemoGrid());
+        _session.Load(TestLevels.Demo);
         TestLevels.Fill(_session, Direction.Right, Direction.Right);
         var runner = Services.GetRequiredService<ExecutionRunner>();
         var editor = Render<ProgramEditor>();
@@ -451,7 +451,7 @@ public class ProgramEditorTests : CultureBunitContext
     [Fact]
     public void Failure_InsideRepeat_MarksFailedBlockWithError()
     {
-        _session.Load(TestLevels.DemoGrid());
+        _session.Load(TestLevels.Demo);
         _session.AddRepeat();
         _session.Select(_session.Program.Commands[0].Id);
         _session.Add(Direction.Right);
@@ -471,7 +471,7 @@ public class ProgramEditorTests : CultureBunitContext
     [Fact]
     public void Reset_ClearsMarkers()
     {
-        _session.Load(TestLevels.DemoGrid());
+        _session.Load(TestLevels.Demo);
         _session.Add(Direction.Up);
         var runner = Services.GetRequiredService<ExecutionRunner>();
         var editor = Render<ProgramEditor>();
@@ -485,7 +485,7 @@ public class ProgramEditorTests : CultureBunitContext
     [Fact]
     public void StartingRun_ClearsSelection()
     {
-        _session.Load(TestLevels.DemoGrid());
+        _session.Load(TestLevels.Demo);
         _session.Add(Direction.Up);
         _session.Select(_session.Program.Commands[0].Id);
         var editor = Render<ProgramEditor>();

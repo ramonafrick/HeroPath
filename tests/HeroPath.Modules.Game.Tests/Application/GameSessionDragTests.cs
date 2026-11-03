@@ -15,7 +15,7 @@ public class GameSessionDragTests
     private static GameSession Locked()
     {
         var session = new GameSession();
-        session.Load(TestLevels.DemoGrid());
+        session.Load(TestLevels.Demo);
         session.Add(Direction.Up);
         new ExecutionRunner(session, TimeProvider.System).StepOnce();
         return session;

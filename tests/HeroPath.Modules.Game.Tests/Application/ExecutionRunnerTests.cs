@@ -13,7 +13,7 @@ public class ExecutionRunnerTests
 
     public ExecutionRunnerTests()
     {
-        _session.Load(TestLevels.DemoGrid());
+        _session.Load(TestLevels.Demo);
         _runner = new ExecutionRunner(_session, _time);
     }
 
@@ -345,7 +345,7 @@ public class ExecutionRunnerTests
         Direction[] moves = [Direction.Up, Direction.Up, Direction.Right, Direction.Right, Direction.Right];
         Program(moves);
         var debugSession = new GameSession();
-        debugSession.Load(TestLevels.DemoGrid());
+        debugSession.Load(TestLevels.Demo);
         TestLevels.Fill(debugSession, moves);
         var debugRunner = new ExecutionRunner(debugSession, _time);
 
@@ -505,7 +505,7 @@ public class ExecutionRunnerTests
         var play = _runner.PlayAsync();
         await AdvanceStepAsync();
 
-        _session.Load(new Grid(10, 10, new Position(0, 0), new Position(9, 9), [], [], false));
+        _session.Load(TestLevels.Empty("test-other", 10, 10, new Position(0, 0), new Position(9, 9)));
         await AdvanceStepAsync(10_000);
         await play;
 

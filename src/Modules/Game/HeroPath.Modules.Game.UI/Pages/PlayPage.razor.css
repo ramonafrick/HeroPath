@@ -11,12 +11,22 @@
 
 .board-area {
     min-width: 0;
-    width: calc((100dvh - 9rem) * var(--board-cols) / var(--board-rows));
+    width: calc((100dvh - 10.25rem) * var(--board-cols) / var(--board-rows));
     max-width: calc(100vw - 32rem);
 }
 
+.board-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.25rem 0.75rem;
+    min-height: 2.75rem;
+    margin-bottom: 0.5rem;
+}
+
 .level-name {
-    margin: 0 0 0.5rem;
+    margin: 0;
     font-size: 1.25rem;
 }
 

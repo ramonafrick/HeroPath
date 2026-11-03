@@ -3,9 +3,11 @@
 @inherits LocalizedComponentBase
 
 <div class="game-board"
-     data-testid="game-board"
-     role="group"
-     aria-label="@Localizer["Board_Label"]"
+     data-testid="@(Preview ? "board-preview" : "game-board")"
+     data-preview="@(Preview ? "true" : null)"
+     role="@(Preview ? null : "group")"
+     aria-label="@(Preview ? null : Localizer["Board_Label"].Value)"
+     aria-hidden="@(Preview ? "true" : null)"
      style="@_boardStyle">
     @for (var y = 0; y < Grid.Height; y++)
     {
@@ -15,7 +17,7 @@
             var kind = KindAt(position);
             <div class="cell"
                  @key="position"
-                 data-testid="@($"cell-{x}-{y}")"
+                 data-testid="@(Preview ? null : $"cell-{x}-{y}")"
                  data-kind="@kind"
                  data-marked="@(IsMarked(position) ? "true" : null)">
                 @switch (kind)
@@ -39,11 +41,14 @@
             </div>
         }
     }
-    <div class="hero"
-         data-testid="hero"
-         data-x="@HeroPosition.X"
-         data-y="@HeroPosition.Y"
-         style="@_heroStyle">
-        @HeroContent
-    </div>
+    @if (!Preview)
+    {
+        <div class="hero"
+             data-testid="hero"
+             data-x="@HeroPosition.X"
+             data-y="@HeroPosition.Y"
+             style="@_heroStyle">
+            @HeroContent
+        </div>
+    }
 </div>

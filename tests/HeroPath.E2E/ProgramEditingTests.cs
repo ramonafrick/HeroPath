@@ -21,8 +21,7 @@ public class ProgramEditingTests(AppFixture app)
     {
         var errors = BrowserErrors.Track(page);
 
-        await page.GotoAsync("/");
-        await page.WaitForRenderedAsync("[data-testid=game-board]", errors);
+        await page.StartGameAsync(errors);
 
         await Expect(page.GetByTestId("message")).ToHaveAttributeAsync("data-code", "EmptyProgram");
         await Expect(page.GetByTestId("program-block")).ToHaveCountAsync(0);

@@ -6,14 +6,35 @@ namespace HeroPath.Modules.Game.Tests;
 
 internal static class TestLevels
 {
-    public static Grid DemoGrid() => new(
-        10,
-        10,
-        new Position(1, 6),
-        new Position(6, 3),
-        [new LevelObstacle(3, 6, ObstacleKind.Tree), new LevelObstacle(4, 3, ObstacleKind.Rock), new LevelObstacle(6, 5, ObstacleKind.Pond)],
-        [],
-        false);
+    public static LevelDefinition Demo { get; } = new()
+    {
+        Id = "test-demo",
+        Width = 10,
+        Height = 10,
+        Start = new Position(1, 6),
+        Goal = new Position(6, 3),
+        Obstacles = [new LevelObstacle(3, 6, ObstacleKind.Tree), new LevelObstacle(4, 3, ObstacleKind.Rock), new LevelObstacle(6, 5, ObstacleKind.Pond)],
+    };
+
+    public static LevelDefinition Empty(string id, int width, int height, Position start, Position goal) => new()
+    {
+        Id = id,
+        Width = width,
+        Height = height,
+        Start = start,
+        Goal = goal,
+    };
+
+    public static LevelDefinition WithItems(string id, int width, int height, Position start, Position goal, params LevelItem[] items) => new()
+    {
+        Id = id,
+        Width = width,
+        Height = height,
+        Start = start,
+        Goal = goal,
+        RequireAllItems = true,
+        Items = items,
+    };
 
     public static Direction[] Directions(GameSession session) =>
         [.. session.Program.Commands.OfType<MoveCommand>().Select(c => c.Direction)];

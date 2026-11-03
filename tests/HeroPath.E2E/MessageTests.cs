@@ -33,8 +33,7 @@ public class MessageTests(AppFixture app)
     {
         var errors = BrowserErrors.Track(page);
         await page.Clock.InstallAsync();
-        await page.GotoAsync("/");
-        await page.WaitForRenderedAsync("[data-testid=game-board]", errors);
+        await page.StartGameAsync(errors);
         await page.GetByTestId("control-tempo").FillAsync("2");
 
         await page.GetByTestId("palette-repeat").ClickAsync();
@@ -81,8 +80,7 @@ public class MessageTests(AppFixture app)
     private static async Task RunAsync(IPage page, string viewport)
     {
         var errors = BrowserErrors.Track(page);
-        await page.GotoAsync("/");
-        await page.WaitForRenderedAsync("[data-testid=game-board]", errors);
+        await page.StartGameAsync(errors);
         await page.GetByTestId("control-tempo").FillAsync("2");
 
         var message = page.GetByTestId("message");

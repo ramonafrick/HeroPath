@@ -6,14 +6,14 @@ namespace HeroPath.Modules.Game.Tests.Application;
 
 public class GameSessionTests
 {
-    private static Grid CreateGrid() => new(10, 10, new Position(2, 3), new Position(7, 7), [], [], false);
+    private static LevelDefinition CreateLevel() => TestLevels.Empty("test-plain", 10, 10, new Position(2, 3), new Position(7, 7));
 
-    private static Grid DemoGrid() => TestLevels.DemoGrid();
+    private static LevelDefinition DemoLevel() => TestLevels.Demo;
 
     private static (GameSession Session, ExecutionRunner Runner) Started(params Direction[] directions)
     {
         var session = new GameSession();
-        session.Load(DemoGrid());
+        session.Load(DemoLevel());
         TestLevels.Fill(session, directions);
         return (session, new ExecutionRunner(session, TimeProvider.System));
     }
@@ -128,7 +128,7 @@ public class GameSessionTests
         session.Add(Direction.Down);
         session.Remove(session.Program.Commands[0].Id);
         session.Clear();
-        session.Load(CreateGrid());
+        session.Load(CreateLevel());
 
         Assert.Equal(5, changes);
     }
@@ -157,7 +157,7 @@ public class GameSessionTests
     public void NewSession_IsReadyWithoutStepAndHeroOnStart()
     {
         var session = new GameSession();
-        session.Load(DemoGrid());
+        session.Load(DemoLevel());
 
         Assert.Equal(RunStatus.Ready, session.Status);
         Assert.Null(session.CurrentStep);
@@ -257,14 +257,15 @@ public class GameSessionTests
     }
 
     [Fact]
-    public void Load_SetsGridAndHeroPositionToStart()
+    public void Load_SetsLevelGridAndHeroPositionToStart()
     {
         var session = new GameSession();
-        var grid = CreateGrid();
+        var level = CreateLevel();
 
-        session.Load(grid);
+        session.Load(level);
 
-        Assert.Same(grid, session.Grid);
+        Assert.Same(level, session.Level);
+        Assert.Equal(level.ToGrid(), session.Grid);
         Assert.Equal(new Position(2, 3), session.HeroPosition);
     }
 
@@ -273,7 +274,7 @@ public class GameSessionTests
         Assert.Throws<ArgumentNullException>(() => new GameSession().Load(null!));
 
     [Fact]
-    public void Load_SameGridTwice_KeepsProgramAndRunAndRaisesNoEvent()
+    public void Load_SameLevelTwice_KeepsProgramAndRunAndRaisesNoEvent()
     {
         var (session, runner) = Started(Direction.Up, Direction.Up);
         runner.StepOnce();
@@ -281,7 +282,7 @@ public class GameSessionTests
         var changes = 0;
         session.Changed += () => changes++;
 
-        session.Load(session.Grid!);
+        session.Load(session.Level!);
 
         Assert.Equal(2, session.Program.Commands.Count);
         Assert.Equal(RunStatus.Paused, session.Status);
@@ -291,13 +292,13 @@ public class GameSessionTests
     }
 
     [Fact]
-    public void Load_EqualGridBuiltAgain_KeepsProgramAndRun()
+    public void Load_EqualLevelBuiltAgain_KeepsGridProgramAndRun()
     {
         var (session, runner) = Started(Direction.Up, Direction.Up);
         runner.StepOnce();
         var grid = session.Grid;
 
-        session.Load(TestLevels.DemoGrid());
+        session.Load(TestLevels.Demo with { });
 
         Assert.Same(grid, session.Grid);
         Assert.Equal(RunStatus.Paused, session.Status);
@@ -306,36 +307,68 @@ public class GameSessionTests
     }
 
     [Fact]
-    public void Load_DifferentGrid_ResetsRunAndKeepsProgram()
+    public void Load_SameIdButDifferentGrid_IsADifferentLevel()
+    {
+        var (session, _) = Started(Direction.Up);
+
+        session.Load(TestLevels.Demo with { Start = new Position(0, 0) });
+
+        Assert.Empty(session.Program.Commands);
+        Assert.Equal(new Position(0, 0), session.HeroPosition);
+    }
+
+    [Fact]
+    public void Load_DifferentLevel_ResetsRunAndClearsProgramSelectionAndHint()
     {
         var (session, runner) = Started(Direction.Right, Direction.Right);
         runner.StepOnce();
         runner.StepOnce();
         Assert.Equal(RunStatus.Failed, session.Status);
         Assert.NotNull(session.MarkedCell);
-        var other = CreateGrid();
+        runner.Reset();
+        session.Select(session.Program.Commands[0].Id);
+        session.AddRepeat();
+        runner.StepOnce();
+        Assert.NotNull(session.HintedId);
+        var other = CreateLevel();
         var changes = 0;
         session.Changed += () => changes++;
 
         session.Load(other);
 
-        Assert.Same(other, session.Grid);
+        Assert.Same(other, session.Level);
         Assert.Equal(RunStatus.Ready, session.Status);
         Assert.Null(session.CurrentStep);
         Assert.Null(session.MarkedCell);
+        Assert.Null(session.HintedId);
+        Assert.Null(session.SelectedId);
         Assert.True(session.IsEditable);
         Assert.Equal(new Position(2, 3), session.HeroPosition);
-        Assert.Equal(2, session.Program.Commands.Count);
+        Assert.Empty(session.Program.Commands);
         Assert.Equal(1, changes);
     }
 
     [Fact]
-    public void Load_DifferentGrid_RunnerStartsFreshInterpreterOnNewGrid()
+    public void Load_DifferentLevelAfterFailedRun_ClearsRunMessage()
+    {
+        var (session, runner) = Started(Direction.Right, Direction.Right);
+        runner.StepOnce();
+        runner.StepOnce();
+        Assert.Equal(GameMessageKind.Error, session.Message!.Kind);
+
+        session.Load(CreateLevel());
+
+        Assert.Equal(GameMessageCode.EmptyProgram, session.Message!.Code);
+    }
+
+    [Fact]
+    public void Load_DifferentLevel_RunnerStartsFreshInterpreterOnNewGrid()
     {
         var (session, runner) = Started(Direction.Up, Direction.Up);
         runner.StepOnce();
 
-        session.Load(CreateGrid());
+        session.Load(CreateLevel());
+        TestLevels.Fill(session, Direction.Up);
         runner.StepOnce();
 
         Assert.Equal(1, session.CurrentStep!.StepNumber);

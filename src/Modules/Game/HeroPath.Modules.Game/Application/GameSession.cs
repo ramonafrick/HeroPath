@@ -23,7 +23,10 @@ public sealed class GameSession
 
     internal event Action? RunDiscarded;
 
-    /// <summary>The loaded level grid, or <c>null</c> before <see cref="Load"/> was called.</summary>
+    /// <summary>The loaded level, or <c>null</c> before <see cref="Load"/> was called.</summary>
+    public LevelDefinition? Level { get; private set; }
+
+    /// <summary>The grid of the loaded level (built once per load), or <c>null</c> before <see cref="Load"/> was called.</summary>
     public Grid? Grid { get; private set; }
 
     /// <summary>The program the child assembles. Immutable; every edit replaces it.</summary>
@@ -109,19 +112,23 @@ public sealed class GameSession
     public GameMessage? Message => _runMessage ?? _hint ?? DerivedHint();
 
     /// <summary>
-    /// Loads a level grid. Loading an equal grid again is a no-op, so returning to the page or re-rendering keeps
-    /// program and run. A different grid discards the run (status <see cref="RunStatus.Ready"/>, hero on the new start,
-    /// editable) and keeps the program.
+    /// Loads a level. Loading the same level again (same id and equal grid) is a no-op, so returning to the page or
+    /// re-rendering keeps program and run. A different level discards the run (status <see cref="RunStatus.Ready"/>, hero on the
+    /// new start, editable) and also clears the program, the selection and the hints.
     /// </summary>
-    public void Load(Grid grid)
+    public void Load(LevelDefinition level)
     {
-        ArgumentNullException.ThrowIfNull(grid);
-        if (grid.Equals(Grid))
+        ArgumentNullException.ThrowIfNull(level);
+        var grid = level.ToGrid();
+        if (Level is { } current && current.Id == level.Id && grid.Equals(Grid))
         {
             return;
         }
 
+        Level = level;
         Grid = grid;
+        _program = ProgramDefinition.Empty;
+        SelectedId = null;
         Status = RunStatus.Ready;
         CurrentStep = null;
         MarkedCell = null;

@@ -1,0 +1,42 @@
+.hero-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.hero-badge-figure {
+    flex: none;
+    width: 2.5rem;
+    height: 2.5rem;
+}
+
+.hero-badge-figure ::deep svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.hero-badge-name {
+    min-width: 0;
+    max-width: 10rem;
+    overflow: hidden;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hero-change {
+    flex: none;
+    font: inherit;
+    font-size: 1rem;
+    color: var(--hp-text);
+    background: var(--hp-surface);
+    border: 3px solid var(--hp-outline);
+    border-radius: 0.75rem;
+    cursor: pointer;
+}
+
+.hero-change:hover {
+    background: var(--hp-cell);
+}

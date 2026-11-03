@@ -8,10 +8,11 @@ namespace HeroPath.Modules.Game.UI;
 /// <summary>Registration of the Game module in the DI container.</summary>
 public static class GameModuleExtensions
 {
-    /// <summary>Registers the Game module: game session, execution runner, drag state.</summary>
+    /// <summary>Registers the Game module: hero choice, game session, execution runner, drag state.</summary>
     public static IServiceCollection AddGameModule(this IServiceCollection services)
     {
         services.TryAddSingleton(TimeProvider.System);
+        services.AddScoped<HeroChoice>();
         services.AddScoped<GameSession>();
         services.AddScoped<ExecutionRunner>();
         services.AddScoped<ProgramDragState>();

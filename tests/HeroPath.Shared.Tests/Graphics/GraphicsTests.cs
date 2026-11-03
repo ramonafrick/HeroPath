@@ -20,6 +20,7 @@ public class GraphicsTests : BunitContext
     public static TheoryData<Type, string, string> Graphics => new()
     {
         { typeof(HeroMax), "Max, der Held", "Max, the hero" },
+        { typeof(HeroLisa), "Lisa, die Heldin", "Lisa, the hero" },
         { typeof(StartField), "Startfeld", "Start field" },
         { typeof(GoalCastle), "Burg, das Ziel", "Castle, the goal" },
         { typeof(ObstacleTree), "Baum", "Tree" },
@@ -79,4 +80,16 @@ public class GraphicsTests : BunitContext
         builder.OpenComponent(0, type);
         builder.CloseComponent();
     });
+
+    [Fact]
+    public void HeroLisa_HasItsTestIdAndDiffersFromMaxInShape()
+    {
+        var lisa = RenderGraphic(typeof(HeroLisa));
+        var max = RenderGraphic(typeof(HeroMax));
+
+        Assert.NotNull(lisa.Find("[data-testid=graphic-hero-lisa]"));
+        Assert.Contains("--hp-lisa-dress", lisa.Markup);
+        Assert.DoesNotContain("--hp-max-shirt", lisa.Markup);
+        Assert.NotEqual(max.Find("svg > g").InnerHtml, lisa.Find("svg > g").InnerHtml);
+    }
 }

@@ -26,7 +26,7 @@ public class ControlBarTests : CultureBunitContext
         Services.AddSingleton<IAppStorage, InMemoryAppStorage>();
         _session = Services.GetRequiredService<GameSession>();
         _runner = Services.GetRequiredService<ExecutionRunner>();
-        _session.Load(TestLevels.DemoGrid());
+        _session.Load(TestLevels.Demo);
     }
 
     private static bool IsDisabled(IRenderedComponent<ControlBar> bar, string testId) =>

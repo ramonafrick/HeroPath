@@ -13,7 +13,7 @@ public class PlayPageTests(AppFixture app)
         var page = await context.NewPageAsync();
         var browserErrors = BrowserErrors.Track(page);
 
-        await page.GotoAsync("/");
+        await page.StartGameAsync(browserErrors);
         await page.WaitForRenderedAsync("main.play-page", browserErrors);
 
         Assert.Empty(browserErrors.Errors);

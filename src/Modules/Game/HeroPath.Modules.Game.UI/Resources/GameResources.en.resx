@@ -217,4 +217,41 @@
     <value>Drop here to delete</value>
     <comment>Shown over the palette while a program block is dragged: dropping it there removes it.</comment>
   </data>
+
+  <data name="Start_Title" xml:space="preserve">
+    <value>Who leads the adventure?</value>
+    <comment>Heading of the start page.</comment>
+  </data>
+  <data name="Start_Intro" xml:space="preserve">
+    <value>Pick a character and a level. Then you guide your hero to the castle with blocks.</value>
+    <comment>Short explanation on the start page.</comment>
+  </data>
+  <data name="Start_HeroGroup" xml:space="preserve">
+    <value>Your hero</value>
+    <comment>Label of the group of hero cards.</comment>
+  </data>
+  <data name="Start_NameLabel" xml:space="preserve">
+    <value>What is your hero called?</value>
+    <comment>Label of the hero name field.</comment>
+  </data>
+  <data name="Start_NameHint" xml:space="preserve">
+    <value>At most 20 characters.</value>
+    <comment>Hint below the hero name field.</comment>
+  </data>
+  <data name="Start_LevelsTitle" xml:space="preserve">
+    <value>Pick a level</value>
+    <comment>Heading above the level cards.</comment>
+  </data>
+  <data name="Start_Go" xml:space="preserve">
+    <value>Let's go!</value>
+    <comment>Button that starts the chosen level.</comment>
+  </data>
+  <data name="Hero_Change" xml:space="preserve">
+    <value>Change hero</value>
+    <comment>Button on the play page that goes back to the start page.</comment>
+  </data>
+  <data name="Hero_BadgeLabel" xml:space="preserve">
+    <value>Your hero</value>
+    <comment>Accessible name of the hero badge on the play page.</comment>
+  </data>
 </root>

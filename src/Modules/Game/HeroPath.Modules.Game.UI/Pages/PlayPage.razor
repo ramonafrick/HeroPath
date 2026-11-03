@@ -1,29 +1,34 @@
-@page "/"
+@page "/play"
 @inherits SessionComponentBase
 @using HeroPath.Modules.Game.UI.Components
 @using HeroPath.Modules.Levels.UI.Components
-@using HeroPath.Shared.UI.Graphics
 
 <PageTitle>@Localizer["App_Title"]</PageTitle>
 
-<main class="play-page">
-    <section class="board-area" style="--board-cols: @Session.Grid!.Width; --board-rows: @Session.Grid!.Height;">
-        <h2 class="level-name" data-testid="level-name">@LevelsLocalizer[$"Level_{_level.Id}"]</h2>
-        <GameBoard Grid="Session.Grid!"
-                   HeroPosition="Session.HeroPosition"
-                   MarkedCell="Session.MarkedCell"
-                   StepDuration="Session.Tempo.Duration">
-            <HeroContent>
-                <HeroMax />
-            </HeroContent>
-        </GameBoard>
-    </section>
-    <aside class="side-panel" data-testid="side-panel">
-        <div class="side-tools">
-            <BlockPalette />
-            <ControlBar />
-            <MessageBox />
-        </div>
-        <ProgramEditor />
-    </aside>
-</main>
+@if (Choice.IsChosen && Session.Grid is { } grid && Session.Level is { } level)
+{
+    <main class="play-page">
+        <section class="board-area" style="--board-cols: @grid.Width; --board-rows: @grid.Height;">
+            <div class="board-head">
+                <h2 class="level-name" data-testid="level-name">@LevelsLocalizer[$"Level_{level.Id}"]</h2>
+                <HeroBadge />
+            </div>
+            <GameBoard Grid="grid"
+                       HeroPosition="Session.HeroPosition"
+                       MarkedCell="Session.MarkedCell"
+                       StepDuration="Session.Tempo.Duration">
+                <HeroContent>
+                    <HeroFigure Avatar="Choice.Avatar" />
+                </HeroContent>
+            </GameBoard>
+        </section>
+        <aside class="side-panel" data-testid="side-panel">
+            <div class="side-tools">
+                <BlockPalette />
+                <ControlBar />
+                <MessageBox />
+            </div>
+            <ProgramEditor />
+        </aside>
+    </main>
+}

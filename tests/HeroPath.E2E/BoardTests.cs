@@ -21,8 +21,7 @@ public class BoardTests(AppFixture app)
     {
         var errors = BrowserErrors.Track(page);
 
-        await page.GotoAsync("/");
-        await page.WaitForRenderedAsync("[data-testid=game-board]", errors);
+        await page.StartGameAsync(errors);
 
         await Expect(page.GetByTestId("game-board")).ToBeVisibleAsync();
         await Expect(page.GetByTestId("side-panel")).ToBeVisibleAsync();

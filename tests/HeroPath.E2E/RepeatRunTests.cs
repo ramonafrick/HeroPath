@@ -20,8 +20,7 @@ public class RepeatRunTests(AppFixture app)
     private static async Task RunAsync(IPage page, string viewport)
     {
         var errors = BrowserErrors.Track(page);
-        await page.GotoAsync("/");
-        await page.WaitForRenderedAsync("[data-testid=game-board]", errors);
+        await page.StartGameAsync(errors);
 
         await page.GetByTestId("palette-up").ClickAsync();
         await page.GetByTestId("palette-up").ClickAsync();

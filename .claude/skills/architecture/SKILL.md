@@ -23,8 +23,8 @@ src/
     Game/
       HeroPath.Modules.Game/         pure C#: Domain/ (Direction, Person, MoveResult, commands, ProgramDefinition, BlockSlot, ProgramEditing,
                                                Interpreter, ExecutionStep, ProgramLimits)
-                                               Application/ (GameSession, ExecutionRunner)
-      HeroPath.Modules.Game.UI/      RCL: PlayPage, StartDialog, BlockPalette, ProgramEditor, BlockList, ProgramBlock, DropZone, ControlBar, GameModuleExtensions, Services/ (ProgramDragState), Resources/
+                                               Application/ (GameSession, ExecutionRunner, HeroChoice)
+      HeroPath.Modules.Game.UI/      RCL: StartPage, PlayPage, HeroBadge, HeroFigure, BlockPalette, ProgramEditor, BlockList, ProgramBlock, DropZone, ControlBar, GameModuleExtensions, Services/ (ProgramDragState), Resources/
   Hosts/
     HeroPath.Web/                    Blazor WASM host: Program.cs, App.razor (router), index.html, web platform services
     HeroPath.Maui/                   (later, do not create)

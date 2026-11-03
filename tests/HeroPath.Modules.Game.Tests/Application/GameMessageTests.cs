@@ -12,7 +12,7 @@ public class GameMessageTests
 
     public GameMessageTests()
     {
-        _session.Load(TestLevels.DemoGrid());
+        _session.Load(TestLevels.Demo);
         _runner = new ExecutionRunner(_session, new FakeTimeProvider());
     }
 
@@ -204,7 +204,7 @@ public class GameMessageTests
         _runner.StepOnce();
         Assert.NotNull(_session.HintedId);
 
-        _session.Load(new Grid(5, 5, new Position(0, 0), new Position(4, 4), [], [], false));
+        _session.Load(TestLevels.Empty("test-other", 5, 5, new Position(0, 0), new Position(4, 4)));
 
         Assert.Null(_session.HintedId);
         Assert.NotEqual(GameMessageCode.EmptyRepeat, _session.Message?.Code);

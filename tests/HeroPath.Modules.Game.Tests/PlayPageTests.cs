@@ -6,6 +6,7 @@ using HeroPath.Modules.Game.UI.Services;
 using HeroPath.Modules.Levels.Domain;
 using HeroPath.Shared.Application.Contracts;
 using HeroPath.Shared.UI;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Time.Testing;
 
@@ -22,9 +23,12 @@ public class PlayPageTests : CultureBunitContext
         Services.AddSharedUI();
         Services.AddGameModule();
         Services.AddSingleton<IAppStorage, InMemoryAppStorage>();
+        Choice.Choose(HeroAvatar.Max, null, "easy-2");
     }
 
     private GameSession Session => Services.GetRequiredService<GameSession>();
+
+    private HeroChoice Choice => Services.GetRequiredService<HeroChoice>();
 
     private ExecutionRunner Runner => Services.GetRequiredService<ExecutionRunner>();
 
@@ -126,5 +130,56 @@ public class PlayPageTests : CultureBunitContext
 
         Assert.Equal("Bereit", page.Find("[data-testid=status] .status-text").TextContent);
         Assert.Equal("Einfach 2", page.Find("[data-testid=level-name]").TextContent);
+    }
+
+    [Fact]
+    public void Render_ShowsHeroBadgeWithChosenNameAndLevel()
+    {
+        Choice.Choose(HeroAvatar.Lisa, "Zoe", "easy-1");
+
+        var page = Render<PlayPage>();
+
+        Assert.Equal("Zoe", page.Find("[data-testid=hero-badge-name]").TextContent);
+        Assert.Equal("Einfach 1", page.Find("[data-testid=level-name]").TextContent);
+        Assert.NotNull(page.Find("[data-testid=hero] [data-testid=graphic-hero-lisa]"));
+        Assert.Empty(page.FindAll("[data-testid=hero] [data-testid=graphic-hero-max]"));
+    }
+
+    [Fact]
+    public void HeroChange_NavigatesToStartPage()
+    {
+        var page = Render<PlayPage>();
+        var navigation = Services.GetRequiredService<NavigationManager>();
+        navigation.NavigateTo("play");
+
+        page.Find("[data-testid=hero-change]").Click();
+
+        Assert.Equal(navigation.BaseUri, navigation.Uri);
+    }
+
+    [Fact]
+    public void Render_OtherLevelChosen_ClearsProgram()
+    {
+        Render<PlayPage>();
+        TestLevels.Fill(Session, Direction.Up);
+        Choice.Choose(HeroAvatar.Max, null, "easy-1");
+
+        var page = Render<PlayPage>();
+
+        Assert.Empty(page.FindAll("[data-testid=program-block]"));
+    }
+
+    [Fact]
+    public void Message_Success_UsesChosenName()
+    {
+        Choice.Choose(HeroAvatar.Lisa, "Zoe", "easy-2");
+        var page = Render<PlayPage>();
+        TestLevels.Fill(Session, TestLevels.DemoSolution);
+        for (var i = 0; i < TestLevels.DemoSolution.Length; i++)
+        {
+            Runner.StepOnce();
+        }
+
+        Assert.Contains("Zoe", page.Find("[data-testid=message]").TextContent);
     }
 }

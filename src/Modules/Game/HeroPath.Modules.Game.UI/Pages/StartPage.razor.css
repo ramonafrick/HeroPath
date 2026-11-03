@@ -1,0 +1,165 @@
+.start-page {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem 2rem;
+    box-sizing: border-box;
+    max-width: 80rem;
+    margin-inline: auto;
+    padding: 1rem;
+}
+
+.start-intro {
+    grid-column: 1 / -1;
+}
+
+.start-title {
+    margin: 0 0 0.25rem;
+    font-size: 1.75rem;
+}
+
+.start-text {
+    margin: 0;
+    font-size: 1.125rem;
+}
+
+.start-section-title {
+    margin: 0 0 0.5rem;
+    font-size: 1.25rem;
+}
+
+.start-setup {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    min-width: 0;
+}
+
+.hero-cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.hero-card,
+.level-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.375rem;
+    min-width: 0;
+    padding: 0.5rem;
+    font: inherit;
+    color: var(--hp-text);
+    background: var(--hp-surface);
+    border: 3px solid var(--hp-outline);
+    border-radius: 0.75rem;
+    cursor: pointer;
+}
+
+.hero-card:hover,
+.level-card:hover {
+    background: var(--hp-cell);
+}
+
+.hero-card[aria-pressed="true"],
+.level-card[aria-pressed="true"] {
+    background: var(--hp-cell);
+    border-width: 5px;
+    padding: calc(0.5rem - 2px);
+    box-shadow: 0 0 0 3px var(--hp-surface), 0 0 0 6px var(--hp-outline);
+}
+
+.hero-card-figure {
+    display: block;
+    width: 6rem;
+    height: 6rem;
+}
+
+.hero-card-figure ::deep svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.hero-card-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.start-name {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.start-name-label {
+    font-size: 1.125rem;
+    font-weight: 700;
+}
+
+.start-name-input {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 2.75rem;
+    padding: 0.375rem 0.625rem;
+    font: inherit;
+    font-size: 1.125rem;
+    color: var(--hp-text);
+    background: var(--hp-surface);
+    border: 3px solid var(--hp-outline);
+    border-radius: 0.75rem;
+}
+
+.start-name-hint {
+    font-size: 0.9375rem;
+}
+
+.start-go {
+    min-height: 3.25rem;
+    font: inherit;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--hp-on-accent);
+    background: var(--hp-accent);
+    border: 3px solid var(--hp-outline);
+    border-radius: 0.75rem;
+    cursor: pointer;
+}
+
+.start-go:hover {
+    filter: brightness(1.25);
+}
+
+.start-levels {
+    min-width: 0;
+}
+
+.level-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+    gap: 0.75rem;
+}
+
+.level-preview {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 6.5rem;
+}
+
+.level-preview ::deep .game-board[data-preview="true"] {
+    width: min(100%, calc(6.5rem * var(--cols) / var(--rows)));
+}
+
+.level-card-name {
+    font-size: 1.0625rem;
+    font-weight: 700;
+    text-align: center;
+}
+
+@media (min-width: 60rem) {
+    .start-page {
+        grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr);
+        align-items: start;
+    }
+}

@@ -1,0 +1,10 @@
+@using HeroPath.Shared.UI.Components
+@inherits LocalizedComponentBase
+
+<div class="hero-badge" data-testid="hero-badge" role="group" aria-label="@Localizer["Hero_BadgeLabel"]">
+    <span class="hero-badge-figure">
+        <HeroFigure Avatar="Choice.Avatar" />
+    </span>
+    <span class="hero-badge-name" data-testid="hero-badge-name">@Choice.Name</span>
+    <button type="button" class="hero-change" data-testid="hero-change" @onclick="Change">@Localizer["Hero_Change"]</button>
+</div>

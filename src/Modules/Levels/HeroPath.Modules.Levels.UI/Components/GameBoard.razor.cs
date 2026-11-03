@@ -26,6 +26,10 @@ public partial class GameBoard : LocalizedComponentBase
     [Parameter]
     public TimeSpan StepDuration { get; set; } = TimeSpan.FromMilliseconds(500);
 
+    /// <summary>A small, purely decorative picture of the level: no hero, hidden from assistive technology, no per-cell test ids, sized by its container.</summary>
+    [Parameter]
+    public bool Preview { get; set; }
+
     [Parameter]
     public RenderFragment? HeroContent { get; set; }
 

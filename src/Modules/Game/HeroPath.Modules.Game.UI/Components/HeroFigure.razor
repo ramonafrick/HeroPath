@@ -1,0 +1,15 @@
+@using HeroPath.Shared.UI.Graphics
+
+@if (Avatar == HeroAvatar.Lisa)
+{
+    <HeroLisa />
+}
+else
+{
+    <HeroMax />
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public required HeroAvatar Avatar { get; set; }
+}

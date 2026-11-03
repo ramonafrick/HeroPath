@@ -7,10 +7,11 @@ using Microsoft.Extensions.Localization;
 
 namespace HeroPath.Modules.Game.UI.Components;
 
-/// <summary>Shows <see cref="GameSession.Message"/> with an icon per kind and the localized text. The hero name is a fixed placeholder until the start dialog exists.</summary>
+/// <summary>Shows <see cref="GameSession.Message"/> with an icon per kind and the localized text. The hero name comes from the <see cref="HeroChoice"/>.</summary>
 public partial class MessageBox : SessionComponentBase
 {
-    private const string HeroName = "Max";
+    [Inject]
+    private HeroChoice Choice { get; set; } = default!;
 
     [Inject]
     private IStringLocalizer<GameResources> Localizer { get; set; } = default!;
@@ -22,11 +23,11 @@ public partial class MessageBox : SessionComponentBase
         {
             GameMessageCode.Obstacle => Localizer[$"Message_Obstacle_{message.Obstacle ?? ObstacleKind.Tree}", number],
             GameMessageCode.OutOfBounds => Localizer["Message_OutOfBounds", number],
-            GameMessageCode.GoalNotReached => Localizer["Message_GoalNotReached", HeroName],
+            GameMessageCode.GoalNotReached => Localizer["Message_GoalNotReached", Choice.Name],
             GameMessageCode.ItemsMissing when message.Count == 1 => Localizer["Message_ItemsMissing_One"],
             GameMessageCode.ItemsMissing => Localizer["Message_ItemsMissing_Other", message.Count],
             GameMessageCode.StepLimitExceeded => Localizer["Message_StepLimitExceeded", ProgramLimits.MaxExecutedSteps],
-            GameMessageCode.Succeeded => Localizer["Message_Succeeded", HeroName],
+            GameMessageCode.Succeeded => Localizer["Message_Succeeded", Choice.Name],
             _ => Localizer[$"Message_{message.Code}"],
         };
     }

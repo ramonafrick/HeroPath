@@ -1,7 +1,6 @@
 using HeroPath.Modules.Game.Application;
 using HeroPath.Modules.Game.UI.Components;
 using HeroPath.Modules.Game.UI.Services;
-using HeroPath.Modules.Levels.Domain;
 using HeroPath.Modules.Levels.Infrastructure;
 using HeroPath.Modules.Levels.UI.Resources;
 using HeroPath.Shared.UI.Resources;
@@ -11,14 +10,17 @@ using Microsoft.Extensions.Localization;
 namespace HeroPath.Modules.Game.UI.Pages;
 
 /// <summary>
-/// The play page. Opening it loads the level into the <see cref="GameSession"/> (an equal grid keeps program and run);
+/// The play page. Opening it loads the chosen level into the <see cref="GameSession"/> (the same level keeps program and run) or
+/// redirects to the start page when nothing was chosen;
 /// leaving it stops a running Play and ends a drag in progress, so no loop keeps running and the run resumes consistently (Paused) on return.
 /// </summary>
 public partial class PlayPage : SessionComponentBase
 {
-    private const string DemoLevelId = "easy-2";
+    [Inject]
+    private HeroChoice Choice { get; set; } = default!;
 
-    private LevelDefinition _level = default!;
+    [Inject]
+    private NavigationManager Navigation { get; set; } = default!;
 
     [Inject]
     private ExecutionRunner Runner { get; set; } = default!;
@@ -34,8 +36,15 @@ public partial class PlayPage : SessionComponentBase
 
     protected override void OnInitialized()
     {
-        _level = StandardLevels.Get(DemoLevelId);
-        Session.Load(_level.ToGrid());
+        if (Choice.IsChosen)
+        {
+            Session.Load(StandardLevels.Get(Choice.LevelId));
+        }
+        else
+        {
+            Navigation.NavigateTo(string.Empty, replace: true);
+        }
+
         base.OnInitialized();
     }
 

@@ -126,6 +126,33 @@ public class GameBoardTests : CultureBunitContext
         Assert.Equal("Spielfeld", cut.Find("[data-testid=game-board]").GetAttribute("aria-label"));
     }
 
+    [Fact]
+    public void Render_Preview_HasNoHeroNoCellTestIdsAndIsHiddenFromAssistiveTechnology()
+    {
+        var cut = RenderBoard(p => p.Add(b => b.Preview, true).Add(b => b.HeroContent, builder => builder.AddContent(0, "hero-content")));
+
+        var board = cut.Find("[data-testid=board-preview]");
+        Assert.Equal("true", board.GetAttribute("aria-hidden"));
+        Assert.Null(board.GetAttribute("role"));
+        Assert.Null(board.GetAttribute("aria-label"));
+        Assert.Empty(cut.FindAll("[data-testid=hero]"));
+        Assert.Empty(cut.FindAll("[data-testid^=cell-]"));
+        Assert.Empty(cut.FindAll("[data-testid=game-board]"));
+        Assert.DoesNotContain("hero-content", cut.Markup);
+        Assert.Equal(_grid.Width * _grid.Height, cut.FindAll(".cell").Count);
+        Assert.Equal("tree", cut.FindAll(".cell")[1 * _grid.Width + 1].GetAttribute("data-kind"));
+    }
+
+    [Fact]
+    public void Render_NotPreview_KeepsBoardHeroAndLabel()
+    {
+        var cut = RenderBoard();
+
+        Assert.Null(cut.Find("[data-testid=game-board]").GetAttribute("aria-hidden"));
+        Assert.Equal("group", cut.Find("[data-testid=game-board]").GetAttribute("role"));
+        Assert.NotNull(cut.Find("[data-testid=hero]"));
+    }
+
     private IRenderedComponent<GameBoard> RenderBoard(Action<ComponentParameterCollectionBuilder<GameBoard>>? configure = null) =>
         Render<GameBoard>(p =>
         {

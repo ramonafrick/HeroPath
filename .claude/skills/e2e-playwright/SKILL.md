@@ -26,6 +26,7 @@ HEROPATH_E2E=1 HEROPATH_BASE_URL=http://127.0.0.1:5198 dotnet test --project tes
 | `E2EEnvironment` | `Enabled`, `BaseUrl`, repository root, screenshot directory |
 | `LayoutAssertions` | geometry checks: `AssertRepeatHeadersOnOneLineAsync` (select, minus, count, plus, trailing text of every repeat on one line, no overlap, inside the row). Call it in laptop and desktop flows, in DE and EN, with a selected and a nested repeat |
 | `BrowserErrors.Track(page)` | collects console errors + uncaught exceptions. **Every test ends with `Assert.Empty(errors.Errors)`** |
+| `page.StartGameAsync(errors, levelId = "easy-2", hero = null, name = null)` | opens the start page, optionally picks hero (`max`/`lisa`) and name, picks the level, clicks `start-go` and waits for the play board. Every test that needs the play page starts here (most rely on the `easy-2` layout) |
 | `page.WaitForRenderedAsync(selector, errors)` | waits for Blazor rendering; on timeout writes `failure.png` and puts browser errors into the message |
 | `Screenshots.CaptureAsync(page, name)` | `name.png` + `name.greyscale.png` (achromatopsia emulation via CDP) |
 
@@ -43,8 +44,7 @@ public class ProgramFlowTests(AppFixture app)
         var page = await context.NewPageAsync();
         var errors = BrowserErrors.Track(page);
 
-        await page.GotoAsync("/");
-        await page.WaitForRenderedAsync("[data-testid=game-board]", errors);
+        await page.StartGameAsync(errors);                          // start page -> easy-2 -> play page
         await page.GetByTestId("palette-right").ClickAsync();          // click alternative, not drag
         await page.GetByTestId("control-play").ClickAsync();
         await Expect(page.GetByTestId("status")).ToHaveAttributeAsync("data-state", "succeeded");
@@ -65,7 +65,7 @@ public class ProgramFlowTests(AppFixture app)
 
 ## Screenshot naming
 
-`<flow>.<state>.<viewport>.<lang>`, e.g. `play-page.start.desktop.de`, `free-field.error-obstacle.desktop.en`.
+`<flow>.<state>.<viewport>.<lang>`, e.g. `language.start-page.desktop.de`, `free-field.error-obstacle.desktop.en`.
 
 | Viewport | Size | When |
 |---|---|---|
@@ -79,6 +79,7 @@ Capture each new UI state in **de and en** (text lengths differ).
 
 E2E covers **flows across components**. Single-component logic belongs in bUnit and game rules in xUnit.
 
+- Start page (`StartPageTests`): choose hero, name and level, `/play` redirect without a choice, language switch keeps the form
 - Choose hero → choose level → assemble program → Play → success message
 - Debug step by step: highlighted block moves (`data-current`), status shows pause (`RunFlowTests`)
 - Error path: obstacle/edge → kid-friendly message, block and cell marked

@@ -60,4 +60,8 @@
     <value>Teich</value>
     <comment>Accessible name of the pond obstacle.</comment>
   </data>
+  <data name="Graphic_HeroLisa" xml:space="preserve">
+    <value>Lisa, die Heldin</value>
+    <comment>Accessible name of the hero graphic.</comment>
+  </data>
 </root>

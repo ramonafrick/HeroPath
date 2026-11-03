@@ -26,8 +26,7 @@ public class RepeatEditingTests(AppFixture app)
         var page = await laptop.NewPageAsync();
         var errors = BrowserErrors.Track(page);
 
-        await page.GotoAsync("/");
-        await page.WaitForRenderedAsync("[data-testid=game-board]", errors);
+        await page.StartGameAsync(errors);
         for (var index = 0; index < 10; index++)
         {
             await page.GetByTestId(index % 2 == 0 ? "palette-up" : "palette-right").ClickAsync();
@@ -51,8 +50,7 @@ public class RepeatEditingTests(AppFixture app)
         var errors = BrowserErrors.Track(page);
         var blocks = page.GetByTestId("program-block");
 
-        await page.GotoAsync("/");
-        await page.WaitForRenderedAsync("[data-testid=game-board]", errors);
+        await page.StartGameAsync(errors);
         await ExpectInsertTargetAsync(page, "root");
         await Expect(page.GetByTestId("palette-repeat")).ToBeEnabledAsync();
 

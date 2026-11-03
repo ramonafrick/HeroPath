@@ -268,7 +268,7 @@ public class GameSessionEditingTests
     public void NotEditable_IgnoresAllTreeEditsAndSelection()
     {
         var session = new GameSession();
-        session.Load(TestLevels.DemoGrid());
+        session.Load(TestLevels.Demo);
         session.AddRepeat();
         var repeat = RepeatAt(session, 1);
         session.Select(repeat.Id);
@@ -301,7 +301,7 @@ public class GameSessionEditingTests
     public void StartingRun_ClearsSelection()
     {
         var session = new GameSession();
-        session.Load(TestLevels.DemoGrid());
+        session.Load(TestLevels.Demo);
         TestLevels.Fill(session, Direction.Up);
         session.Select(session.Program.Commands[0].Id);
 
@@ -324,7 +324,7 @@ public class GameSessionEditingTests
     public void Obstacle_InsideRepeat_MarksObstacleCell()
     {
         var session = new GameSession();
-        session.Load(TestLevels.DemoGrid());
+        session.Load(TestLevels.Demo);
         session.AddRepeat();
         session.Select(RepeatAt(session, 1).Id);
         session.Add(Direction.Right);

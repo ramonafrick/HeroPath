@@ -223,7 +223,7 @@ public class ProgramDragTests : CultureBunitContext
     [Fact]
     public void Locked_DragStartDoesNothing()
     {
-        _session.Load(TestLevels.DemoGrid());
+        _session.Load(TestLevels.Demo);
         _session.Add(Direction.Up);
         Services.GetRequiredService<ExecutionRunner>().StepOnce();
         var editor = Render<ProgramEditor>();
@@ -237,7 +237,7 @@ public class ProgramDragTests : CultureBunitContext
     [Fact]
     public void RunStartsBetweenDragStartAndDrop_DropDoesNothing()
     {
-        _session.Load(TestLevels.DemoGrid());
+        _session.Load(TestLevels.Demo);
         _session.Add(Direction.Up);
         _session.Add(Direction.Up);
         var palette = RenderPalette();

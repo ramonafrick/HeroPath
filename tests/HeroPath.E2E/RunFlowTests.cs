@@ -189,8 +189,7 @@ public class RunFlowTests(AppFixture app)
 
     private static async Task OpenAsync(IPage page, BrowserErrors errors)
     {
-        await page.GotoAsync("/");
-        await page.WaitForRenderedAsync("[data-testid=game-board]", errors);
+        await page.StartGameAsync(errors);
     }
 
     private static async Task AddBlocksAsync(IPage page, string[] directions)

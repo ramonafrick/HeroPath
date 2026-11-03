@@ -1,0 +1,71 @@
+@page "/"
+@inherits LocalizedComponentBase
+@using HeroPath.Modules.Game.UI.Components
+@using HeroPath.Modules.Levels.UI.Components
+@using HeroPath.Shared.UI.Components
+
+<PageTitle>@SharedLocalizer["App_Title"]</PageTitle>
+
+<main class="start-page" data-testid="start-page">
+    <section class="start-intro">
+        <h2 class="start-title">@Localizer["Start_Title"]</h2>
+        <p class="start-text">@Localizer["Start_Intro"]</p>
+    </section>
+
+    <div class="start-setup">
+        <section class="start-heroes" aria-labelledby="start-hero-title">
+            <h3 id="start-hero-title" class="start-section-title">@Localizer["Start_HeroGroup"]</h3>
+            <div class="hero-cards">
+                @foreach (var avatar in Avatars)
+                {
+                    <button type="button"
+                            class="hero-card"
+                            data-testid="@($"hero-{avatar.ToString().ToLowerInvariant()}")"
+                            aria-pressed="@(_avatar == avatar ? "true" : "false")"
+                            @onclick="() => SelectAvatar(avatar)">
+                        <span class="hero-card-figure">
+                            <HeroFigure Avatar="avatar" />
+                        </span>
+                        <span class="hero-card-name">@HeroChoice.DefaultName(avatar)</span>
+                    </button>
+                }
+            </div>
+        </section>
+
+        <section class="start-name">
+            <label class="start-name-label" for="hero-name">@Localizer["Start_NameLabel"]</label>
+            <input id="hero-name"
+                   class="start-name-input"
+                   data-testid="hero-name"
+                   type="text"
+                   maxlength="@HeroChoice.MaxNameLength"
+                   autocomplete="off"
+                   aria-describedby="hero-name-hint"
+                   @bind="_name"
+                   @bind:event="oninput" />
+            <span id="hero-name-hint" class="start-name-hint">@Localizer["Start_NameHint"]</span>
+        </section>
+
+        <button type="button" class="start-go" data-testid="start-go" @onclick="Go">@Localizer["Start_Go"]</button>
+    </div>
+
+    <section class="start-levels" aria-labelledby="start-levels-title">
+        <h3 id="start-levels-title" class="start-section-title">@Localizer["Start_LevelsTitle"]</h3>
+        <div class="level-cards">
+            @foreach (var level in Levels)
+            {
+                <button type="button"
+                        class="level-card"
+                        @key="level.Id"
+                        data-testid="@($"level-card-{level.Id}")"
+                        aria-pressed="@(_levelId == level.Id ? "true" : "false")"
+                        @onclick="() => SelectLevel(level.Id)">
+                    <span class="level-preview" data-testid="@($"level-preview-{level.Id}")" aria-hidden="true">
+                        <GameBoard Grid="GridOf(level)" Preview="true" />
+                    </span>
+                    <span class="level-card-name">@LevelsLocalizer[$"Level_{level.Id}"]</span>
+                </button>
+            }
+        </div>
+    </section>
+</main>

@@ -25,11 +25,11 @@ public class MessageBoxTests : CultureBunitContext
         Services.AddSingleton<IAppStorage, InMemoryAppStorage>();
         _session = Services.GetRequiredService<GameSession>();
         _runner = Services.GetRequiredService<ExecutionRunner>();
-        _session.Load(TestLevels.DemoGrid());
+        _session.Load(TestLevels.Demo);
     }
 
-    private static Grid ItemGrid(params LevelItem[] items) =>
-        new(5, 3, new Position(0, 0), new Position(2, 0), [], items, requireAllItems: true);
+    private static LevelDefinition ItemGrid(params LevelItem[] items) =>
+        TestLevels.WithItems("test-items", 5, 3, new Position(0, 0), new Position(2, 0), items);
 
     private void RunToEnd()
     {
@@ -144,6 +144,32 @@ public class MessageBoxTests : CultureBunitContext
         var message = box.Find("[data-testid=message]");
         Assert.Equal(kind, message.GetAttribute("data-kind"));
         Assert.Equal(code, message.GetAttribute("data-code"));
+    }
+
+    [Theory]
+    [InlineData("GoalNotReached", "de-CH", "Dein Programm ist fertig, aber Zoe ist noch nicht bei der Burg. Probier es nochmal!")]
+    [InlineData("GoalNotReached", "en", "Your program is done, but Zoe hasn't reached the castle yet. Try again!")]
+    [InlineData("Succeeded", "de-CH", "Geschafft, Zoe! Du hast die Burg erreicht.")]
+    [InlineData("Succeeded", "en", "You did it, Zoe! You reached the castle.")]
+    public async Task Render_HeroMessages_UseChosenName(string scenario, string culture, string text)
+    {
+        Services.GetRequiredService<HeroChoice>().Choose(HeroAvatar.Lisa, "Zoe", "easy-2");
+        Setup(scenario);
+        var box = Render<MessageBox>();
+
+        await Services.GetRequiredService<LanguageService>().SetAsync(culture, Xunit.TestContext.Current.CancellationToken);
+
+        box.WaitForAssertion(() => Assert.Equal(text, box.Find("[data-testid=message]").TextContent.Trim()));
+    }
+
+    [Fact]
+    public void Render_WithoutChoice_UsesDefaultHeroName()
+    {
+        Setup("Succeeded");
+
+        var box = Render<MessageBox>();
+
+        Assert.Contains("Max", box.Find("[data-testid=message]").TextContent);
     }
 
     [Fact]

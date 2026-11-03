@@ -23,7 +23,7 @@ public class BlockPaletteTests : CultureBunitContext
 
     private void LockEditing()
     {
-        _session.Load(TestLevels.DemoGrid());
+        _session.Load(TestLevels.Demo);
         _session.Add(Direction.Up);
         Services.GetRequiredService<ExecutionRunner>().StepOnce();
     }

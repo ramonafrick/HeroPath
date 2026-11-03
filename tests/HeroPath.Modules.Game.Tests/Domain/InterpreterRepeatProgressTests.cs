@@ -181,7 +181,7 @@ public class InterpreterRepeatProgressTests
     private static GameSession BuildSession()
     {
         var session = new GameSession();
-        session.Load(TestLevels.DemoGrid());
+        session.Load(TestLevels.Demo);
         session.Add(Direction.Up);
         session.Add(Direction.Up);
         session.AddRepeat();

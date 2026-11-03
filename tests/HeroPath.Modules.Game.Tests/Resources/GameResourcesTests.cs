@@ -20,6 +20,11 @@ public class GameResourcesTests
                 data.Add($"Tempo_{tempo}");
             }
 
+            foreach (var key in new[] { "Start_Title", "Start_Intro", "Start_HeroGroup", "Start_NameLabel", "Start_NameHint", "Start_LevelsTitle", "Start_Go", "Hero_Change", "Hero_BadgeLabel" })
+            {
+                data.Add(key);
+            }
+
             foreach (var status in Enum.GetValues<RunStatus>())
             {
                 data.Add($"Status_{status}");

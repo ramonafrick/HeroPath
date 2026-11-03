@@ -6,7 +6,7 @@ namespace HeroPath.Modules.Game.Application;
 /// Runs the program of a <see cref="GameSession"/> for Play and Debug with one shared <see cref="Interpreter"/>.
 /// The first step locks editing; <see cref="Reset"/> unlocks it again. Play executes the first step immediately and
 /// waits for the <see cref="GameSession.Tempo"/> duration between steps. The runner lives as long as its session and
-/// drops its run whenever the session loads a different grid.
+/// drops its run whenever the session loads a different level.
 /// </summary>
 public sealed class ExecutionRunner
 {
