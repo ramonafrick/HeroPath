@@ -120,6 +120,11 @@
     outline-offset: 3px;
 }
 
+.program-block[data-hint="true"] > .block-row {
+    outline: 4px dotted var(--hp-outline);
+    outline-offset: 3px;
+}
+
 .program-marker {
     position: absolute;
     top: -0.875rem;

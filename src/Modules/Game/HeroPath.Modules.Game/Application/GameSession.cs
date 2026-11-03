@@ -15,6 +15,8 @@ public sealed class GameSession
 
     private ProgramDefinition _program = ProgramDefinition.Empty;
     private Tempo _tempo = Tempo.Medium;
+    private GameMessage? _runMessage;
+    private GameMessage? _hint;
 
     /// <summary>Raised after every change of the session.</summary>
     public event Action? Changed;
@@ -95,6 +97,17 @@ public sealed class GameSession
     /// </summary>
     public Position? MarkedCell { get; private set; }
 
+    /// <summary>Id of the empty repeat block the last refused start pointed at, or <c>null</c>. Cleared by the next program edit and by Reset.</summary>
+    public Guid? HintedId { get; private set; }
+
+    /// <summary>
+    /// What to tell the child now, or <c>null</c>. Priority: the message of the run (error or success, set when a step is
+    /// applied, cleared by Reset), then the hint of a refused start (empty repeat, cleared by the next edit and by Reset), then,
+    /// while the program is editable, a hint derived from the current state: program empty, program full, no repeat fits into the
+    /// <see cref="InsertTarget"/>. The derived hints are recomputed on every read and need no clearing.
+    /// </summary>
+    public GameMessage? Message => _runMessage ?? _hint ?? DerivedHint();
+
     /// <summary>
     /// Loads a level grid. Loading an equal grid again is a no-op, so returning to the page or re-rendering keeps
     /// program and run. A different grid discards the run (status <see cref="RunStatus.Ready"/>, hero on the new start,
@@ -112,6 +125,7 @@ public sealed class GameSession
         Status = RunStatus.Ready;
         CurrentStep = null;
         MarkedCell = null;
+        _runMessage = null;
         RunDiscarded?.Invoke();
         Changed?.Invoke();
     }
@@ -176,6 +190,21 @@ public sealed class GameSession
         CurrentStep = step;
         SelectedId = null;
         MarkedCell = MarkedCellOf(step);
+        _runMessage = GameMessage.FromStep(step, _program);
+        _hint = null;
+        HintedId = null;
+        Changed?.Invoke();
+    }
+
+    internal void ShowEmptyRepeatHint(RepeatCommand repeat)
+    {
+        if (_program.PathOf(repeat.Id) is not { } path)
+        {
+            return;
+        }
+
+        HintedId = repeat.Id;
+        _hint = GameMessage.Hint(GameMessageCode.EmptyRepeat, path);
         Changed?.Invoke();
     }
 
@@ -192,7 +221,7 @@ public sealed class GameSession
 
     internal void ResetRun()
     {
-        if (Status == RunStatus.Ready && CurrentStep is null)
+        if (Status == RunStatus.Ready && CurrentStep is null && _hint is null)
         {
             return;
         }
@@ -200,6 +229,9 @@ public sealed class GameSession
         Status = RunStatus.Ready;
         CurrentStep = null;
         MarkedCell = null;
+        _runMessage = null;
+        _hint = null;
+        HintedId = null;
         Changed?.Invoke();
     }
 
@@ -213,12 +245,34 @@ public sealed class GameSession
         }
 
         _program = edited;
+        _hint = null;
+        HintedId = null;
         if (SelectedId is { } selected && _program.Find(selected) is null)
         {
             SelectedId = null;
         }
 
         Changed?.Invoke();
+    }
+
+    private GameMessage? DerivedHint()
+    {
+        if (!IsEditable)
+        {
+            return null;
+        }
+
+        if (_program.Commands.Count == 0)
+        {
+            return GameMessage.Hint(GameMessageCode.EmptyProgram);
+        }
+
+        if (!CanAdd)
+        {
+            return GameMessage.Hint(GameMessageCode.ProgramFull);
+        }
+
+        return CanAddRepeat ? null : GameMessage.Hint(GameMessageCode.NestingTooDeep);
     }
 
     private Position? MarkedCellOf(ExecutionStep step) => step switch

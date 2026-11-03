@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Resources;
 using HeroPath.Modules.Game.Application;
 using HeroPath.Modules.Game.UI.Resources;
+using HeroPath.Modules.Levels.Domain;
 
 namespace HeroPath.Modules.Game.Tests.Resources;
 
@@ -22,6 +23,27 @@ public class GameResourcesTests
             foreach (var status in Enum.GetValues<RunStatus>())
             {
                 data.Add($"Status_{status}");
+            }
+
+            foreach (var code in Enum.GetValues<GameMessageCode>())
+            {
+                switch (code)
+                {
+                    case GameMessageCode.Obstacle:
+                        foreach (var kind in Enum.GetValues<ObstacleKind>())
+                        {
+                            data.Add($"Message_Obstacle_{kind}");
+                        }
+
+                        break;
+                    case GameMessageCode.ItemsMissing:
+                        data.Add("Message_ItemsMissing_One");
+                        data.Add("Message_ItemsMissing_Other");
+                        break;
+                    default:
+                        data.Add($"Message_{code}");
+                        break;
+                }
             }
 
             return data;

@@ -33,12 +33,13 @@ public sealed class ExecutionRunner
 
     /// <summary>
     /// Executes steps until the run ends, <see cref="Reset"/> or <see cref="Stop"/> cancels it. Does nothing while running,
-    /// after an end state or for an empty program. If anything throws mid-run (for example a <see cref="GameSession.Changed"/>
+    /// after an end state or for an empty program. A <see cref="RunStatus.Ready"/> program with an empty repeat block does not start
+    /// either: the session shows the empty-repeat hint (no interpreter, status stays Ready, the program stays editable). If anything throws mid-run (for example a <see cref="GameSession.Changed"/>
     /// handler), the run ends <see cref="RunStatus.Paused"/> instead of staying <see cref="RunStatus.Running"/> and the exception propagates.
     /// </summary>
     public async Task PlayAsync()
     {
-        if (!CanStart)
+        if (!CanStart || IsRefusedByEmptyRepeat())
         {
             return;
         }
@@ -80,7 +81,7 @@ public sealed class ExecutionRunner
     /// <summary>Executes exactly one step (Debug). Does nothing while running, after an end state or for an empty program.</summary>
     public void StepOnce()
     {
-        if (!CanStart)
+        if (!CanStart || IsRefusedByEmptyRepeat())
         {
             return;
         }
@@ -120,6 +121,17 @@ public sealed class ExecutionRunner
         _cancellation = null;
         cancellation?.Cancel();
         cancellation?.Dispose();
+    }
+
+    private bool IsRefusedByEmptyRepeat()
+    {
+        if (_session.Status != RunStatus.Ready || _session.Program.FindEmptyRepeat() is not { } repeat)
+        {
+            return false;
+        }
+
+        _session.ShowEmptyRepeatHint(repeat);
+        return true;
     }
 
     private Interpreter CreateInterpreter() => new(_session.ToProgram(), _session.Grid!);

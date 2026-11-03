@@ -24,7 +24,7 @@ Modules/Game/HeroPath.Modules.Game.UI/Resources/GameResources.cs (+ …)       b
 Modules/Levels/HeroPath.Modules.Levels.UI/Resources/LevelsResources.cs (+ …) level names (Level_<id>), editor texts
 ```
 
-- Keys so far. Shared: `App_Title`, `Language_Switch_Label`, `Language_German`, `Language_German_Short`, `Language_English`, `Language_English_Short`, `Graphic_<TypeName>` (`HeroMax`, `StartField`, `GoalCastle`, `ObstacleTree`, `ObstacleRock`, `ObstaclePond`). Levels: `Board_Label`, `Level_<id>` (`Level_demo`). Game: `Block_Up|Down|Left|Right`, `Palette_Title`, `Program_Title`, `Program_Empty`, `Program_Clear`, `Program_Remove` ({0} = block number such as 3.2), `Program_MoveUp|MoveDown` ({0} = block number), `Palette_Repeat`, `Block_Repeat` ({0} = count), `Repeat_Before|After`, `Repeat_Decrease|Increase` ({0} = block number), `Repeat_Round` ({0} = round, {1} = count), `InsertTarget_Root|Repeat` ({0} = block number), `Program_Block` ({0} = number, {1} = direction), `Program_Current`, `Program_Error`, `Controls_Title`, `Control_Play|Debug|Reset`, `Tempo_Label`, `Tempo_<Tempo>` (`Slow|Medium|Fast`), `Status_Label`, `Status_<RunStatus>` (`Ready|Running|Paused|Failed|Succeeded`). Every `Tempo` and `RunStatus` value must have its key in both resx files (`GameResourcesTests`).
+- Keys so far. Shared: `App_Title`, `Language_Switch_Label`, `Language_German`, `Language_German_Short`, `Language_English`, `Language_English_Short`, `Graphic_<TypeName>` (`HeroMax`, `StartField`, `GoalCastle`, `ObstacleTree`, `ObstacleRock`, `ObstaclePond`). Levels: `Board_Label`, `Level_<id>` (`Level_demo`). Game: `Block_Up|Down|Left|Right`, `Palette_Title`, `Program_Title`, `Program_Clear`, `Program_Remove` ({0} = block number such as 3.2), `Program_MoveUp|MoveDown` ({0} = block number), `Palette_Repeat`, `Block_Repeat` ({0} = count), `Repeat_Before|After`, `Repeat_Decrease|Increase` ({0} = block number), `Repeat_Round` ({0} = round, {1} = count), `InsertTarget_Root|Repeat` ({0} = block number), `Program_Block` ({0} = number, {1} = direction), `Program_Current`, `Program_Error`, `Controls_Title`, `Control_Play|Debug|Reset`, `Tempo_Label`, `Tempo_<Tempo>` (`Slow|Medium|Fast`), `Program_Hint`, `Message_Obstacle_Tree|Rock|Pond` ({0} = block number), `Message_OutOfBounds` ({0} = block number), `Message_GoalNotReached` and `Message_Succeeded` ({0} = hero name), `Message_ItemsMissing_One|Other` ({0} = count), `Message_StepLimitExceeded` ({0} = step limit), `Message_EmptyRepeat|EmptyProgram|ProgramFull|NestingTooDeep`, `Status_Label`, `Status_<RunStatus>` (`Ready|Running|Paused|Failed|Succeeded`). Every `Tempo` and `RunStatus` value must have its key in both resx files (`GameResourcesTests`).
 - `<X>Resources.cs` is an empty marker class (`public sealed class GameResources;`) in namespace `HeroPath.Modules.Game.UI.Resources`. Use `IStringLocalizer<GameResources>`, no ResX designer classes.
 - Neutral resx = German. `<NeutralLanguage>` is not needed.
 - Only UI projects contain resx. Pure module projects return error kinds and numbers, never texts.
@@ -41,16 +41,16 @@ Modules/Levels/HeroPath.Modules.Levels.UI/Resources/LevelsResources.cs (+ …) l
 | `App_Title` | HeldenWeg | Hero's Path |
 | `Block_Up` | Hoch | Up |
 | `Block_Repeat` | Wiederhole {0} mal | Repeat {0} times |
-| `Error_Obstacle_Tree` | Autsch! Da steht ein Baum im Weg. Schau dir Schritt {0} noch einmal an. | Ouch! There's a tree in the way. Take another look at step {0}. |
-| `Error_OutOfBounds` | Hoppla! Hier ist die Welt zu Ende. Schritt {0} führt aus dem Spielfeld. | Oops! The world ends here. Step {0} leads off the board. |
-| `Error_EmptyRepeat` | Leg zuerst Bausteine in den Wiederhole-Block. | Put some blocks into the repeat block first. |
-| `Success` | Geschafft, {0}! Du hast die Burg erreicht. | You did it, {0}! You reached the castle. |
+| `Message_Obstacle_Tree` | Autsch! Da steht ein Baum im Weg. Schau dir Baustein {0} noch einmal an. | Ouch! There's a tree in the way. Take another look at block {0}. |
+| `Message_OutOfBounds` | Hoppla! Hier ist die Welt zu Ende. Baustein {0} führt aus dem Spielfeld. | Oops! The world ends here. Block {0} leads off the board. |
+| `Message_EmptyRepeat` | Leg zuerst Bausteine in den Wiederhole-Block. | Put some blocks into the repeat block first. |
+| `Message_Succeeded` | Geschafft, {0}! Du hast die Burg erreicht. | You did it, {0}! You reached the castle. |
 | `Level_free-field` | Freies Feld | Open Field |
 
-- **One key per full sentence and variant** (`Error_Obstacle_Tree`, `_Rock`, `_Pond`). Never build sentences by concatenating fragments: grammar differs between languages.
+- **One key per full sentence and variant** (`Message_Obstacle_Tree`, `_Rock`, `_Pond`). Never build sentences by concatenating fragments: grammar differs between languages.
 - Placeholders `{0}`, `{1}`: document in the resx `<comment>` what they contain (e.g. `{0} = step number`).
-- Plural: separate keys (`Error_ItemsMissing_One`, `Error_ItemsMissing_Other`).
-- Every `ExecutionError` from Core has exactly one mapping in a UI helper (`ExecutionMessageFormatter`), tested with bUnit or xUnit.
+- Plural: separate keys (`Message_ItemsMissing_One`, `Message_ItemsMissing_Other`).
+- Every `GameMessageCode` has exactly one text mapping in `MessageBox`, tested with bUnit (`MessageBoxTests`, all codes in DE and EN). The session returns codes and numbers (`GameMessage`), `MessageBox` adds the hero name.
 
 ## Tone (target group 11–13)
 

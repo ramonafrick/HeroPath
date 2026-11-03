@@ -57,7 +57,7 @@ public class PlayPageTests : CultureBunitContext
 
         Assert.NotNull(page.Find("[data-testid=side-panel] [data-testid=palette-up]"));
         Assert.NotNull(page.Find("[data-testid=side-panel] [data-testid=program]"));
-        Assert.NotNull(page.Find("[data-testid=program-empty]"));
+        Assert.Equal("EmptyProgram", page.Find("[data-testid=message]").GetAttribute("data-code"));
     }
 
     [Fact]

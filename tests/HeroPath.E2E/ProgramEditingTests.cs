@@ -24,7 +24,7 @@ public class ProgramEditingTests(AppFixture app)
         await page.GotoAsync("/");
         await page.WaitForRenderedAsync("[data-testid=game-board]", errors);
 
-        await Expect(page.GetByTestId("program-empty")).ToBeVisibleAsync();
+        await Expect(page.GetByTestId("message")).ToHaveAttributeAsync("data-code", "EmptyProgram");
         await Expect(page.GetByTestId("program-block")).ToHaveCountAsync(0);
 
         foreach (var direction in new[] { "up", "up", "right", "right" })
@@ -33,7 +33,7 @@ public class ProgramEditingTests(AppFixture app)
         }
 
         await ExpectOrderAsync(page, ["up", "up", "right", "right"]);
-        await Expect(page.GetByTestId("program-empty")).ToHaveCountAsync(0);
+        await Expect(page.GetByTestId("message")).ToHaveCountAsync(0);
 
         if (viewport == "laptop")
         {
@@ -52,7 +52,7 @@ public class ProgramEditingTests(AppFixture app)
 
         await page.GetByTestId("program-clear").ClickAsync();
         await Expect(page.GetByTestId("program-block")).ToHaveCountAsync(0);
-        await Expect(page.GetByTestId("program-empty")).ToBeVisibleAsync();
+        await Expect(page.GetByTestId("message")).ToHaveAttributeAsync("data-code", "EmptyProgram");
 
         if (viewport == "laptop")
         {

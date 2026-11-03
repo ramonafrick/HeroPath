@@ -530,4 +530,48 @@ public class ExecutionRunnerTests
         _runner.Reset();
         await newPlay;
     }
+
+    [Fact]
+    public void StepOnce_EmptyRepeat_StaysReadyWithHintAndNoStep()
+    {
+        Program(Direction.Up);
+        _session.AddRepeat();
+
+        _runner.StepOnce();
+
+        Assert.Equal(RunStatus.Ready, _session.Status);
+        Assert.Null(_session.CurrentStep);
+        Assert.True(_session.IsEditable);
+        Assert.Equal(GameMessageCode.EmptyRepeat, _session.Message?.Code);
+        Assert.Equal(_session.Program.Commands[1].Id, _session.HintedId);
+        Assert.Equal(_session.Grid!.Start, _session.HeroPosition);
+    }
+
+    [Fact]
+    public async Task PlayAsync_EmptyRepeat_StaysReadyWithHintAndNoStep()
+    {
+        _session.AddRepeat();
+
+        await _runner.PlayAsync();
+
+        Assert.Equal(RunStatus.Ready, _session.Status);
+        Assert.Null(_session.CurrentStep);
+        Assert.True(_session.IsEditable);
+        Assert.Equal(GameMessageCode.EmptyRepeat, _session.Message?.Code);
+        Assert.True(_runner.CanStart);
+    }
+
+    [Fact]
+    public async Task PlayAsync_AfterFillingTheEmptyRepeat_Runs()
+    {
+        _session.AddRepeat();
+        await _runner.PlayAsync();
+        _session.Select(_session.Program.Commands[0].Id);
+        _session.Add(Direction.Up);
+
+        await FinishAsync(_runner.PlayAsync());
+
+        Assert.NotNull(_session.CurrentStep);
+        Assert.NotEqual(RunStatus.Ready, _session.Status);
+    }
 }

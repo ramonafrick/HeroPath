@@ -59,4 +59,25 @@ public class ProgramDefinitionTests
         Assert.Equal(6, _program.CountAll());
         Assert.Equal(0, ProgramDefinition.Empty.CountAll());
     }
+
+    [Fact]
+    public void FindEmptyRepeat_NoRepeatOrFilledRepeat_ReturnsNull()
+    {
+        Assert.Null(ProgramDefinition.Empty.FindEmptyRepeat());
+        Assert.Null(new ProgramDefinition([new RepeatCommand(2, [new MoveCommand(Direction.Up)])]).FindEmptyRepeat());
+    }
+
+    [Fact]
+    public void FindEmptyRepeat_SeveralEmptyRepeats_ReturnsFirstInProgramOrder()
+    {
+        var first = new RepeatCommand(2, []);
+        var program = new ProgramDefinition(
+        [
+            new MoveCommand(Direction.Up),
+            new RepeatCommand(2, [new MoveCommand(Direction.Up), first]),
+            new RepeatCommand(2, []),
+        ]);
+
+        Assert.Same(first, program.FindEmptyRepeat());
+    }
 }

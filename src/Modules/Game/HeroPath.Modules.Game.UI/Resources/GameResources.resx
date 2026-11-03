@@ -36,10 +36,6 @@
     <value>Dein Programm</value>
     <comment>Heading above the program list.</comment>
   </data>
-  <data name="Program_Empty" xml:space="preserve">
-    <value>Klick auf einen Baustein, um ihn ins Programm zu legen.</value>
-    <comment>Hint shown while the program has no blocks.</comment>
-  </data>
   <data name="Program_Remove" xml:space="preserve">
     <value>Baustein {0} entfernen</value>
     <comment>Accessible name of the remove button. {0} = block number, starting at 1.</comment>
@@ -112,6 +108,10 @@
     <value>Aktueller Baustein</value>
     <comment>Accessible hint on the block that runs now.</comment>
   </data>
+  <data name="Program_Hint" xml:space="preserve">
+    <value>Hier fehlen noch Bausteine</value>
+    <comment>Accessible hint on the empty repeat block that stopped the start.</comment>
+  </data>
   <data name="Program_Error" xml:space="preserve">
     <value>Hier ist der Fehler</value>
     <comment>Accessible hint on the block that caused the error.</comment>
@@ -159,5 +159,57 @@
   <data name="Repeat_Round" xml:space="preserve">
     <value>Runde {0} von {1}</value>
     <comment>{0} = current round (1-based), {1} = total rounds of the repeat block that is running.</comment>
+  </data>
+  <data name="Message_Obstacle_Tree" xml:space="preserve">
+    <value>Autsch! Da steht ein Baum im Weg. Schau dir Baustein {0} noch einmal an.</value>
+    <comment>{0} = block number of the move that was blocked, for example 6 or 3.2.</comment>
+  </data>
+  <data name="Message_Obstacle_Rock" xml:space="preserve">
+    <value>Autsch! Da liegt ein Stein im Weg. Schau dir Baustein {0} noch einmal an.</value>
+    <comment>{0} = block number of the move that was blocked.</comment>
+  </data>
+  <data name="Message_Obstacle_Pond" xml:space="preserve">
+    <value>Autsch! Da ist ein Teich im Weg. Schau dir Baustein {0} noch einmal an.</value>
+    <comment>{0} = block number of the move that was blocked.</comment>
+  </data>
+  <data name="Message_OutOfBounds" xml:space="preserve">
+    <value>Hoppla! Hier ist die Welt zu Ende. Baustein {0} führt aus dem Spielfeld.</value>
+    <comment>{0} = block number of the move that left the board.</comment>
+  </data>
+  <data name="Message_GoalNotReached" xml:space="preserve">
+    <value>Dein Programm ist fertig, aber {0} ist noch nicht bei der Burg. Probier es nochmal!</value>
+    <comment>{0} = hero name.</comment>
+  </data>
+  <data name="Message_ItemsMissing_One" xml:space="preserve">
+    <value>Fast geschafft! Es fehlt noch 1 Erdbeere.</value>
+    <comment>Exactly one strawberry is missing.</comment>
+  </data>
+  <data name="Message_ItemsMissing_Other" xml:space="preserve">
+    <value>Fast geschafft! Es fehlen noch {0} Erdbeeren.</value>
+    <comment>{0} = number of missing strawberries (2 or more).</comment>
+  </data>
+  <data name="Message_StepLimitExceeded" xml:space="preserve">
+    <value>Puh! Dein Programm macht mehr als {0} Schritte. Brauchst du wirklich so viele Wiederholungen?</value>
+    <comment>{0} = step limit (1000).</comment>
+  </data>
+  <data name="Message_Succeeded" xml:space="preserve">
+    <value>Geschafft, {0}! Du hast die Burg erreicht.</value>
+    <comment>{0} = hero name.</comment>
+  </data>
+  <data name="Message_EmptyRepeat" xml:space="preserve">
+    <value>Leg zuerst Bausteine in den Wiederhole-Block.</value>
+    <comment>Hint when Play or Debug is pressed with an empty repeat block.</comment>
+  </data>
+  <data name="Message_EmptyProgram" xml:space="preserve">
+    <value>Zieh zuerst ein paar Bausteine ins Programm.</value>
+    <comment>Hint while the program has no blocks.</comment>
+  </data>
+  <data name="Message_ProgramFull" xml:space="preserve">
+    <value>Dein Programm ist voll. Lösch zuerst einen Baustein.</value>
+    <comment>Hint when the maximum number of blocks is reached.</comment>
+  </data>
+  <data name="Message_NestingTooDeep" xml:space="preserve">
+    <value>Hier passt kein weiterer Wiederhole-Block hinein.</value>
+    <comment>Hint when no repeat block fits into the insert target (nesting too deep).</comment>
   </data>
 </root>

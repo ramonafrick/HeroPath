@@ -52,6 +52,32 @@ public sealed class ProgramDefinition
         return Locate(Commands, repeatId.Value, null, []) is { Command: RepeatCommand } located ? located.Path.Count : null;
     }
 
+    /// <summary>The first repeat block with an empty body in program order (outer before inner, top to bottom), or <c>null</c>.</summary>
+    public RepeatCommand? FindEmptyRepeat() => FindEmptyRepeat(Commands);
+
+    private static RepeatCommand? FindEmptyRepeat(IReadOnlyList<Command> commands)
+    {
+        foreach (var command in commands)
+        {
+            if (command is not RepeatCommand repeat)
+            {
+                continue;
+            }
+
+            if (repeat.Body.Count == 0)
+            {
+                return repeat;
+            }
+
+            if (FindEmptyRepeat(repeat.Body) is { } inner)
+            {
+                return inner;
+            }
+        }
+
+        return null;
+    }
+
     private static Located? Locate(IReadOnlyList<Command> commands, Guid id, Guid? parentId, List<int> prefix)
     {
         for (var index = 0; index < commands.Count; index++)

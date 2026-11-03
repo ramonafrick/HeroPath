@@ -109,32 +109,9 @@ public sealed class Interpreter
             return Failure(Guid.Empty, ExecutionError.EmptyProgram, 0);
         }
 
-        return FindEmptyRepeat(_program.Commands) is { } repeat
+        return _program.FindEmptyRepeat() is { } repeat
             ? Failure(repeat.Id, ExecutionError.EmptyRepeat, 0)
             : null;
-    }
-
-    private static RepeatCommand? FindEmptyRepeat(IReadOnlyList<Command> commands)
-    {
-        foreach (var command in commands)
-        {
-            if (command is not RepeatCommand repeat)
-            {
-                continue;
-            }
-
-            if (repeat.Body.Count == 0)
-            {
-                return repeat;
-            }
-
-            if (FindEmptyRepeat(repeat.Body) is { } inner)
-            {
-                return inner;
-            }
-        }
-
-        return null;
     }
 
     private ExecutionStep Failure(Guid commandId, ExecutionError error, int stepNumber, IReadOnlyList<RepeatProgress>? repeats = null) =>

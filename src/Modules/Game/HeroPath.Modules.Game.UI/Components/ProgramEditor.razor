@@ -18,10 +18,6 @@
     <p class="insert-target" data-testid="insert-target" data-target="@(targetNumber ?? "root")">
         @(targetNumber is null ? Localizer["InsertTarget_Root"] : Localizer["InsertTarget_Repeat", targetNumber])
     </p>
-    @if (Session.Program.Commands.Count == 0)
-    {
-        <p class="program-empty" data-testid="program-empty">@Localizer["Program_Empty"]</p>
-    }
     <ol class="program-list" data-testid="program">
         @for (var index = 0; index < Session.Program.Commands.Count; index++)
         {

@@ -6,6 +6,7 @@
     var isSelected = Session.SelectedId == Command.Id;
     var isCurrent = Session.CurrentStep?.CommandId == Command.Id;
     var isError = isCurrent && Session.Status == RunStatus.Failed;
+    var isHinted = Session.HintedId == Command.Id;
     var editable = Session.IsEditable;
     var progress = Session.CurrentStep?.Repeats.FirstOrDefault(r => r.RepeatId == Command.Id);
     var isActiveRepeat = Command is RepeatCommand && progress is not null;
@@ -25,6 +26,7 @@
     data-direction="@((Command as MoveCommand)?.Direction.ToSlug())"
     data-current="@(isCurrent ? "true" : null)"
     data-error="@(isError ? "true" : null)"
+    data-hint="@(isHinted ? "true" : null)"
     data-active-repeat="@(isActiveRepeat ? "true" : null)">
     <div class="block-row">
         <button type="button"
@@ -83,6 +85,13 @@
                     <circle class="marker-shape" cx="12" cy="12" r="10" />
                     <path class="marker-glyph-fill" d="M9.5 7 L17 12 L9.5 17 Z" />
                 }
+            </svg>
+        }
+        @if (isHinted)
+        {
+            <svg class="program-marker" role="img" aria-label="@Localizer["Program_Hint"]" viewBox="0 0 24 24" focusable="false">
+                <circle class="marker-shape" cx="12" cy="12" r="10" />
+                <path class="marker-glyph" d="M12 11 V17 M12 6.8 V7" />
             </svg>
         }
         @if (isSelected)

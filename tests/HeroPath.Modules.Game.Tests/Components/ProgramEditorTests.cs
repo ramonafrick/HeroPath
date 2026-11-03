@@ -31,11 +31,10 @@ public class ProgramEditorTests : CultureBunitContext
         commands.SelectMany(c => c is RepeatCommand r ? new[] { c }.Concat(Flatten(r.Body)) : [c]);
 
     [Fact]
-    public void Render_Empty_ShowsHintAndNoBlocks()
+    public void Render_Empty_ShowsNoBlocks()
     {
         var editor = Render<ProgramEditor>();
 
-        Assert.NotNull(editor.Find("[data-testid=program-empty]"));
         Assert.Empty(editor.FindAll("[data-testid=program-block]"));
     }
 
@@ -54,7 +53,6 @@ public class ProgramEditorTests : CultureBunitContext
         Assert.Equal(["up", "right", "down"], blocks.Select(b => b.GetAttribute("data-direction")));
         Assert.Equal(_session.Program.Commands.Select(c => c.Id.ToString()), blocks.Select(b => b.GetAttribute("data-command-id")));
         Assert.Equal(["1", "2", "3"], blocks.Select(b => b.QuerySelector(".program-number")!.TextContent));
-        Assert.Empty(editor.FindAll("[data-testid=program-empty]"));
     }
 
     [Fact]
@@ -286,7 +284,7 @@ public class ProgramEditorTests : CultureBunitContext
     }
 
     [Fact]
-    public void ClearButton_RemovesAllBlocksAndShowsHint()
+    public void ClearButton_RemovesAllBlocks()
     {
         _session.Add(Direction.Up);
         _session.Add(Direction.Left);
@@ -295,7 +293,6 @@ public class ProgramEditorTests : CultureBunitContext
         editor.Find("[data-testid=program-clear]").Click();
 
         Assert.Empty(editor.FindAll("[data-testid=program-block]"));
-        Assert.NotNull(editor.Find("[data-testid=program-empty]"));
     }
 
     [Fact]

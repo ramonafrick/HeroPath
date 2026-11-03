@@ -42,14 +42,6 @@
     font-size: 0.9375rem;
 }
 
-.program-empty {
-    margin: 0;
-    padding: 0.5rem;
-    font-size: 1rem;
-    border: 3px dashed var(--hp-outline);
-    border-radius: 0.75rem;
-}
-
 .program-list {
     flex: 0 1 auto;
     min-height: 0;
