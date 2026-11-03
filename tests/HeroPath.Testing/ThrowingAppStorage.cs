@@ -7,9 +7,9 @@ public sealed class ThrowingAppStorage : IAppStorage
     public ValueTask<string?> GetAsync(string key, CancellationToken cancellationToken) =>
         throw new InvalidOperationException("Storage is blocked.");
 
-    public ValueTask SetAsync(string key, string value, CancellationToken cancellationToken) =>
+    public ValueTask<bool> SetAsync(string key, string value, CancellationToken cancellationToken) =>
         throw new InvalidOperationException("Storage is blocked.");
 
-    public ValueTask RemoveAsync(string key, CancellationToken cancellationToken) =>
+    public ValueTask<bool> RemoveAsync(string key, CancellationToken cancellationToken) =>
         throw new InvalidOperationException("Storage is blocked.");
 }

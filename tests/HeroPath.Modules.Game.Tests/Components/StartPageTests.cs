@@ -2,6 +2,7 @@ using HeroPath.Modules.Game.Application;
 using HeroPath.Modules.Game.Domain;
 using HeroPath.Modules.Game.UI;
 using HeroPath.Modules.Game.UI.Pages;
+using HeroPath.Modules.Levels.Application;
 using HeroPath.Modules.Levels.Domain;
 using HeroPath.Modules.Levels.Infrastructure;
 using HeroPath.Shared.Application.Contracts;
@@ -48,7 +49,7 @@ public class StartPageTests : CultureBunitContext
             TestLevels.Empty("synthetic-a", 4, 4, new Position(0, 0), new Position(3, 3)),
             TestLevels.Empty("synthetic-b", 4, 4, new Position(0, 0), new Position(3, 0)),
         };
-        Services.AddScoped(_ => new LevelProgress(levels));
+        Services.AddScoped(_ => TestLevels.NewRepository(levels));
 
         var page = Render<StartPage>();
 
@@ -222,5 +223,118 @@ public class StartPageTests : CultureBunitContext
         Assert.Equal("false", open.GetAttribute("data-solved"));
         Assert.Null(open.GetAttribute("aria-label"));
         Assert.Empty(page.FindAll("[data-testid=level-solved-easy-2]"));
+    }
+
+    private async Task<LevelRepository> AddCustomLevelsAsync(params (string Id, string Name)[] levels)
+    {
+        var repository = Services.GetRequiredService<LevelRepository>();
+        foreach (var (id, name) in levels)
+        {
+            var saved = await repository.SaveAsync(
+                TestLevels.Empty(id, 5, 5, new Position(0, 0), new Position(4, 4)) with { Name = name },
+                Xunit.TestContext.Current.CancellationToken);
+            Assert.Equal(SaveOutcome.Saved, saved);
+        }
+
+        return repository;
+    }
+
+    [Fact]
+    public void Render_WithoutCustomLevels_HasNoCustomSection()
+    {
+        var page = Render<StartPage>();
+
+        Assert.Empty(page.FindAll("[data-testid=custom-levels]"));
+    }
+
+    [Fact]
+    public async Task Render_WithCustomLevels_ShowsThemInASectionAfterTheStandardCards()
+    {
+        await AddCustomLevelsAsync(("custom-a", "Mein Burgweg"), ("custom-b", "Zweiter"));
+
+        var page = Render<StartPage>();
+
+        var section = page.Find("[data-testid=custom-levels]");
+        Assert.Equal("Meine Levels", section.QuerySelector("h3")!.TextContent);
+        Assert.Equal(["level-card-custom-a", "level-card-custom-b"], section.QuerySelectorAll("[data-testid^=level-card-]").Select(c => c.GetAttribute("data-testid")));
+        Assert.Equal("Mein Burgweg", page.Find("[data-testid=level-card-custom-a] .level-card-name").TextContent);
+        Assert.NotNull(page.Find("[data-testid=level-preview-custom-a]"));
+        Assert.Equal(
+            [.. StandardLevels.All.Select(l => $"level-card-{l.Id}"), "level-card-custom-a", "level-card-custom-b"],
+            page.FindAll("[data-testid^=level-card-]").Select(c => c.GetAttribute("data-testid")));
+        Assert.Empty(section.QuerySelectorAll("[data-testid=level-card-easy-1]"));
+    }
+
+    [Fact]
+    public async Task Render_CustomLevelNameWithHtml_IsShownAsText()
+    {
+        await AddCustomLevelsAsync(("custom-a", "<b>Fett</b><script>x()</script>"));
+
+        var page = Render<StartPage>();
+
+        var name = page.Find("[data-testid=level-card-custom-a] .level-card-name");
+        Assert.Equal("<b>Fett</b><script>x()</script>", name.TextContent);
+        Assert.Empty(name.QuerySelectorAll("b, script"));
+        Assert.Empty(page.FindAll("script"));
+    }
+
+    [Fact]
+    public async Task Render_SolvedCustomLevel_ShowsBadgeAndAccessibleName()
+    {
+        await AddCustomLevelsAsync(("custom-a", "Mein Burgweg"));
+        Services.GetRequiredService<LevelProgress>().MarkSolved("custom-a");
+
+        var page = Render<StartPage>();
+
+        Assert.Equal("Mein Burgweg, gelöst", page.Find("[data-testid=level-card-custom-a]").GetAttribute("aria-label"));
+        Assert.NotNull(page.Find("[data-testid=level-solved-custom-a]"));
+    }
+
+    [Fact]
+    public async Task Render_CustomSectionTitle_IsTranslated()
+    {
+        await AddCustomLevelsAsync(("custom-a", "Mine"));
+        var page = Render<StartPage>();
+
+        await Services.GetRequiredService<LanguageService>().SetAsync("en", Xunit.TestContext.Current.CancellationToken);
+
+        page.WaitForAssertion(() => Assert.Equal("My levels", page.Find("[data-testid=custom-levels] h3").TextContent));
+        Assert.Equal("Mine", page.Find("[data-testid=level-card-custom-a] .level-card-name").TextContent);
+    }
+
+    [Fact]
+    public async Task Render_CustomLevelAddedLater_AppearsWithoutNewRender()
+    {
+        var page = Render<StartPage>();
+        Assert.Empty(page.FindAll("[data-testid=custom-levels]"));
+
+        await AddCustomLevelsAsync(("custom-a", "Mine"));
+
+        page.WaitForAssertion(() => Assert.NotNull(page.Find("[data-testid=level-card-custom-a]")));
+    }
+
+    [Fact]
+    public async Task Go_WithACustomLevelSelected_ChoosesIt()
+    {
+        await AddCustomLevelsAsync(("custom-a", "Mine"));
+        var page = Render<StartPage>();
+
+        page.Find("[data-testid=level-card-custom-a]").Click();
+        page.Find("[data-testid=start-go]").Click();
+
+        Assert.Equal("custom-a", Choice.LevelId);
+    }
+
+    [Fact]
+    public async Task Go_StoresNoHeroNameInTheCustomLevelStorage()
+    {
+        var storage = (InMemoryAppStorage)Services.GetRequiredService<IAppStorage>();
+        await AddCustomLevelsAsync(("custom-a", "Mine"));
+        var page = Render<StartPage>();
+        page.Find("[data-testid=hero-name]").Input("Zoe");
+
+        page.Find("[data-testid=start-go]").Click();
+
+        Assert.DoesNotContain("Zoe", storage.Values[StorageKeys.CustomLevels], StringComparison.Ordinal);
     }
 }

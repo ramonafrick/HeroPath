@@ -1,7 +1,9 @@
 using HeroPath.Modules.Game.Application;
 using HeroPath.Modules.Game.Domain;
+using HeroPath.Modules.Levels.Application;
 using HeroPath.Modules.Levels.Domain;
 using HeroPath.Modules.Levels.Infrastructure;
+using HeroPath.Shared.Application.Contracts;
 
 namespace HeroPath.Modules.Game.Tests;
 
@@ -37,7 +39,10 @@ internal static class TestLevels
         Items = items,
     };
 
-    public static LevelProgress NewProgress() => new([Demo, .. StandardLevels.All]);
+    public static LevelRepository NewRepository(IReadOnlyList<LevelDefinition> standard, IAppStorage? storage = null) =>
+        new(new StorageCustomLevelStore(storage ?? new InMemoryAppStorage()), standard, LevelJson.Read);
+
+    public static LevelProgress NewProgress() => new(NewRepository([Demo, .. StandardLevels.All]));
 
     public static Direction[] Directions(GameSession session) =>
         [.. session.Program.Commands.OfType<MoveCommand>().Select(c => c.Direction)];

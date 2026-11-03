@@ -17,9 +17,9 @@ src/
   Modules/
     Levels/
       HeroPath.Modules.Levels/       pure C#: Domain/ (Position, Grid, ObstacleKind, ItemKind, LevelDefinition, LevelLimits, LevelSolver, EditorTool, LevelEditing)
-                                               Application/ (LevelValidator, LevelReadResult, LevelCheck, LevelIdGenerator, ILevelSource, LevelRepository)
-                                               Infrastructure/ (embedded Levels/*.json, JSON context, storage-backed source)
-      HeroPath.Modules.Levels.UI/    RCL: board view, LevelPicker, LevelEditor, LevelsModuleExtensions, Resources/
+                                               Application/ (LevelValidator, LevelReadResult, LevelCheck, LevelIdGenerator, LevelRepository, SaveOutcome, ImportResult, Contracts/ICustomLevelStore)
+                                               Infrastructure/ (embedded Levels/*.json, JSON context, StorageCustomLevelStore)
+      HeroPath.Modules.Levels.UI/    RCL: board view, LevelPicker, LevelEditor, LevelsModuleExtensions (AddLevelsModule, LoadCustomLevelsAsync), LevelDisplayExtensions (NameOf), Resources/
     Game/
       HeroPath.Modules.Game/         pure C#: Domain/ (Direction, Person, MoveResult, commands, ProgramDefinition, BlockSlot, ProgramEditing,
                                                Interpreter, ExecutionStep, ProgramLimits)
@@ -60,7 +60,7 @@ When you add a project-level rule, add it to `DependencyRuleTests.Rules`.
 |---|---|
 | Game rule, value object, entity | `Modules.<X>/Domain` |
 | Use case / stateful service without Blazor (GameSession, ExecutionRunner, LevelRepository) | `Modules.<X>/Application` |
-| Contract needed by Application, implemented elsewhere (`ILevelSource`) | `Modules.<X>/Application/Contracts` |
+| Contract needed by Application, implemented elsewhere (`ICustomLevelStore`, implemented by `StorageCustomLevelStore` in Infrastructure) | `Modules.<X>/Application/Contracts` |
 | JSON, embedded resources, storage-backed implementation | `Modules.<X>/Infrastructure` |
 | Razor page/component of one feature | `Modules.<X>.UI/Pages` or `/Components` |
 | Texts of one module | `Modules.<X>.UI/Resources/<X>Resources.resx` (+ `.en.resx`) |

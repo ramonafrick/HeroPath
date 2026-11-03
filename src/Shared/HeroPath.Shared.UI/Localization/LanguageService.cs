@@ -49,11 +49,11 @@ public sealed class LanguageService(IAppStorage storage)
 
         try
         {
-            await storage.SetAsync(StorageKeys.Language, culture, cancellationToken);
+            _ = await storage.SetAsync(StorageKeys.Language, culture, cancellationToken);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
-            // The language stays switched for this session even if it cannot be remembered.
+            // The language stays switched for this session even if it cannot be remembered (a throw or a false result).
         }
 
         Changed?.Invoke();

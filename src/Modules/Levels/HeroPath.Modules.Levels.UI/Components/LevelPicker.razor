@@ -1,3 +1,4 @@
+@using HeroPath.Modules.Levels.Domain
 @using HeroPath.Shared.UI.Components
 @inherits LocalizedComponentBase
 
@@ -8,14 +9,26 @@
             data-testid="level-picker"
             value="@SelectedId"
             @onchange="HandleChange">
-        @foreach (var level in Levels)
+        @foreach (var level in Levels.Where(level => !IsCustomLevel(level)))
         {
-            var solved = IsSolved?.Invoke(level.Id) == true;
-            <option @key="level.Id"
-                    value="@level.Id"
-                    selected="@(level.Id == SelectedId)"
-                    data-testid="@($"level-picker-option-{level.Id}")"
-                    data-solved="@(solved ? "true" : "false")">@(solved ? "✓ " : string.Empty)@Localizer[$"Level_{level.Id}"]</option>
+            @LevelOption(level)
+        }
+        @if (Levels.Any(IsCustomLevel))
+        {
+            <optgroup label="@Localizer["LevelPicker_GroupCustom"]" data-testid="level-picker-group-custom">
+                @foreach (var level in Levels.Where(IsCustomLevel))
+                {
+                    @LevelOption(level)
+                }
+            </optgroup>
         }
     </select>
 </div>
+
+@code {
+    private RenderFragment LevelOption(LevelDefinition level) => @<option @key="level.Id"
+            value="@level.Id"
+            selected="@(level.Id == SelectedId)"
+            data-testid="@($"level-picker-option-{level.Id}")"
+            data-solved="@(IsSolved?.Invoke(level.Id) == true ? "true" : "false")">@(IsSolved?.Invoke(level.Id) == true ? "✓ " : string.Empty)@Localizer.NameOf(level)</option>;
+}

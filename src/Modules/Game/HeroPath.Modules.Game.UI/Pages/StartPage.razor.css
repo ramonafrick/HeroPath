@@ -154,6 +154,8 @@
 }
 
 .level-card-name {
+    max-width: 100%;
+    overflow-wrap: anywhere;
     font-size: 1.0625rem;
     font-weight: 700;
     text-align: center;
@@ -225,4 +227,10 @@
         position: sticky;
         top: 1rem;
     }
+}
+
+.start-levels {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
 }

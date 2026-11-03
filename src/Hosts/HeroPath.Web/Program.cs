@@ -20,4 +20,5 @@ builder.Services.AddScoped<IAppStorage, LocalStorageAppStorage>();
 
 var host = builder.Build();
 await host.Services.ApplyStoredCultureAsync();
+await host.Services.LoadCustomLevelsAsync();
 await host.RunAsync();

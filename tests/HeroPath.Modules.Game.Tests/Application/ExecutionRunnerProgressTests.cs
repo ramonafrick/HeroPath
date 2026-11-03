@@ -12,7 +12,7 @@ public class ExecutionRunnerProgressTests
 
     private readonly FakeTimeProvider _time = new();
     private readonly GameSession _session = new();
-    private readonly LevelProgress _progress = new(StandardLevels.All);
+    private readonly LevelProgress _progress = new(TestLevels.NewRepository(StandardLevels.All));
     private readonly ExecutionRunner _runner;
 
     public ExecutionRunnerProgressTests()

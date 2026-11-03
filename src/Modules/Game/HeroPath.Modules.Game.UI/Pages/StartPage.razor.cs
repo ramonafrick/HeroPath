@@ -1,5 +1,6 @@
 using HeroPath.Modules.Game.Application;
 using HeroPath.Modules.Game.UI.Resources;
+using HeroPath.Modules.Levels.Application;
 using HeroPath.Modules.Levels.Domain;
 using HeroPath.Modules.Levels.UI.Resources;
 using HeroPath.Shared.UI.Components;
@@ -29,6 +30,9 @@ public partial class StartPage : LocalizedComponentBase
     private LevelProgress Progress { get; set; } = default!;
 
     [Inject]
+    private LevelRepository Repository { get; set; } = default!;
+
+    [Inject]
     private NavigationManager Navigation { get; set; } = default!;
 
     [Inject]
@@ -44,8 +48,21 @@ public partial class StartPage : LocalizedComponentBase
     {
         _avatar = Choice.Avatar;
         _name = Choice.Name;
-        _levelId = Choice.LevelId ?? Progress.Levels.FirstOrDefault()?.Id ?? string.Empty;
+        _levelId = Choice.LevelId is { } chosen && Progress.Find(chosen) is not null ? chosen : Progress.Levels.FirstOrDefault()?.Id ?? string.Empty;
         base.OnInitialized();
+        Repository.Changed += HandleChanged;
+        Progress.Changed += HandleChanged;
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            Repository.Changed -= HandleChanged;
+            Progress.Changed -= HandleChanged;
+        }
+
+        base.Dispose(disposing);
     }
 
     private Grid GridOf(LevelDefinition level)

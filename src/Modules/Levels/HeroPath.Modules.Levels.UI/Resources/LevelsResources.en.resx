@@ -48,4 +48,8 @@
     <value>Choose level</value>
     <comment>Label of the level dropdown on the play page.</comment>
   </data>
+  <data name="LevelPicker_GroupCustom" xml:space="preserve">
+    <value>My levels</value>
+    <comment>Label of the dropdown group that holds the child's own levels.</comment>
+  </data>
 </root>

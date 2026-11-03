@@ -3,6 +3,7 @@ using HeroPath.Modules.Game.Domain;
 using HeroPath.Modules.Game.UI;
 using HeroPath.Modules.Game.UI.Pages;
 using HeroPath.Modules.Game.UI.Services;
+using HeroPath.Modules.Levels.Application;
 using HeroPath.Modules.Levels.Domain;
 using HeroPath.Modules.Levels.Infrastructure;
 using HeroPath.Shared.Application.Contracts;
@@ -296,5 +297,59 @@ public class PlayPageTests : CultureBunitContext
         Services.GetRequiredService<LevelProgress>().MarkSolved(last.Id);
 
         Assert.Empty(page.FindAll("[data-testid=next-level]"));
+    }
+
+    private async Task SaveCustomLevelAsync()
+    {
+        var saved = await Services.GetRequiredService<LevelRepository>().SaveAsync(
+            TestLevels.Empty("custom-a", 3, 3, new Position(0, 0), new Position(2, 0)) with { Name = "<i>Mein</i> Weg" },
+            Xunit.TestContext.Current.CancellationToken);
+        Assert.Equal(SaveOutcome.Saved, saved);
+    }
+
+    [Fact]
+    public async Task CustomLevel_ShowsItsNameAsTextInTheHeading()
+    {
+        await SaveCustomLevelAsync();
+        Choice.SelectLevel("custom-a");
+
+        var page = Render<PlayPage>();
+
+        var heading = page.Find("[data-testid=level-name]");
+        Assert.Equal("<i>Mein</i> Weg", heading.TextContent);
+        Assert.Empty(heading.QuerySelectorAll("i"));
+        Assert.Equal(9, page.FindAll("[data-testid^=cell-]").Count);
+    }
+
+    [Fact]
+    public async Task CustomLevel_IsListedInThePickerGroup_AndSwitchingLoadsIt()
+    {
+        await SaveCustomLevelAsync();
+        var page = Render<PlayPage>();
+
+        var option = page.Find("[data-testid=level-picker-group-custom] [data-testid=level-picker-option-custom-a]");
+        Assert.Equal("<i>Mein</i> Weg", option.TextContent.Trim());
+        page.Find("[data-testid=level-picker]").Change("custom-a");
+
+        Assert.Equal("custom-a", Session.Level!.Id);
+        Assert.Equal("custom-a", Choice.LevelId);
+    }
+
+    [Fact]
+    public async Task CustomLevel_SolvedMarksItAndOffersNoNextLevel()
+    {
+        await SaveCustomLevelAsync();
+        Choice.SelectLevel("custom-a");
+        var page = Render<PlayPage>();
+
+        Session.Add(Direction.Right);
+        Session.Add(Direction.Right);
+        Runner.StepOnce();
+        Runner.StepOnce();
+
+        Assert.Equal(RunStatus.Succeeded, Session.Status);
+        Assert.True(Services.GetRequiredService<LevelProgress>().IsSolved("custom-a"));
+        Assert.Empty(page.FindAll("[data-testid=next-level]"));
+        Assert.StartsWith("✓", page.Find("[data-testid=level-picker-option-custom-a]").TextContent.Trim());
     }
 }

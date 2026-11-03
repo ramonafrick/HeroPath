@@ -2,6 +2,7 @@
 @inherits SessionComponentBase
 @using HeroPath.Modules.Game.Application
 @using HeroPath.Modules.Game.UI.Components
+@using HeroPath.Modules.Levels.UI
 @using HeroPath.Modules.Levels.UI.Components
 
 <PageTitle>@SharedLocalizer["App_Title"]</PageTitle>
@@ -11,7 +12,7 @@
     <main class="play-page" data-wide="@(grid.Width >= 2 * grid.Height ? "true" : null)">
         <section class="board-area" data-has-items="@(grid.Items.Count > 0 ? "true" : null)" style="--board-cols: @grid.Width; --board-rows: @grid.Height;">
             <div class="board-head">
-                <h2 class="level-name" data-testid="level-name">@LevelsLocalizer[$"Level_{level.Id}"]</h2>
+                <h2 class="level-name" data-testid="level-name">@LevelsLocalizer.NameOf(level)</h2>
                 <HeroBadge />
             </div>
             <ItemCounter />
@@ -30,6 +31,7 @@
                 <LevelPicker Levels="Progress.Levels"
                              SelectedId="@level.Id"
                              IsSolved="Progress.IsSolved"
+                             IsCustom="Repository.IsCustom"
                              SelectedIdChanged="SwitchLevel" />
                 <BlockPalette />
                 <ControlBar />

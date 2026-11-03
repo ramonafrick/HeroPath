@@ -2,6 +2,7 @@ using HeroPath.Modules.Game.Application;
 using HeroPath.Modules.Game.UI.Components;
 using HeroPath.Modules.Game.UI.Resources;
 using HeroPath.Modules.Game.UI.Services;
+using HeroPath.Modules.Levels.Application;
 using HeroPath.Modules.Levels.Domain;
 using HeroPath.Modules.Levels.UI.Resources;
 using HeroPath.Shared.UI.Resources;
@@ -37,6 +38,9 @@ public partial class PlayPage : SessionComponentBase
 
     [Inject]
     private LevelProgress Progress { get; set; } = default!;
+
+    [Inject]
+    private LevelRepository Repository { get; set; } = default!;
 
     [Inject]
     private IStringLocalizer<GameResources> GameLocalizer { get; set; } = default!;

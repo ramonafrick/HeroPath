@@ -5,4 +5,7 @@ public static class StorageKeys
 {
     /// <summary>Selected UI culture name (<c>de-CH</c> or <c>en</c>).</summary>
     public const string Language = "heropath.language";
+
+    /// <summary>JSON array of the child's custom levels.</summary>
+    public const string CustomLevels = "heropath.levels";
 }

@@ -6,7 +6,7 @@ using Microsoft.Extensions.Localization;
 
 namespace HeroPath.Modules.Levels.UI.Components;
 
-/// <summary>A native dropdown to switch the level. Solved levels get a check mark in front of the name.</summary>
+/// <summary>A native dropdown to switch the level. Solved levels get a check mark in front of the name; custom levels are grouped under their own heading and show their own name.</summary>
 public partial class LevelPicker : LocalizedComponentBase
 {
     private static int _nextId;
@@ -21,11 +21,17 @@ public partial class LevelPicker : LocalizedComponentBase
     [Parameter]
     public Func<string, bool>? IsSolved { get; set; }
 
+    /// <summary>Tells which levels are custom levels; those are listed in their own group. Without it every level is listed plainly.</summary>
+    [Parameter]
+    public Func<string, bool>? IsCustom { get; set; }
+
     [Parameter]
     public EventCallback<string> SelectedIdChanged { get; set; }
 
     [Inject]
     private IStringLocalizer<LevelsResources> Localizer { get; set; } = default!;
+
+    private bool IsCustomLevel(LevelDefinition level) => IsCustom?.Invoke(level.Id) == true;
 
     private Task HandleChange(ChangeEventArgs args) =>
         args.Value is string id && id != SelectedId ? SelectedIdChanged.InvokeAsync(id) : Task.CompletedTask;

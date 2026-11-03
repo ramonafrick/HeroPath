@@ -1,6 +1,8 @@
 @page "/"
 @inherits LocalizedComponentBase
 @using HeroPath.Modules.Game.UI.Components
+@using HeroPath.Modules.Levels.Domain
+@using HeroPath.Modules.Levels.UI
 @using HeroPath.Modules.Levels.UI.Components
 @using HeroPath.Shared.UI.Components
 
@@ -49,38 +51,55 @@
         <button type="button" class="start-go" data-testid="start-go" @onclick="Go">@GameLocalizer["Start_Go"]</button>
     </div>
 
-    <section class="start-levels" aria-labelledby="start-levels-title">
-        <h3 id="start-levels-title" class="start-section-title">@GameLocalizer["Start_LevelsTitle"]</h3>
-        <div class="level-cards">
-            @foreach (var level in Progress.Levels)
-            {
-                var solved = Progress.IsSolved(level.Id);
-                var levelName = LevelsLocalizer[$"Level_{level.Id}"];
-                <div class="level-card"
-                     @key="level.Id"
-                     data-solved="@(solved ? "true" : "false")"
-                     data-selected="@(_levelId == level.Id ? "true" : "false")">
-                    <span class="level-preview" data-testid="@($"level-preview-{level.Id}")" aria-hidden="true">
-                        <GameBoard Grid="GridOf(level)" Preview="true" />
-                    </span>
-                    <button type="button"
-                            class="level-card-button"
-                            data-testid="@($"level-card-{level.Id}")"
-                            data-solved="@(solved ? "true" : "false")"
-                            aria-label="@(solved ? $"{levelName}, {GameLocalizer["Level_Solved"]}" : null)"
-                            aria-pressed="@(_levelId == level.Id ? "true" : "false")"
-                            @onclick="() => SelectLevel(level.Id)">
-                        <span class="level-card-name">@levelName</span>
-                    </button>
-                    @if (solved)
+    <div class="start-levels">
+        <section class="start-standard-levels" aria-labelledby="start-levels-title">
+            <h3 id="start-levels-title" class="start-section-title">@GameLocalizer["Start_LevelsTitle"]</h3>
+            <div class="level-cards">
+                @foreach (var level in Repository.Standard)
+                {
+                    @LevelCard(level)
+                }
+            </div>
+        </section>
+
+        @if (Repository.Custom.Count > 0)
+        {
+            <section class="start-custom-levels" data-testid="custom-levels" aria-labelledby="start-custom-levels-title">
+                <h3 id="start-custom-levels-title" class="start-section-title">@GameLocalizer["Start_CustomLevelsTitle"]</h3>
+                <div class="level-cards">
+                    @foreach (var level in Repository.Custom)
                     {
-                        <svg class="level-solved-badge" data-testid="@($"level-solved-{level.Id}")" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                            <circle class="badge-shape" cx="12" cy="12" r="10.5" />
-                            <path class="badge-glyph" d="M6.5 12.5 L10.5 16.5 L17.5 8" />
-                        </svg>
+                        @LevelCard(level)
                     }
                 </div>
-            }
-        </div>
-    </section>
+            </section>
+        }
+    </div>
 </main>
+
+@code {
+    private RenderFragment LevelCard(LevelDefinition level) => @<div class="level-card"
+         @key="level.Id"
+         data-solved="@(Progress.IsSolved(level.Id) ? "true" : "false")"
+         data-selected="@(_levelId == level.Id ? "true" : "false")">
+        <span class="level-preview" data-testid="@($"level-preview-{level.Id}")" aria-hidden="true">
+            <GameBoard Grid="GridOf(level)" Preview="true" />
+        </span>
+        <button type="button"
+                class="level-card-button"
+                data-testid="@($"level-card-{level.Id}")"
+                data-solved="@(Progress.IsSolved(level.Id) ? "true" : "false")"
+                aria-label="@(Progress.IsSolved(level.Id) ? $"{LevelsLocalizer.NameOf(level)}, {GameLocalizer["Level_Solved"]}" : null)"
+                aria-pressed="@(_levelId == level.Id ? "true" : "false")"
+                @onclick="() => SelectLevel(level.Id)">
+            <span class="level-card-name">@LevelsLocalizer.NameOf(level)</span>
+        </button>
+        @if (Progress.IsSolved(level.Id))
+        {
+            <svg class="level-solved-badge" data-testid="@($"level-solved-{level.Id}")" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <circle class="badge-shape" cx="12" cy="12" r="10.5" />
+                <path class="badge-glyph" d="M6.5 12.5 L10.5 16.5 L17.5 8" />
+            </svg>
+        }
+    </div>;
+}

@@ -5,7 +5,7 @@ namespace HeroPath.Web.Services;
 
 /// <summary>
 /// <see cref="IAppStorage"/> on top of the browser localStorage. Unavailable storage (blocked, full, circuit gone,
-/// interop timeout) degrades silently: reads return <c>null</c>, writes are dropped, so the game stays playable.
+/// interop timeout) degrades silently: reads return <c>null</c>, writes return <c>false</c>, so the game stays playable.
 /// A cancellation requested by the caller is not swallowed.
 /// </summary>
 public sealed class LocalStorageAppStorage(IJSRuntime js) : IAppStorage
@@ -13,7 +13,7 @@ public sealed class LocalStorageAppStorage(IJSRuntime js) : IAppStorage
     public ValueTask<string?> GetAsync(string key, CancellationToken cancellationToken) =>
         TryAsync(runtime => runtime.InvokeAsync<string?>("localStorage.getItem", cancellationToken, key), cancellationToken);
 
-    public async ValueTask SetAsync(string key, string value, CancellationToken cancellationToken) =>
+    public async ValueTask<bool> SetAsync(string key, string value, CancellationToken cancellationToken) =>
         await TryAsync(
             async runtime =>
             {
@@ -22,7 +22,7 @@ public sealed class LocalStorageAppStorage(IJSRuntime js) : IAppStorage
             },
             cancellationToken);
 
-    public async ValueTask RemoveAsync(string key, CancellationToken cancellationToken) =>
+    public async ValueTask<bool> RemoveAsync(string key, CancellationToken cancellationToken) =>
         await TryAsync(
             async runtime =>
             {

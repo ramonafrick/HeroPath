@@ -112,4 +112,20 @@ public class LanguageServiceTests : IDisposable
         Assert.Equal("en", CultureInfo.CurrentUICulture.Name);
         Assert.Equal(1, changed);
     }
+
+    [Fact]
+    public async Task SetAsync_StorageRefusesTheWrite_StillSwitchesAndRaisesChanged()
+    {
+        _storage.FailWrites = true;
+        var service = new LanguageService(_storage);
+        var changed = 0;
+        service.Changed += () => changed++;
+
+        await service.SetAsync("en", Xunit.TestContext.Current.CancellationToken);
+
+        Assert.Equal("en", service.Current);
+        Assert.Equal("en", CultureInfo.CurrentUICulture.Name);
+        Assert.Empty(_storage.Values);
+        Assert.Equal(1, changed);
+    }
 }
