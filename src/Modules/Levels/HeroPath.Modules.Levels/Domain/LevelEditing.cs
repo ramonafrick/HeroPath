@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text;
 using HeroPath.Shared.Application;
 
 namespace HeroPath.Modules.Levels.Domain;
@@ -8,6 +10,12 @@ namespace HeroPath.Modules.Levels.Domain;
 /// </summary>
 public static class LevelEditing
 {
+    /// <summary>The ending of exported level files.</summary>
+    public const string ExportExtension = ".heropath.json";
+
+    /// <summary>Longest base name of an exported file, without the extension.</summary>
+    public const int MaxExportBaseLength = 40;
+
     private static readonly (int X, int Y)[] _offsets = [(0, -1), (0, 1), (-1, 0), (1, 0)];
 
     /// <summary>An empty 10x10 level with the start bottom-left and the goal top-right.</summary>
@@ -198,6 +206,47 @@ public static class LevelEditing
         }
 
         return cleaned;
+    }
+
+    /// <summary>
+    /// A safe file name for exporting a level: lowercase ASCII letters and digits separated by single hyphens (umlauts become ae, oe, ue,
+    /// «ß» becomes ss, other accents are dropped), at most <see cref="MaxExportBaseLength"/> characters, «level» when nothing is left,
+    /// plus <see cref="ExportExtension"/>. Never contains a path separator or markup.
+    /// </summary>
+    public static string ExportFileName(string? name)
+    {
+        var builder = new StringBuilder();
+        var pendingHyphen = false;
+        var text = string.Concat((name ?? string.Empty).EnumerateRunes()).ToLowerInvariant().Normalize(NormalizationForm.FormC);
+        foreach (var rune in text.EnumerateRunes())
+        {
+            var mapped = rune.Value switch { 'ä' => "ae", 'ö' => "oe", 'ü' => "ue", 'ß' => "ss", _ => rune.ToString() };
+            foreach (var letter in mapped.Normalize(NormalizationForm.FormD))
+            {
+                if (CharUnicodeInfo.GetUnicodeCategory(letter) == UnicodeCategory.NonSpacingMark)
+                {
+                    continue;
+                }
+
+                if (letter is (>= 'a' and <= 'z') or (>= '0' and <= '9'))
+                {
+                    if (pendingHyphen && builder.Length > 0)
+                    {
+                        builder.Append('-');
+                    }
+
+                    pendingHyphen = false;
+                    builder.Append(letter);
+                }
+                else
+                {
+                    pendingHyphen = true;
+                }
+            }
+        }
+
+        var baseName = builder.Length > MaxExportBaseLength ? builder.ToString(0, MaxExportBaseLength).TrimEnd('-') : builder.ToString();
+        return (baseName.Length == 0 ? "level" : baseName) + ExportExtension;
     }
 
     private static EditResult Done(LevelDefinition level) => new(Normalized(level));

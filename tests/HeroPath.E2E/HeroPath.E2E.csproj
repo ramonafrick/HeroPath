@@ -11,6 +11,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Modules\Levels\HeroPath.Modules.Levels\HeroPath.Modules.Levels.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Using Include="Xunit" />
     <Using Include="Microsoft.Playwright" />
   </ItemGroup>

@@ -1,8 +1,12 @@
+using System.Text;
 using HeroPath.Modules.Levels.Application;
 using HeroPath.Modules.Levels.Domain;
+using HeroPath.Modules.Levels.Infrastructure;
 using HeroPath.Modules.Levels.UI.Resources;
+using HeroPath.Shared.Application.Contracts;
 using HeroPath.Shared.UI.Components;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.Extensions.Localization;
 
@@ -29,6 +33,12 @@ public partial class LevelEditor : LocalizedComponentBase
     private bool _trying;
     private bool _deleteFailed;
     private int _templateKey;
+    private const long MaxImportBytes = 256 * 1024;
+
+    private ImportMessage _import;
+    private string? _importName;
+    private int _importKey;
+    private bool _exportFailed;
 
     /// <summary>The id of the custom level to open. <c>null</c> or an unknown id starts a new level.</summary>
     [Parameter]
@@ -46,6 +56,9 @@ public partial class LevelEditor : LocalizedComponentBase
 
     [Inject]
     private NavigationManager Navigation { get; set; } = default!;
+
+    [Inject]
+    private IFileDownload FileDownload { get; set; } = default!;
 
     [Inject]
     private IStringLocalizer<LevelsResources> Localizer { get; set; } = default!;
@@ -74,6 +87,28 @@ public partial class LevelEditor : LocalizedComponentBase
         Clear,
         Leave,
     }
+
+    private enum ImportMessage
+    {
+        None,
+        Ok,
+        Invalid,
+        TooLarge,
+        NotSavable,
+        LimitReached,
+        StorageFailed,
+    }
+
+    private string? ImportText => _import switch
+    {
+        ImportMessage.Ok => Localizer["Editor_Import_Ok", _importName ?? string.Empty].Value,
+        ImportMessage.Invalid => Localizer["Editor_Import_Invalid"].Value,
+        ImportMessage.TooLarge => Localizer["Editor_Import_TooLarge"].Value,
+        ImportMessage.NotSavable => Localizer["Editor_Import_NotSavable"].Value,
+        ImportMessage.LimitReached => Localizer["Editor_Import_LimitReached", LevelLimits.MaxCustomLevels].Value,
+        ImportMessage.StorageFailed => Localizer["Editor_Import_StorageFailed"].Value,
+        _ => null,
+    };
 
     private bool HasStrawberry => State.Draft.Items.Any(item => item.Kind == ItemKind.Strawberry);
 
@@ -317,6 +352,58 @@ public partial class LevelEditor : LocalizedComponentBase
         {
             _nameText = State.Draft.Name ?? string.Empty;
             GoTo(null);
+        }
+    }
+
+    private async Task ExportAsync(string id)
+    {
+        _exportFailed = false;
+        _import = ImportMessage.None;
+        if (Repository.Custom.FirstOrDefault(level => level.Id == id) is not { } level)
+        {
+            return;
+        }
+
+        _exportFailed = !await FileDownload.SaveTextAsync(LevelEditing.ExportFileName(level.Name), LevelJson.Write(level), _disposed.Token);
+    }
+
+    private async Task ImportAsync(InputFileChangeEventArgs args)
+    {
+        _importKey++;
+        _exportFailed = false;
+        _importName = null;
+        var json = await ReadFileAsync(args.File);
+        if (json is null)
+        {
+            _import = ImportMessage.TooLarge;
+            return;
+        }
+
+        var result = await Repository.ImportAsync(json, DefaultName, _disposed.Token);
+        _importName = result.Level?.Name;
+        _import = result.Outcome switch
+        {
+            ImportOutcome.Imported => ImportMessage.Ok,
+            ImportOutcome.NotSavable => ImportMessage.NotSavable,
+            ImportOutcome.LimitReached => ImportMessage.LimitReached,
+            ImportOutcome.StorageFailed => ImportMessage.StorageFailed,
+            _ => ImportMessage.Invalid,
+        };
+    }
+
+    private async Task<string?> ReadFileAsync(IBrowserFile file)
+    {
+        try
+        {
+            await using var stream = file.OpenReadStream(MaxImportBytes, _disposed.Token);
+            using var reader = new StreamReader(stream, Encoding.UTF8);
+            var buffer = new char[LevelJson.MaxJsonLength + 1];
+            var length = await reader.ReadBlockAsync(buffer, _disposed.Token);
+            return length > LevelJson.MaxJsonLength ? null : new string(buffer, 0, length);
+        }
+        catch (IOException)
+        {
+            return null;
         }
     }
 

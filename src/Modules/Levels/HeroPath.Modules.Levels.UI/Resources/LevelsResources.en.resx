@@ -376,4 +376,52 @@
     <value>No, keep building</value>
     <comment>Cancel button of the leave and discard confirmations.</comment>
   </data>
+  <data name="Editor_Export" xml:space="preserve">
+    <value>Export</value>
+    <comment>Button next to a custom level that saves it as a file.</comment>
+  </data>
+  <data name="Editor_List_Export" xml:space="preserve">
+    <value>Export {0}</value>
+    <comment>Accessible name of the export button. {0} = level name.</comment>
+  </data>
+  <data name="Editor_Export_Failed" xml:space="preserve">
+    <value>The file could not be saved. Please try again.</value>
+    <comment>Shown when the browser could not start the download.</comment>
+  </data>
+  <data name="Editor_Import_Title" xml:space="preserve">
+    <value>Level from a file</value>
+    <comment>Heading of the import section.</comment>
+  </data>
+  <data name="Editor_Import_Button" xml:space="preserve">
+    <value>Import level</value>
+    <comment>Label of the big file button that imports a level file.</comment>
+  </data>
+  <data name="Editor_Import_Hint" xml:space="preserve">
+    <value>Pick a file that ends in .heropath.json.</value>
+    <comment>Hint under the import button.</comment>
+  </data>
+  <data name="Editor_Import_Ok" xml:space="preserve">
+    <value>«{0}» is now in your list.</value>
+    <comment>Import worked. {0} = level name (user text).</comment>
+  </data>
+  <data name="Editor_Import_Invalid" xml:space="preserve">
+    <value>That is not a level for this game. Try another file.</value>
+    <comment>Import: file is not a valid level.</comment>
+  </data>
+  <data name="Editor_Import_TooLarge" xml:space="preserve">
+    <value>The file is too large.</value>
+    <comment>Import: file is too large.</comment>
+  </data>
+  <data name="Editor_Import_NotSavable" xml:space="preserve">
+    <value>This level cannot be solved or needs too many steps, so it was not imported.</value>
+    <comment>Import: valid file, but the level is unsolvable or needs too many steps.</comment>
+  </data>
+  <data name="Editor_Import_LimitReached" xml:space="preserve">
+    <value>You already have {0} levels of your own. Delete one first.</value>
+    <comment>Import: custom level limit reached. {0} = limit.</comment>
+  </data>
+  <data name="Editor_Import_StorageFailed" xml:space="preserve">
+    <value>The level could not be saved. Your browser is not allowing saving right now.</value>
+    <comment>Import: storage write failed.</comment>
+  </data>
 </root>

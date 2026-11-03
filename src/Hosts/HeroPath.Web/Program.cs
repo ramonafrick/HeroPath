@@ -17,6 +17,7 @@ builder.Services
     .AddLevelsModule()
     .AddGameModule();
 builder.Services.AddScoped<IAppStorage, LocalStorageAppStorage>();
+builder.Services.AddScoped<IFileDownload, BrowserFileDownload>();
 
 var host = builder.Build();
 await host.Services.ApplyStoredCultureAsync();

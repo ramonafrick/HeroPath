@@ -15,11 +15,13 @@ namespace HeroPath.Modules.Levels.Tests.Components;
 public class LevelEditorTests : CultureBunitContext
 {
     private readonly InMemoryAppStorage _storage = new();
+    private readonly FakeFileDownload _download = new();
 
     public LevelEditorTests()
     {
         Services.AddSharedUI();
         Services.AddSingleton<IAppStorage>(_storage);
+        Services.AddSingleton<IFileDownload>(_download);
         Services.AddLevelsModule();
     }
 

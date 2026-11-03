@@ -97,3 +97,5 @@ public sealed class LanguageService(IAppStorage storage)
 3. Placeholders documented in `<comment>`.
 4. Used via `Localizer["Key"]` / `Localizer["Key", arg]`, no fallback string in code.
 5. Keys built from enum values (`Status_{RunStatus}`, `Tempo_{Tempo}`) get a completeness test per culture (`GameResourcesTests`). Use `ResourceManager.GetResourceSet(culture, createIfNotExists: true, tryParents: false)`: `GetString` for `en` silently falls back to German and hides a missing key.
+
+- M5 S5 keys (Levels): `Editor_Export`, `Editor_List_Export` ({0} = level name), `Editor_Export_Failed`, `Editor_Import_Title|Button|Hint`, `Editor_Import_Ok` ({0} = level name as text), `Editor_Import_Invalid|TooLarge|NotSavable|StorageFailed`, `Editor_Import_LimitReached` ({0} = 20). The «ß» to «ss» mapping of `LevelEditing.ExportFileName` is file-name mapping only, UI texts stay free of «ß».

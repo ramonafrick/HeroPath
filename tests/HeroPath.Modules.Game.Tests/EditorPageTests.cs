@@ -15,12 +15,14 @@ namespace HeroPath.Modules.Game.Tests;
 public class EditorPageTests : CultureBunitContext
 {
     private readonly InMemoryAppStorage _storage = new();
+    private readonly FakeFileDownload _download = new();
 
     public EditorPageTests()
     {
         Services.AddSharedUI();
         Services.AddGameModule();
         Services.AddSingleton<IAppStorage>(_storage);
+        Services.AddSingleton<IFileDownload>(_download);
     }
 
     private static CancellationToken Token => Xunit.TestContext.Current.CancellationToken;

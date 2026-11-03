@@ -1,5 +1,6 @@
 @using HeroPath.Modules.Levels.Application
 @using HeroPath.Shared.UI.Components
+@using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.AspNetCore.Components.Routing
 @inherits LocalizedComponentBase
 
@@ -126,11 +127,33 @@
                 <div class="editor-saved" data-testid="editor-delete-failed" data-outcome="StorageFailed" role="alert">@Localizer["Editor_Delete_Failed"]</div>
             }
 
+            <section class="editor-import" aria-labelledby="editor-import-title">
+                <h3 id="editor-import-title" class="editor-section-title">@Localizer["Editor_Import_Title"]</h3>
+                <label class="import-button">
+                    <span>@Localizer["Editor_Import_Button"]</span>
+                    <InputFile @key="_importKey"
+                               OnChange="ImportAsync"
+                               accept=".json,application/json"
+                               data-testid="editor-import"
+                               aria-describedby="editor-import-hint" />
+                </label>
+                <span id="editor-import-hint" class="editor-name-hint">@Localizer["Editor_Import_Hint"]</span>
+                @if (ImportText is { } importMessage)
+                {
+                    <div class="editor-saved" data-testid="editor-import-message" data-state="@(_import == ImportMessage.Ok ? "ok" : "error")" role="status">@importMessage</div>
+                }
+                @if (_exportFailed)
+                {
+                    <div class="editor-saved" data-testid="editor-export-failed" data-state="error" role="alert">@Localizer["Editor_Export_Failed"]</div>
+                }
+            </section>
+
             <CustomLevelList Levels="Repository.Custom"
                              OpenId="@State.EditingId"
                              LevelOpened="AskOpen"
                              NewRequested="AskNew"
-                             DeleteRequested="AskDelete" />
+                             DeleteRequested="AskDelete"
+                             ExportRequested="ExportAsync" />
         </div>
     </div>
 </div>

@@ -23,6 +23,11 @@
                             aria-label="@Localizer["Editor_List_Open", level.Name ?? string.Empty]"
                             @onclick="() => LevelOpened.InvokeAsync(level.Id)">@level.Name</button>
                     <button type="button"
+                            class="list-export"
+                            data-testid="@($"custom-level-export-{level.Id}")"
+                            aria-label="@Localizer["Editor_List_Export", level.Name ?? string.Empty]"
+                            @onclick="() => ExportRequested.InvokeAsync(level.Id)">@Localizer["Editor_Export"]</button>
+                    <button type="button"
                             class="list-delete"
                             data-testid="@($"custom-level-delete-{level.Id}")"
                             aria-label="@Localizer["Editor_List_Delete", level.Name ?? string.Empty]"
