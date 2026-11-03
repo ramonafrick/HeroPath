@@ -41,3 +41,22 @@
     gap: 0.5rem;
     min-height: 2.75rem;
 }
+
+.palette {
+    position: relative;
+}
+
+.palette-delete {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--hp-text);
+    background: var(--hp-surface);
+    border: 4px dashed var(--hp-outline);
+    border-radius: 0.75rem;
+}

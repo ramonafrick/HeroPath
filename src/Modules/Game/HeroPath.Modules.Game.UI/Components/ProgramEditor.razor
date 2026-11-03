@@ -22,7 +22,9 @@
         @for (var index = 0; index < Session.Program.Commands.Count; index++)
         {
             var command = Session.Program.Commands[index];
+            <DropZone @key="(command.Id, 1)" Slot="BlockSlot.Root(index)" ParentNumber="root" />
             <ProgramBlock @key="command.Id" Command="command" Path="[index + 1]" />
         }
+        <DropZone Slot="BlockSlot.Root(Session.Program.Commands.Count)" ParentNumber="root" IsEnd="true" />
     </ol>
 </section>

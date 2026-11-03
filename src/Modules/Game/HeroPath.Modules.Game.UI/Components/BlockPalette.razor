@@ -1,15 +1,25 @@
-@inherits SessionComponentBase
+@inherits DragAwareComponentBase
 
-<section class="palette" aria-labelledby="palette-title">
+<section class="palette"
+         aria-labelledby="palette-title"
+         data-testid="palette"
+         @ondragenter:preventDefault="Drag.IsValidDelete"
+         @ondragover:preventDefault="Drag.IsValidDelete"
+         @ondrop="Drag.DropOnPalette"
+         @ondrop:preventDefault>
     <h3 id="palette-title" class="palette-title">@Localizer["Palette_Title"]</h3>
     <div class="palette-buttons">
         @foreach (var direction in _directions)
         {
+            var captured = direction;
             <button type="button"
                     class="palette-button"
                     data-testid="@($"palette-{direction.ToSlug()}")"
                     disabled="@(!CanAdd)"
-                    @onclick="() => Session.Add(direction)">
+                    draggable="@(CanAdd ? "true" : "false")"
+                    @onclick="() => Session.Add(captured)"
+                    @ondragstart="() => Drag.Start(new DragSource.NewMove(captured))"
+                    @ondragend="Drag.End">
                 <DirectionIcon Direction="direction" />
                 <span>@Localizer[$"Block_{direction}"]</span>
             </button>
@@ -18,9 +28,19 @@
                 class="palette-button palette-repeat"
                 data-testid="palette-repeat"
                 disabled="@(!CanAddRepeat)"
-                @onclick="Session.AddRepeat">
+                draggable="@(CanAddRepeat ? "true" : "false")"
+                @onclick="Session.AddRepeat"
+                @ondragstart="() => Drag.Start(new DragSource.NewRepeat())"
+                @ondragend="Drag.End">
             <ProgramIcon Kind="ProgramIconKind.Repeat" />
             <span>@Localizer["Palette_Repeat"]</span>
         </button>
     </div>
+    @if (Drag.IsDraggingExisting)
+    {
+        <div class="palette-delete" data-testid="palette-delete" data-valid="@(Drag.IsValidDelete ? "true" : "false")">
+            <ProgramIcon Kind="ProgramIconKind.Remove" />
+            <span>@Localizer["Palette_DropDelete"]</span>
+        </div>
+    }
 </section>

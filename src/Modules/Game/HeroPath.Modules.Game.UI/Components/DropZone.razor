@@ -1,0 +1,35 @@
+@inherits DragAwareComponentBase
+
+@{
+    var dragging = Drag.IsDragging;
+    var valid = dragging && Drag.IsValidTarget(Slot);
+    if (!dragging)
+    {
+        _hover = false;
+    }
+}
+<li class="drop-zone"
+    aria-hidden="true"
+    data-testid="drop-zone"
+    data-slot="@SlotText"
+    data-end="@(IsEnd ? "true" : null)"
+    data-valid="@(dragging ? (valid ? "true" : "false") : null)"
+    data-hover="@(_hover ? "true" : null)"
+    @ondragenter="() => _hover = true"
+    @ondragenter:preventDefault="valid"
+    @ondragover:preventDefault="valid"
+    @ondragleave="() => _hover = false"
+    @ondrop="HandleDrop"
+    @ondrop:preventDefault>
+    @if (dragging)
+    {
+        <span class="zone-line"></span>
+        @if (_hover && !valid)
+        {
+            <svg class="zone-no" viewBox="0 0 24 24" focusable="false">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M5.6 5.6 L18.4 18.4" />
+            </svg>
+        }
+    }
+</li>

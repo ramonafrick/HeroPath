@@ -1,4 +1,4 @@
-@inherits SessionComponentBase
+@inherits DragAwareComponentBase
 
 @{
     var isMove = Command is MoveCommand;
@@ -28,7 +28,12 @@
     data-error="@(isError ? "true" : null)"
     data-hint="@(isHinted ? "true" : null)"
     data-active-repeat="@(isActiveRepeat ? "true" : null)">
-    <div class="block-row">
+    <div class="block-row"
+         draggable="@(editable ? "true" : "false")"
+         data-testid="@($"block-row-{number}")"
+         data-dragging="@(Drag.Source is DragSource.Existing { Id: var dragged } && dragged == Command.Id ? "true" : null)"
+         @ondragstart="StartDrag"
+         @ondragend="Drag.End">
         <button type="button"
                 class="block-select"
                 data-testid="@($"program-select-{number}")"
@@ -130,8 +135,10 @@
             @for (var index = 0; index < repeatCommand.Body.Count; index++)
             {
                 var child = repeatCommand.Body[index];
+                <DropZone @key="(child.Id, 1)" Slot="new BlockSlot(repeatCommand.Id, index)" ParentNumber="@number" />
                 <ProgramBlock @key="child.Id" Command="child" Path="[.. Path, index + 1]" />
             }
+            <DropZone Slot="new BlockSlot(repeatCommand.Id, repeatCommand.Body.Count)" ParentNumber="@number" IsEnd="true" />
         </ol>
     }
 </li>

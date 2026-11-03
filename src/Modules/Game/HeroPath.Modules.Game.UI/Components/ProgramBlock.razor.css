@@ -91,9 +91,8 @@
 .repeat-body {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
     min-height: 0.5rem;
-    margin: 0.5rem 0 0 0.75rem;
+    margin: 0 0 0 0.75rem;
     padding: 0 0 0 0.75rem;
     list-style: none;
     border-left: 6px solid var(--hp-outline);
@@ -174,4 +173,14 @@
 .program-block[data-active-repeat="true"] > .repeat-body {
     border-left-style: dotted;
     border-left-width: 10px;
+}
+
+.block-row[draggable="true"] {
+    cursor: grab;
+}
+
+.block-row[data-dragging="true"] {
+    opacity: 0.45;
+    outline: 3px dashed var(--hp-outline);
+    outline-offset: 2px;
 }

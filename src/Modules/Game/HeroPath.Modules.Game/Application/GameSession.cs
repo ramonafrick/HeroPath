@@ -136,6 +136,24 @@ public sealed class GameSession
     /// <summary>Inserts an empty repeat block (count <see cref="DefaultRepeatCount"/>) at the <see cref="InsertTarget"/>. Does nothing when it does not fit or the program is locked.</summary>
     public void AddRepeat() => Apply(ProgramEditing.Insert(_program, NewRepeat(), InsertTarget));
 
+    /// <summary>Inserts a move block at <paramref name="slot"/> (drag &amp; drop). Does nothing when it does not fit, the slot is invalid or the program is locked.</summary>
+    public void Add(Direction direction, BlockSlot slot) => Apply(ProgramEditing.Insert(_program, new MoveCommand(direction), slot));
+
+    /// <summary>Inserts an empty repeat block at <paramref name="slot"/> (drag &amp; drop). Does nothing when it does not fit (depth, 200 blocks), the slot is invalid or the program is locked.</summary>
+    public void AddRepeat(BlockSlot slot) => Apply(ProgramEditing.Insert(_program, NewRepeat(), slot));
+
+    /// <summary>Whether a move block can be inserted at <paramref name="slot"/> and the program is editable.</summary>
+    public bool CanAddAt(BlockSlot slot) => IsEditable && ProgramEditing.CanInsert(_program, new MoveCommand(Direction.Up), slot);
+
+    /// <summary>Whether an empty repeat block can be inserted at <paramref name="slot"/> and the program is editable.</summary>
+    public bool CanAddRepeatAt(BlockSlot slot) => IsEditable && ProgramEditing.CanInsert(_program, NewRepeat(), slot);
+
+    /// <summary>Whether the block can move to <paramref name="slot"/> (a real change) and the program is editable.</summary>
+    public bool CanMove(Guid id, BlockSlot slot) => IsEditable && ProgramEditing.CanMove(_program, id, slot);
+
+    /// <summary>Whether the block exists and the program is editable, i.e. it may be removed.</summary>
+    public bool CanRemove(Guid id) => IsEditable && _program.Find(id) is not null;
+
     /// <summary>Removes the block with <paramref name="id"/> (a repeat with its body). Does nothing when it is unknown or the program is locked.</summary>
     public void Remove(Guid id) => Apply(ProgramEditing.Remove(_program, id));
 

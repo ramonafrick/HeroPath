@@ -24,7 +24,7 @@ src/
       HeroPath.Modules.Game/         pure C#: Domain/ (Direction, Person, MoveResult, commands, ProgramDefinition, BlockSlot, ProgramEditing,
                                                Interpreter, ExecutionStep, ProgramLimits)
                                                Application/ (GameSession, ExecutionRunner)
-      HeroPath.Modules.Game.UI/      RCL: PlayPage, StartDialog, BlockPalette, ProgramEditor, ProgramBlock, ControlBar, GameModuleExtensions, Resources/
+      HeroPath.Modules.Game.UI/      RCL: PlayPage, StartDialog, BlockPalette, ProgramEditor, ProgramBlock, DropZone, ControlBar, GameModuleExtensions, Services/ (ProgramDragState), Resources/
   Hosts/
     HeroPath.Web/                    Blazor WASM host: Program.cs, App.razor (router), index.html, web platform services
     HeroPath.Maui/                   (later, do not create)
@@ -64,7 +64,8 @@ When you add a project-level rule, add it to `DependencyRuleTests.Rules`.
 | JSON, embedded resources, storage-backed implementation | `Modules.<X>/Infrastructure` |
 | Razor page/component of one feature | `Modules.<X>.UI/Pages` or `/Components` |
 | Texts of one module | `Modules.<X>.UI/Resources/<X>Resources.resx` (+ `.en.resx`) |
-| Component base classes (language / session subscription) | `Shared.UI/Components` (`LocalizedComponentBase`), `Modules.Game.UI/Components` (`SessionComponentBase`) |
+| Component base classes (language / session / drag subscription) | `Shared.UI/Components` (`LocalizedComponentBase`), `Modules.Game.UI/Components` (`SessionComponentBase`, `DragAwareComponentBase`) |
+| UI-only state shared by components (drag state) | `Modules.<X>.UI/Services` (`ProgramDragState`) |
 | Layout, theme, SVG graphics, app title, LanguageSwitcher | `Shared.UI` |
 | Platform contract (storage, files) | `Shared/Application/Contracts` |
 | Platform implementation (localStorage via JS interop) | `Hosts/HeroPath.Web/Services` |

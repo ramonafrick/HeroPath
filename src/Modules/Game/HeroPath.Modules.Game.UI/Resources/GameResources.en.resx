@@ -212,4 +212,9 @@
     <value>There's no room for another repeat block in here.</value>
     <comment>Hint when no repeat block fits into the insert target (nesting too deep).</comment>
   </data>
+
+  <data name="Palette_DropDelete" xml:space="preserve">
+    <value>Drop here to delete</value>
+    <comment>Shown over the palette while a program block is dragged: dropping it there removes it.</comment>
+  </data>
 </root>

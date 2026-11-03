@@ -5,7 +5,7 @@ using Microsoft.Extensions.Localization;
 
 namespace HeroPath.Modules.Game.UI.Components;
 
-public partial class BlockPalette : SessionComponentBase
+public partial class BlockPalette : DragAwareComponentBase
 {
     private static readonly Direction[] _directions = [Direction.Up, Direction.Down, Direction.Left, Direction.Right];
 

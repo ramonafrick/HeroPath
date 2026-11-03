@@ -56,7 +56,7 @@ public class ProgramFlowTests(AppFixture app)
 
 - `Expect(...)` comes from `using static Microsoft.Playwright.Assertions;`. It retries automatically, so never use `Task.Delay`.
 - **Selectors**: `data-testid` on interactive elements and state carriers (`data-state`, `data-step`), defined in the component markup. No CSS classes or localized texts as selectors (texts change with the language).
-- Use the click alternative in E2E tests. Test real HTML5 drag & drop with `page.DragAndDropAsync(source, target)` in **one** dedicated test only (it's flaky by nature).
+- Use the click alternative in E2E tests. Real HTML5 drag & drop only in `DragDropTests`, with the manual mouse sequence (hover, `Mouse.DownAsync`, move, measure the target after the drag started, several moves over it, screenshot, `Mouse.UpAsync`): `dragover` needs at least two moves and the drop zones grow after `dragstart`, so `DragAndDropAsync` is not used.
 - Never assert on animation timing. Reduced motion is on, and set the tempo to fast before Play with `page.GetByTestId("control-tempo").FillAsync("2")` (range 0 slow, 1 medium, 2 fast); wait for `status` `data-state` with `Expect` instead.
 - Each test gets a fresh context (empty `localStorage`). For a stored state, set it via `page.EvaluateAsync("localStorage.setItem(...)")` before `GotoAsync`.
 

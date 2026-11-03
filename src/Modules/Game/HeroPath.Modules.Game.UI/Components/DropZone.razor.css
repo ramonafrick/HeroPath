@@ -1,0 +1,62 @@
+.drop-zone {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    height: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.drop-zone[data-end="true"] {
+    height: 0;
+}
+
+.drop-zone[data-valid] {
+    height: 1.5rem;
+}
+
+.drop-zone > * {
+    pointer-events: none;
+}
+
+.zone-line {
+    display: none;
+    width: 100%;
+    height: 0;
+    border-top: 3px dashed var(--hp-outline);
+    opacity: 0.55;
+}
+
+.drop-zone[data-valid="true"] .zone-line {
+    display: block;
+}
+
+.drop-zone[data-valid="true"][data-hover="true"] .zone-line {
+    height: 0.5rem;
+    border: 0;
+    border-radius: 999px;
+    background: var(--hp-outline);
+    opacity: 1;
+}
+
+.zone-no {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 1.5rem;
+    height: 1.5rem;
+    transform: translate(-50%, -50%);
+    fill: var(--hp-surface);
+    stroke: var(--hp-flag);
+    stroke-width: 3;
+    stroke-linecap: round;
+    paint-order: stroke;
+}
+
+.drop-zone[data-valid="false"][data-hover="true"] {
+    background: repeating-linear-gradient(135deg, transparent 0 0.375rem, var(--hp-cell) 0.375rem 0.75rem);
+    border-radius: 0.5rem;
+}
