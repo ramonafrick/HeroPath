@@ -1,113 +1,98 @@
-# Plan: M2 – Blazor-Grundgerüst, Spielfeld, Figur, Play, Debug, Reset
+# Plan: M3 – Drag & Drop, Wiederhole-Block, Block-Hervorhebung, Fehlermeldungen
 
-**Date**: 2026-11-03 · Grundlage: `docs/requirements.md` (freigegeben) · Vorgänger: `plan-M1.md`
+**Date**: 2026-11-03 · Grundlage: `docs/requirements.md` (freigegeben) · Vorgänger: `plan-M2.md` · Freigegeben mit D1–D5 wie empfohlen, D6 Variante A, Reihenfolge S1 → S4
 
 ## Modul-Überblick
 
-| Projekt | Neu in M2 |
+| Projekt | Neu bzw. geändert in M3 |
 |---|---|
-| `HeroPath.Shared` | `Application/Contracts/StorageKeys` (Schlüssel `Language`) |
-| `HeroPath.Shared.UI` | `wwwroot/css/theme.css` (Palette, Basis-Styles), `Graphics/` (HeroMax, StartField, GoalCastle, ObstacleTree, ObstacleRock, ObstaclePond), `Layout/MainLayout` mit Kopfzeile, `Localization/LanguageService`, `Components/LanguageSwitcher`, `Resources/SharedResources` |
-| `HeroPath.Modules.Levels` | `Infrastructure/Levels/00-demo.json`, `Infrastructure/StandardLevels` (lädt eingebettete Levels, siehe D2) |
-| `HeroPath.Modules.Levels.UI` | `Components/GameBoard`, `Resources/LevelsResources`, Registrierung in `AddLevelsModule()` |
-| `HeroPath.Modules.Game` | `Application/GameSession`, `Application/ExecutionRunner`, `Application/RunStatus`, `Application/Tempo` |
-| `HeroPath.Modules.Game.UI` | `Pages/PlayPage` (Layout), `Components/BlockPalette`, `Components/ProgramEditor`, `Components/ControlBar` (Play/Debug/Reset, Tempo, Status), `Resources/GameResources`, Registrierung in `AddGameModule()` |
-| `Hosts/HeroPath.Web` | `Services/LocalStorageAppStorage`, Registrierung, Sprache beim Start setzen, `index.html` verlinkt `theme.css` |
-| Tests | `HeroPath.Shared.Tests` (neu, siehe D3), `HeroPath.Modules.Levels.Tests`, `HeroPath.Modules.Game.Tests`, `HeroPath.E2E` |
+| `HeroPath.Modules.Game` (Domain) | `ProgramEditing` (Einfügen, Verschieben, Entfernen, Anzahl ändern, Ziel prüfen, ▲▼), `BlockSlot` (Einfügestelle), `ProgramDefinition` erhält `PathOf(id)` (Nummer 3.2.1), `FindEmptyRepeat()`, `CountAll`; `ExecutionStep` erhält `Repeats` (Runden), `RepeatProgress` |
+| `HeroPath.Modules.Game` (Application) | `GameSession`: Programm als `ProgramDefinition` statt `List<MoveCommand>`, Auswahl und Einfügeziel, Hinweis ohne Lauf; `ExecutionRunner`: Vorprüfung leerer Wiederhole-Block; `GameMessage` (Art, Code, Werte) |
+| `HeroPath.Modules.Game.UI` | `BlockPalette` (Wiederhole, Ziehen, Sperren), `ProgramEditor` + neues `ProgramBlock` (rekursiv, einspaltig, Auswahl, ▲▼🗑, −/+, Drop-Zonen), neues `MessageBox`, `ProgramDragState` (Services), `GameResources` (DE/EN) |
+| `HeroPath.Shared.UI` | ggf. Symbol für Wiederhole und Meldungsarten (eigene SVG), `theme.css` (Farben für Meldungen) |
+| `HeroPath.Modules.Levels(.UI)`, Host | keine Änderung erwartet (Ausnahme D6, Variante B) |
+| Tests | `HeroPath.Modules.Game.Tests` (xUnit + bUnit), `HeroPath.E2E` (4 neue Flows), bestehende Tests an Baum-API anpassen |
 
-Kein neues Modul. Abhängigkeiten bleiben `Shared ← Levels ← Game` (gleich für `.UI`). `GameBoard` (Levels.UI) kennt keine Game-Typen: Es bekommt `Grid`, Heldposition, hervorgehobenes Feld und Animationsdauer als Parameter. Den Helden selbst rendert es über einen `RenderFragment`-Parameter (`HeroContent`), den `PlayPage` mit `HeroMax` aus Shared.UI befüllt.
+Kein neues Modul. Abhängigkeiten bleiben `Shared ← Levels ← Game`. Keine neuen NuGet-Pakete.
+
+## Entscheidungen (zur Freigabe)
+
+### D1 – Wo liegt die Baum-Bearbeitung?
+- **A (Empfehlung):** Reine Funktionen in `Game/Domain/ProgramEditing` auf der unveränderlichen `ProgramDefinition`: Jede Operation baut den betroffenen Pfad neu (`RepeatCommand` mit gleicher `Id`, Konstruktor erlaubt explizite Id) und liefert eine neue `ProgramDefinition` bzw. `null`, wenn ungültig. `GameSession` hält nur `ProgramDefinition Program`. + Domain mit xUnit testbar, Interpreter bekommt dieselbe Instanz, Grenzen prüft weiterhin der Konstruktor (Schutznetz), Ids stabil für `@key`. − Neubau pro Bearbeitung (bei ≤ 200 Bausteinen unerheblich).
+- **B:** Veränderbarer Entwurfs-Baum in `Application` (eigene Knotenklassen), `ToProgram()` konvertiert. − Zweites Modell derselben Sache, Grenzen doppelt.
+- Quelle: `RepeatCommand.cs` (Id im Konstruktor, Kopie des Rumpfs), `Architektur C4.md` §6 Nr. 3a (geschlossene Hierarchie), `game-rules` (Fehler sind Werte, Exceptions nur Programmierfehler).
+
+### D2 – Rundenzähler
+- **A (Empfehlung):** `ExecutionStep` erhält `IReadOnlyList<RepeatProgress> Repeats` (aussen → innen; `RepeatProgress(Guid RepeatId, int Round, int Count)`). Der `Interpreter` kennt die Runde schon im `Frame` (`Remaining`), es fehlt nur die Repeat-Id. + Play und Debug identisch, da gleiche Quelle. − `record`-Gleichheit vergleicht die Liste per Referenz; heute vergleicht kein Test ganze `ExecutionStep`s (geprüft: `grep "Assert.Equal(new ExecutionStep"` ohne Treffer). Gleichheit wird im Doc-Kommentar vermerkt.
+- **B:** UI rechnet Runden aus der Schrittfolge nach. − Spiellogik in der UI, bei Debug-Sprüngen fehleranfällig.
+
+### D3 – Leerer Wiederhole-Block startet keinen Lauf
+- **A (Empfehlung):** `ProgramDefinition.FindEmptyRepeat()` (bisher privat im `Interpreter`) wird öffentlich. `ExecutionRunner.PlayAsync`/`StepOnce` prüfen vorher; bei Treffer setzt die Session einen Hinweis (`GameMessage` EmptyRepeat + markierte Id), Status bleibt `Ready`, kein Interpreter wird erstellt. Die nächste Bearbeitung löscht den Hinweis. Der Interpreter behält `EmptyRepeat` als Schutznetz. `CanStart` bleibt unverändert (Knöpfe aktiv, damit der Klick den Hinweis auslöst).
+- **B:** `CanStart` liefert `false` bei leerem Wiederhole. − Kind sieht nur gesperrte Knöpfe, ohne Grund (widerspricht FR21).
+
+### D4 – Wer bestimmt die Meldung?
+- **A (Empfehlung):** `Application/GameMessage` (`Kind`: Error/Success/Hint; `Code`: z. B. `Obstacle`, `OutOfBounds`, `EmptyRepeat`, `ProgramFull`, `NestingTooDeep`; Werte: Baustein-Pfad, Hinderniss-Art, Anzahl). `GameSession.Message` wird beim Anwenden eines Schritts bzw. Hinweises berechnet. Die UI-Komponente `MessageBox` übersetzt nur `Code` → resx-Schlüssel und setzt Pfad (`string.Join(".", path)`) und Heldenname ein. + xUnit-testbar, Sprachwechsel übersetzt sofort (FR23). − Ein Typ mehr.
+- **B:** `MessageBox` leitet alles aus `Status` und `CurrentStep` ab. − Ableitungslogik (z. B. Pfad suchen, Hinweise) in der UI.
+
+### D5 – Auswahl und Drag-Zustand
+- **Auswahl (Empfehlung):** In `GameSession` (`SelectedId`, `Select(id)`, abgeleitet `InsertTarget` als `BlockSlot`), weil `BlockPalette` und `ProgramEditor` sie teilen und FR12/FR13 Regeln sind. Beginn eines Laufs hebt sie auf.
+- **Drag-Zustand (Empfehlung):** Scoped Dienst `Game.UI/Services/ProgramDragState` (gezogener Palette-Baustein oder Programm-Id). Reiner UI-Zustand, die Gültigkeit eines Ziels fragt er bei `ProgramEditing.CanInsert/CanMove` ab. Laut `blazor-ui`-Skill: «Keep the currently dragged block in the component state (C#), not in `DataTransfer`». Ein Dienst statt Komponentenzustand, weil Palette (Quelle und Lösch-Ziel) und Editor (Quelle und Ziel) getrennte Komponenten sind.
+- Alternative: Drag-Zustand ebenfalls in `GameSession`. − Vermischt UI-Interaktion mit Spielzustand.
+
+### D6 – Native Drag & Drop in Blazor
+- Blazor: `@ondragover:preventDefault="ausdruck"` ist erlaubt, damit nur gültige Zielzonen den Drop annehmen ([Microsoft Learn: Blazor event handling, «Prevent default actions»](https://learn.microsoft.com/aspnet/core/blazor/components/event-handling?view=aspnetcore-10.0)). Weil der gezogene Baustein ab `dragstart` im C#-Zustand liegt und neu gerendert wird, ist der Wert pro Zone beim `dragover` bekannt. `DataTransfer` ist in Blazor nur ein Abbild, `setData`/`dropEffect` sind ohne JS nicht setzbar; Microsoft empfiehlt für Drag & Drop JS-Interop (gleiche Quelle, Tabelle der Ereignisargumente).
+- Ungültige Ziele zeigt die UI selbst (CSS-Klasse mit «Nein»-Symbol während `dragenter`/`dragover`), nicht über `dropEffect`. MDN: Ein Element ist nur Drop-Ziel, wenn `dragover` abgebrochen wird ([MDN: Drag operations](https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API/Drag_operations)).
+- **Firefox und `setData` (nicht verifiziert):** Mehrere Quellen berichten, dass Firefox einen Drag nur startet, wenn in `dragstart` Daten gesetzt werden. MDN bestätigt das auf der geprüften Seite nicht. Der Firmenbrowser der Laptops ist unbekannt (`Projekt_Kontext.md` §9: «Test mit Firmenbrowser vorab»).
+  - **A (Empfehlung, freigegeben):** Nur Blazor-Ereignisse, keine eigene JS-Datei. E2E läuft in Chromium (Edge/Chrome). Firefox wird beim Probelauf (M6) manuell geprüft; die Klick-Alternative funktioniert dort in jedem Fall. + Kein JS, MAUI-neutral.
+  - **B:** Eigenes kleines JS-Modul in `Game.UI/wwwroot` (`setData('text/plain','')` per Listener), geladen über `IJSRuntime`. + Firefox sicher. − Erster eigener JS-Code im Modul, braucht Tests und Lebenszyklus.
+- Playwright: `DragToAsync` bzw. `Hover → Mouse.Down → Hover (2×) → Mouse.Up`, weil `dragover` mindestens zwei Mausbewegungen braucht ([Playwright .NET: Input, Drag and drop](https://playwright.dev/dotnet/docs/input)).
+
+### D7 – Layout der Programmliste
+Einspaltig, Zeilenhöhe 2.75 rem (44 px), Einrückung pro Ebene, Wiederhole-Rumpf mit linker Leiste. ▲▼🗑 nur am ausgewählten Baustein (freigegeben, FR11). Die Liste scrollt innerhalb der Seitenleiste. Ziel: ca. 8 Zeilen auf 1366×768 (NFR4). Prüfung über Screenshot mit 10 Bausteinen.
 
 ## Slices
 
 | # | Name | Ziel | Skills | Abhängig von |
 |---|---|---|---|---|
-| S1 | Grundgerüst + Sprache | Kopfzeile mit App-Titel und DE/EN-Umschalter, Sprache gespeichert, Theme | architecture, dotnet10, blazor-ui, localization, e2e-playwright | – |
-| S2 | Spielfeld + Figur | Demo-Level mit Start, Burg, Hindernissen und Max auf `/` sichtbar | architecture, dotnet10, game-rules, level-design, svg-assets, blazor-ui, localization, e2e-playwright | S1 (Theme, Texte) |
-| S3 | Programm per Klick | Palette und Programm-Editor: anhängen, entfernen, alles löschen, Limit 200 | architecture, dotnet10, game-rules, blazor-ui, localization, e2e-playwright | S2 |
-| S4 | Play, Debug, Reset | Ausführung mit Tempo, Status, Hervorhebung, Sperren, Animation | architecture, dotnet10, game-rules, blazor-ui, localization, e2e-playwright | S3 |
+| S1 | Wiederhole per Klick | Programm als Baum: Wiederhole einfügen, −/+, Auswahl, Einfügeziel, ▲▼🗑, Nummern 3.2.1, einspaltige Liste | architecture, dotnet10, game-rules, blazor-ui, localization, e2e-playwright | – |
+| S2 | Lauf mit Wiederhole | Rundenzähler im Interpreter, Hervorhebung des Wiederhole-Blocks mit «Runde X von N» | dotnet10, game-rules, blazor-ui, localization, e2e-playwright | S1 |
+| S3 | Meldungen | `GameMessage`, `MessageBox`, alle Texte DE/EN, Vorprüfung leerer Wiederhole, Hinweise voll/leer/Verschachtelung | dotnet10, game-rules, blazor-ui, localization, svg-assets, e2e-playwright | S1, S2 (Pfad, Runden) |
+| S4 | Drag & Drop | Ziehen aus Palette, Umsortieren, Herausziehen löscht, ungültige Ziele | architecture, dotnet10, blazor-ui, e2e-playwright | S1 (Editier-API), S3 (Hinweis Verschachtelung) |
 
-### S1 – Grundgerüst + Sprache
-- **Dateien:** `Shared/Application/Contracts/StorageKeys.cs`; `Shared.UI/wwwroot/css/theme.css`, `Layout/MainLayout.razor(.css)`, `Localization/LanguageService.cs`, `Components/LanguageSwitcher.razor(.cs/.css)`, `Resources/SharedResources.cs/.resx/.en.resx` (`App_Title`, `Language_German`, `Language_English`, `Language_Switch_Label`); `SharedUIExtensions` registriert `LanguageService`; `Hosts/HeroPath.Web/Services/LocalStorageAppStorage.cs` (JS-Interop `localStorage.getItem/setItem/removeItem`, fängt `JSException` ab), `Program.cs` (`AddScoped<IAppStorage, …>`, nach `Build()` `ApplyStoredCultureAsync()`), `index.html` (Link auf `_content/HeroPath.Shared.UI/css/theme.css`).
-- **Verhalten:** Erlaubte Kulturen `de-CH`, `en`. Unbekannter oder fehlender Wert → `de-CH`. Umschalten setzt `CultureInfo.Default*`/`Current*`, speichert und löst `Changed` aus. Komponenten mit Texten abonnieren `Changed`. `<PageTitle>` zeigt den lokalisierten App-Titel.
-- **Tests:** xUnit `LanguageServiceTests` (Standard, gültiger gespeicherter Wert, Müll → `de-CH`, Speichern beim Wechsel, Speicher wirft → Spiel läuft weiter), bUnit `LanguageSwitcherTests` (aktive Sprache markiert, Klick wechselt) mit `InMemoryAppStorage`.
-- **E2E:** `LanguageTests.Switch_ChangesTexts_AndPersists`: `/` öffnen, Titel «HeldenWeg», auf EN wechseln, «Hero's Path», neu laden, weiterhin EN. Screenshots `play-page.start.desktop.de`, `play-page.start.desktop.en`.
-- **Akzeptanz:** FR18, FR19 (ohne Programmteil, der in S4 ergänzt wird), localStorage blockiert → keine Konsolenfehler.
+Reihenfolge folgt dem Risiko-Hinweis in `Projekt_Kontext.md` §9 und dem `blazor-ui`-Skill: erst Baum mit Klick, dann Drag & Drop.
 
-### S2 – Spielfeld + Figur
-- **Dateien:** `Levels/Infrastructure/Levels/00-demo.json`, `Levels/Infrastructure/StandardLevels.cs` (D2); `Shared.UI/Graphics/*.razor` (6 SVGs, `viewBox 0 0 100 100`, `<title>` über `Graphic_<Name>` in `SharedResources`); `Levels.UI/Components/GameBoard.razor(.cs/.css)`, `Levels.UI/Resources/LevelsResources` (`Board_Label`, `Level_demo`); `Game.UI/Pages/PlayPage.razor` lädt `demo`, zeigt `GameBoard` mit Max auf dem Start; `Levels.UI`-Assembly bleibt in `App.razor`.
-- **Board:** CSS Grid `repeat(var(--cols), 1fr)`, `aspect-ratio: 1` pro Zelle, Zellen mit `data-testid="cell-{x}-{y}"` und `data-kind` (`start`, `goal`, `tree`, `rock`, `pond`, `empty`). Held als eigene Ebene: Breite = 1 Zelle, `transform: translate(calc(var(--x) * 100%), calc(var(--y) * 100%))`, `transition` mit `var(--hp-step-duration)`, `data-testid="hero"` mit `data-x`/`data-y`. Markiertes Feld: Parameter `MarkedCell`, Klasse + `data-marked="true"`.
-- **Tests:** xUnit `StandardLevelsTests` (jedes eingebettete Level lädt, ist gültig, per BFS lösbar, Id passt zum Dateinamen), bUnit `GameBoardTests` (Zellenzahl = Breite×Höhe, Start/Ziel/Hindernisse an der richtigen Stelle, Held-Koordinaten, markiertes Feld).
-- **E2E:** `BoardTests.PlayPage_ShowsDemoLevel`: Board sichtbar, Held auf `cell-1-6`. Screenshots `board.start.{desktop,laptop}.{de,en}`.
-- **Akzeptanz:** FR1 bis FR4, NFR5 (Graustufen-Screenshot).
+### S1 – Wiederhole per Klick
+- **Dateien:** `Game/Domain/ProgramEditing.cs`, `BlockSlot.cs`, `ProgramDefinition.cs` (`PathOf`, `CountAll`, `DepthAt`), `CommandNesting.cs`; `Game/Application/GameSession.cs` (Programm als `ProgramDefinition`, `Add(BlockKind)` mit Einfügeziel, `AddRepeat`, `Remove`, `MoveUp/MoveDown`, `SetRepeatCount`, `Select`, `SelectedId`, `InsertTarget`, `CanAddRepeat`), `ExecutionRunner.cs` (leere Programm-Prüfung über Baum); `Game.UI/Components/BlockPalette.*` (Wiederhole-Knopf `palette-repeat`), `ProgramEditor.*`, neu `ProgramBlock.razor(.cs/.css)` (rekursiv), `Resources/GameResources(.en).resx`.
+- **Test-Ids:** `program-block` mit `data-path` (`3.2`), `data-kind` (`move|repeat`), `data-selected`; `program-select-{path}` (Klickfläche), `program-up`, `program-down`, `program-remove` (nur am ausgewählten), `repeat-count-{path}`, `repeat-minus-{path}`, `repeat-plus-{path}`, `repeat-body-{path}`, `insert-target` (Zeile «Neue Bausteine kommen in …»). Bestehende Ids `program-remove-{index}` entfallen (E2E/bUnit anpassen).
+- **Tests:** xUnit `ProgramEditingTests` (Einfügen oben/Rumpf/verschachtelt, Tiefe 3 abgelehnt, 200 voll, Verschieben ▲▼ inkl. Rumpf verlassen und gesperrt, Wiederhole nicht in eigenen Rumpf, Entfernen mit Rumpf, Anzahl 1/20 Grenzen, Ids bleiben), `ProgramDefinitionTests` (`PathOf`), `GameSessionTests` (Auswahl, Einfügeziel, Sperre während Lauf, `Changed` nur bei echter Änderung); bUnit `ProgramEditorTests`, `BlockPaletteTests`.
+- **E2E:** `RepeatEditingTests.ClickOnly_BuildsNestedProgram` (Flow 2). Screenshots `program.repeat.{desktop,laptop}.{de,en}`, `program.ten-blocks.laptop.de` (NFR4).
+- **Akzeptanz:** FR1–FR5, FR11–FR15 (ohne Hinweistexte aus S3), FR4 Nummern.
 
-### S3 – Programm per Klick
-- **Dateien:** `Game/Application/GameSession.cs` (Level/`Grid`, Liste der `MoveCommand`, `Add(Direction)`, `Remove(Guid)`, `Clear()`, `CanAdd`, `IsEditable`, `event Action? Changed`, `ToProgram()` → `ProgramDefinition`); `Game.UI/Components/BlockPalette.razor(.cs/.css)` (`data-testid="palette-up|down|left|right"`), `ProgramEditor.razor(.cs/.css)` (`data-testid="program"`, Bausteine `program-block` mit `data-index`, `data-command-id`, Entfernen `program-remove-{index}`, `program-clear`); `GameResources` (`Block_Up/Down/Left/Right`, `Program_Title`, `Program_Empty`, `Program_Remove`, `Program_Clear`, `Palette_Title`); `AddGameModule()` registriert `GameSession` scoped.
-- **Tests:** xUnit `GameSessionTests` (Anhängen in Reihenfolge, Entfernen per Id, Leeren, Limit 200 → `CanAdd = false` und kein Throw, `Changed` feuert), bUnit `BlockPaletteTests`, `ProgramEditorTests` (Liste, Entfernen, Leeren, leeres Programm zeigt Hinweis, deaktiviert wenn nicht editierbar).
-- **E2E:** `ProgramEditingTests.Click_AddsAndRemovesBlocks`. Screenshots `program.editing.{desktop,laptop}.{de,en}`.
-- **Akzeptanz:** FR5 bis FR7.
+### S2 – Lauf mit Wiederhole
+- **Dateien:** `Game/Domain/ExecutionStep.cs`, neu `RepeatProgress.cs`, `Interpreter.cs` (Frame mit Repeat-Id, `Repeats` pro Schritt); `GameSession` (Auswahl bei Laufbeginn aufheben); `ProgramBlock` (`data-active-repeat`, «Runde X von N»), `GameSession.MarkedCellOf` (Richtung im Baum suchen), Resx `Repeat_Round`.
+- **Tests:** xUnit `InterpreterRepeatProgressTests` (einfach, verschachtelt, Fehler im Rumpf, Schrittlimit, Play = Debug), bUnit Hervorhebung.
+- **E2E:** `RepeatRunTests.Debug_ShowsRound_ThenPlaySucceeds` (Flow 3). Screenshots `run.repeat-round.{desktop,laptop}.{de,en}`.
+- **Akzeptanz:** FR16–FR18.
 
-### S4 – Play, Debug, Reset
-- **Dateien:** `Game/Application/RunStatus.cs` (`Ready`, `Running`, `Paused`, `Failed`, `Succeeded`), `Tempo.cs` (`Slow` 900 ms, `Medium` 500 ms, `Fast` 200 ms), `ExecutionRunner.cs` (besitzt `Interpreter` und `CancellationTokenSource`; `PlayAsync()`, `StepOnce()`, `Reset()`, `Tempo`; wendet jeden `ExecutionStep` auf `GameSession` an); `GameSession` ergänzt `Status`, `CurrentStep`, `HeroPosition`; `Game.UI/Components/ControlBar.razor(.cs/.css)` (`control-play`, `control-debug`, `control-reset`, `control-tempo` als `<input type="range" min=0 max=2>`, `status` mit `data-state` und `data-error`); `ProgramEditor` hebt `CurrentStep.CommandId` hervor (`data-current="true"`, bei Fehler `data-error="true"`); `PlayPage` übergibt Heldposition, markiertes Feld und Schrittdauer an `GameBoard`.
-- **Regeln:** Gleicher `Interpreter` für Play und Debug. Play nach Debug macht weiter. Play/Debug gesperrt bei leerem Programm, während Play (beides) und nach Endzustand. Editor gesperrt ab dem ersten Schritt bis Reset. Reset bricht das Token ab, erstellt einen neuen `Interpreter`, Programm bleibt. Nach Abbruch wird kein Schritt mehr angewendet. Markiertes Feld bei `Obstacle` = Hindernisfeld (Position + Richtung), bei `OutOfBounds` = Feld des Helden.
-- **Tests:** xUnit `ExecutionRunnerTests` mit `FakeTimeProvider` (D1): Play bis `Succeeded`, Wartezeit je Tempo, Debug genau ein Schritt → `Paused`, Debug dann Play setzt fort, Reset mitten in Play (kein weiterer Schritt), Fehlerfälle `Obstacle`/`OutOfBounds`/`GoalNotReached`, doppelter Play-Aufruf startet keinen zweiten Lauf. bUnit `ControlBarTests` (Sperrlogik je Status, `data-state`/`data-error`, Tempo-Wechsel).
-- **E2E:** `RunFlowTests`:
-  1. `Play_ReachesCastle` → Screenshots `run.success.{desktop,laptop}.{de,en}`
-  2. `Debug_StepsAndContinuesWithPlay` → `run.debug-paused.*`
-  3. `Play_HitsObstacle` / `Play_LeavesBoard` → `run.error-obstacle.*`, `run.error-edge.*`
-  4. `Reset_RestoresStart_AndUnlocksEditor` → `run.reset.*`
-  5. `LanguageSwitch_DuringPause_KeepsProgramAndHero` → `run.language-paused.desktop.{de,en}`
-- Tempo in E2E auf «schnell» setzen. Keine Zeitassertionen.
-- **Akzeptanz:** FR8 bis FR17, alle Edge Cases aus `requirements.md`.
+### S3 – Meldungen
+- **Dateien:** `Game/Application/GameMessage.cs` (+ `GameMessageKind`, `GameMessageCode`), `GameSession` (`Message`, Hinweis setzen/löschen, `HintedId`), `ExecutionRunner` (Vorprüfung D3); `Game.UI/Components/MessageBox.razor(.cs/.css)` unter dem Status, Resx (alle Texte FR20–FR22, Einzahl/Mehrzahl über eigene Schlüssel); Leer-Text ersetzen; ggf. Symbole in `Shared.UI/Graphics`.
+- **Test-Ids:** `message` mit `data-kind` (`error|success|hint`) und `data-code`.
+- **Tests:** xUnit `GameMessageTests` (jede Fehlerart, Erfolg, Hinweise, Reset löscht, Bearbeitung löscht Hinweis), `ExecutionRunnerTests` (leerer Wiederhole: Status `Ready`, kein Schritt); bUnit `MessageBoxTests` (alle Codes DE/EN, Einzahl/Mehrzahl, Sprachwechsel).
+- **E2E:** `MessageTests` (Flow 4): Baum, Rand, Ziel nicht erreicht, leerer Wiederhole bleibt bearbeitbar, Verschachtelung abgelehnt. Screenshots `message.{obstacle,edge,goal-not-reached,empty-repeat,success}.{desktop,laptop}.{de,en}`.
+- **Akzeptanz:** FR19–FR23.
 
-## Entscheidungen (am 2026-11-03 freigegeben: D1 A, D2 A, D3 A, D4 wie skizziert)
-
-**D1 – Fake-Zeit für `ExecutionRunner`-Tests**
-- A) Paket `Microsoft.Extensions.TimeProvider.Testing` (Microsoft, MIT, aktuell 10.11.0 laut `dotnet package search`), nur im Game-Testprojekt. `FakeTimeProvider.Advance()` steuert `Task.Delay(…, timeProvider, ct)` korrekt. So steht es in `.claude/skills/dotnet10/SKILL.md:95`. Doku: https://learn.microsoft.com/dotnet/api/microsoft.extensions.time.testing.faketimeprovider
-- B) Eigener Fake im Testprojekt. Dann muss `CreateTimer` samt `ITimer` nachgebaut werden, das ist fehleranfällig. So steht es in `.claude/agents/implementer.md:48` («no mocking library», ein Fake-TimeProvider wird als Beispiel genannt).
-- **Empfehlung A.** Es ist ein offizielles Test-Hilfspaket und keine Mocking-Bibliothek. `implementer.md` wird im selben Commit präzisiert.
-
-**D2 – Laden des Demo-Levels**
-- A) `StandardLevels` (statisch, Infrastructure) liest alle eingebetteten `Infrastructure/Levels/*.json` über `LevelJson.Read`, sortiert nach Dateipräfix und bietet `All` und `Get(id)`. Die UI ruft es direkt bzw. über `AddLevelsModule()` auf. Der `level-design`-Skill erwartet `StandardLevels.All` bereits.
-- B) Wie die Ziel-Architektur: `ILevelSource` (Application/Contracts), `EmbeddedLevelSource` (Infrastructure) und `LevelRepository` (Application). Für ein einziges Level sind das drei Typen auf Vorrat.
-- **Empfehlung A.** `LevelRepository` und `ILevelSource` kommen in M5, wenn eigene Levels über `IAppStorage` dazukommen.
-
-**D3 – Tests für `Shared`/`Shared.UI` (LanguageService, LanguageSwitcher, Grafiken)**
-- A) Neues Projekt `tests/HeroPath.Shared.Tests` (xUnit + bUnit, referenziert `Shared` und `Shared.UI`), eingetragen in `HeroPath.slnx` und in der Ordnerstruktur `Architektur C4.md` §9.
-- B) Diese Tests in `HeroPath.Modules.Game.Tests` ablegen (es referiert `Shared.UI` transitiv). Kein neues Projekt, aber die Zuordnung ist unsauber.
-- **Empfehlung A.**
-
-**D4 – Demo-Level-Layout** (Skizze nach `level-design`: `S` Start, `G` Ziel, `T` Baum, `R` Stein, `P` Teich, Ursprung oben links)
-
-```
-   x 0123456789
-y0   ..........
-y1   ..........
-y2   ..........
-y3   ....R.G...
-y4   ..........
-y5   ......P...
-y6   .S.T......
-y7   ..........
-y8   ..........
-y9   ..........
-```
-- Start (1,6), Ziel (6,3). Lösung mit 8 Bausteinen: Hoch, Hoch, Rechts ×5, Hoch.
-- Fehlerwege für E2E: Rechts, Rechts → Baum (Feld 3,6). Links, Links → Rand. Hoch ×3, Rechts ×3 → Stein. Hoch → Programm zu Ende ohne Burg (`GoalNotReached`).
-- Erfüllt die Regeln «≤ 10 Bausteine» und «alle Hindernisarten früh sichtbar». Start und Ziel liegen nicht nebeneinander.
-- Datei `00-demo.json`, Id `demo`. In M4 kann es eine Vorlage werden oder entfallen.
+### S4 – Drag & Drop
+- **Dateien:** `Game.UI/Services/ProgramDragState.cs` (Registrierung in `AddGameModule`), `BlockPalette` (`draggable`, Lösch-Ziel), `ProgramEditor`/`ProgramBlock` (`draggable`, Drop-Zonen zwischen Bausteinen, am Ende, im Rumpf; `@ondragover:preventDefault="IsValid(zone)"`, Klassen für Einfüge-Linie und «Nein»), Domain: `ProgramEditing.CanMove/Move` (aus S1) wiederverwenden; Resx für `aria-label` der Zonen.
+- **Test-Ids:** `drop-zone` mit `data-slot` (`root:0`, `3.2:1`) und `data-valid`.
+- **Tests:** bUnit (Ereignisse `dragstart`/`drop` per `TriggerEvent`, ungültige Zone ändert nichts, gesperrt während Lauf); xUnit für `ProgramDragState`, falls Logik darin.
+- **E2E:** `DragDropTests` (Flow 1): Palette → Position, Umsortieren in/aus Wiederhole, Herausziehen löscht. Screenshots `drag.insert-line.desktop.{de,en}`, `drag.invalid.desktop.de`.
+- **Akzeptanz:** FR6–FR10.
 
 ## Befehle
 
 ```bash
 dotnet build HeroPath.slnx
 dotnet test --solution HeroPath.slnx
+HEROPATH_E2E=1 dotnet test --project tests/HeroPath.E2E
 dotnet format HeroPath.slnx --verify-no-changes
-$env:HEROPATH_E2E = '1'; dotnet test --project tests/HeroPath.E2E     # PowerShell
-dotnet watch --project src/Hosts/HeroPath.Web
 ```
-
-## Pro Slice nachzuführen
-
-- `game-rules`-Skill: neue öffentliche Typen aus Levels/Game (`StandardLevels`, `GameSession`, `ExecutionRunner`, `RunStatus`, `Tempo`), sonst schlägt `ClaudeWorkflowTests` fehl.
-- `blazor-ui`-Skill: `data-testid`-Konventionen (`cell-x-y`, `hero`, `program-block`, `control-*`, `status`).
-- Commit pro Slice nach grünem Build (Freigabe zum Committen liegt vor).
