@@ -12,7 +12,7 @@ Docs: `docs/Projektidee.md` (behaviour), `docs/Architektur C4.md` §4.2 (class m
 | Module | Domain | Application | Infrastructure |
 |---|---|---|---|
 | `HeroPath.Modules.Levels` | `Position`, `Grid`, `ObstacleKind`, `ItemKind`, `LevelObstacle`, `LevelItem`, `LevelDefinition`, `LevelLimits` | `LevelValidator`, `LevelValidationError`/`LevelValidationErrorKind`, `LevelReadResult`; later `ILevelSource`, `LevelRepository` | `LevelJson` (Read/Write), `LevelJsonContext`; `StandardLevels` (static: `All`, `Get(id)` over the embedded `Levels/*.json`, throws `KeyNotFoundException` for unknown ids and `InvalidOperationException` for an invalid embedded level); later storage-backed custom levels |
-| `HeroPath.Modules.Game` | `Direction` + `DirectionExtensions` (`Offset`, `MoveFrom`), `Person`, `MoveResult`/`MoveOutcome`, `Command` (abstract), `MoveCommand`, `RepeatCommand`, `ProgramDefinition`, `BlockSlot`, `ProgramEditing`, `Interpreter`, `ExecutionStep`/`ExecutionState`/`ExecutionError`, `ProgramLimits` | `GameSession`, `ExecutionRunner`, `RunStatus`, `Tempo` + `TempoExtensions` (`Duration`) | none so far |
+| `HeroPath.Modules.Game` | `Direction` + `DirectionExtensions` (`Offset`, `MoveFrom`), `Person`, `MoveResult`/`MoveOutcome`, `Command` (abstract), `MoveCommand`, `RepeatCommand`, `ProgramDefinition`, `BlockSlot`, `ProgramEditing`, `Interpreter`, `ExecutionStep`/`RepeatProgress`/`ExecutionState`/`ExecutionError`, `ProgramLimits` | `GameSession`, `ExecutionRunner`, `RunStatus`, `Tempo` + `TempoExtensions` (`Duration`) | none so far |
 
 Game depends on Levels (the interpreter runs on a `Grid`), never the other way round.
 
@@ -67,6 +67,7 @@ Items are collected when the person **enters** the cell. The start cell is walka
 | `CollectedItem` | `ItemKind?` collected in this step only |
 | `HitObstacle` | `ObstacleKind?` on `Obstacle` |
 | `MissingItems` | missing strawberries, only with `ItemsMissing` |
+| `Repeats` | `IReadOnlyList<RepeatProgress>` (`RepeatId`, 1-based `Round`, `Count`), outermost repeat first, for the repeats enclosing the move of `CommandId` (attempted move on `Obstacle`/`OutOfBounds`/`StepLimitExceeded`, otherwise the last executed move); empty outside repeats and for `EmptyProgram`/`EmptyRepeat`. Compared by reference in record equality (M3 S2) |
 
 The interpreter also exposes `State`, `Position` and `CollectedItems` (`IReadOnlySet<Position>`). The step that executes the **last** move already carries the terminal state, so Play needs no extra empty step.
 

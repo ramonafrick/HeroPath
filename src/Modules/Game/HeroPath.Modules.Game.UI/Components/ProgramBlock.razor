@@ -7,6 +7,8 @@
     var isCurrent = Session.CurrentStep?.CommandId == Command.Id;
     var isError = isCurrent && Session.Status == RunStatus.Failed;
     var editable = Session.IsEditable;
+    var progress = Session.CurrentStep?.Repeats.FirstOrDefault(r => r.RepeatId == Command.Id);
+    var isActiveRepeat = Command is RepeatCommand && progress is not null;
     var name = Command switch
     {
         MoveCommand move => Localizer[$"Block_{move.Direction}"].Value,
@@ -22,7 +24,8 @@
     data-command-id="@Command.Id"
     data-direction="@((Command as MoveCommand)?.Direction.ToSlug())"
     data-current="@(isCurrent ? "true" : null)"
-    data-error="@(isError ? "true" : null)">
+    data-error="@(isError ? "true" : null)"
+    data-active-repeat="@(isActiveRepeat ? "true" : null)">
     <div class="block-row">
         <button type="button"
                 class="block-select"
@@ -62,6 +65,10 @@
                 <ProgramIcon Kind="ProgramIconKind.Plus" />
             </button>
             <span class="repeat-after">@Localizer["Repeat_After"]</span>
+            @if (progress is { } round)
+            {
+                <span class="repeat-round" data-testid="@($"repeat-round-{number}")">@Localizer["Repeat_Round", round.Round, round.Count]</span>
+            }
         }
         @if (isCurrent)
         {

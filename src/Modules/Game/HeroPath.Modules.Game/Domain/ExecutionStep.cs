@@ -16,6 +16,12 @@ namespace HeroPath.Modules.Game.Domain;
 /// number of the last executed move; 0 for EmptyProgram and EmptyRepeat.
 /// </para>
 /// <para><c>MissingItems</c>: strawberries still missing, only set together with ItemsMissing, otherwise 0.</para>
+/// <para>
+/// <c>Repeats</c>: the repeat blocks enclosing the move described by <c>CommandId</c>, outermost first, each with its
+/// 1-based round; empty outside repeats and for EmptyProgram and EmptyRepeat. For Obstacle, OutOfBounds and
+/// StepLimitExceeded this is the attempted move, otherwise the last executed move. Record equality compares
+/// <c>Repeats</c> by reference, not by content.
+/// </para>
 /// </summary>
 public sealed record ExecutionStep(
     Guid CommandId,
@@ -25,4 +31,7 @@ public sealed record ExecutionStep(
     ExecutionError? Error = null,
     ItemKind? CollectedItem = null,
     ObstacleKind? HitObstacle = null,
-    int MissingItems = 0);
+    int MissingItems = 0)
+{
+    public IReadOnlyList<RepeatProgress> Repeats { get; init; } = [];
+}

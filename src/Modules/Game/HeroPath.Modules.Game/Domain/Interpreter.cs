@@ -16,6 +16,7 @@ public sealed class Interpreter
     private int _collectedStrawberries;
     private int _executedSteps;
     private MoveCommand? _pending;
+    private IReadOnlyList<RepeatProgress> _pendingRepeats = [];
     private ExecutionStep? _terminal;
 
     /// <summary>Creates an interpreter whose person starts on the grid start cell. Create a new one to reset.</summary>
@@ -53,34 +54,36 @@ public sealed class Interpreter
 
         if (State == ExecutionState.Ready)
         {
-            _frames.Push(new Frame(_program.Commands, 1));
+            _frames.Push(new Frame(_program.Commands, 1, null));
             _pending = NextMove();
+            _pendingRepeats = Snapshot();
         }
 
         State = ExecutionState.Running;
 
         var command = _pending!;
+        var repeats = _pendingRepeats;
         if (_executedSteps >= ProgramLimits.MaxExecutedSteps)
         {
-            return Finish(Failure(command.Id, ExecutionError.StepLimitExceeded, _executedSteps + 1));
+            return Finish(Failure(command.Id, ExecutionError.StepLimitExceeded, _executedSteps + 1, repeats));
         }
 
         var result = _person.Move(command.Direction, _grid);
         if (result.Outcome == MoveOutcome.OutOfBounds)
         {
-            return Finish(Failure(command.Id, ExecutionError.OutOfBounds, _executedSteps + 1));
+            return Finish(Failure(command.Id, ExecutionError.OutOfBounds, _executedSteps + 1, repeats));
         }
 
         if (result.Outcome == MoveOutcome.Blocked)
         {
-            return Finish(Failure(command.Id, ExecutionError.Obstacle, _executedSteps + 1) with { HitObstacle = result.Hit });
+            return Finish(Failure(command.Id, ExecutionError.Obstacle, _executedSteps + 1, repeats) with { HitObstacle = result.Hit });
         }
 
         _executedSteps++;
         var collectedItem = Collect(result.NewPosition);
         var missing = _grid.RequiredItemCount - _collectedStrawberries;
         var onGoal = result.NewPosition == _grid.Goal;
-        var step = new ExecutionStep(command.Id, _executedSteps, result.NewPosition, ExecutionState.Running, CollectedItem: collectedItem);
+        var step = new ExecutionStep(command.Id, _executedSteps, result.NewPosition, ExecutionState.Running, CollectedItem: collectedItem) { Repeats = repeats };
 
         if (onGoal && (!_grid.RequireAllItems || missing == 0))
         {
@@ -88,6 +91,7 @@ public sealed class Interpreter
         }
 
         _pending = NextMove();
+        _pendingRepeats = Snapshot();
         if (_pending is not null)
         {
             return step;
@@ -133,8 +137,13 @@ public sealed class Interpreter
         return null;
     }
 
-    private ExecutionStep Failure(Guid commandId, ExecutionError error, int stepNumber) =>
-        new(commandId, stepNumber, _person.Position, ExecutionState.Failed, error);
+    private ExecutionStep Failure(Guid commandId, ExecutionError error, int stepNumber, IReadOnlyList<RepeatProgress>? repeats = null) =>
+        new(commandId, stepNumber, _person.Position, ExecutionState.Failed, error) { Repeats = repeats ?? [] };
+
+    private RepeatProgress[] Snapshot() =>
+        [.. _frames.Reverse()
+            .Where(frame => frame.RepeatId is not null)
+            .Select(frame => new RepeatProgress(frame.RepeatId!.Value, frame.Count - frame.Remaining + 1, frame.Count))];
 
     private ExecutionStep Finish(ExecutionStep step)
     {
@@ -183,7 +192,7 @@ public sealed class Interpreter
                 case MoveCommand move:
                     return move;
                 case RepeatCommand repeat:
-                    _frames.Push(new Frame(repeat.Body, repeat.Count));
+                    _frames.Push(new Frame(repeat.Body, repeat.Count, repeat.Id));
                     break;
             }
         }
@@ -191,12 +200,16 @@ public sealed class Interpreter
         return null;
     }
 
-    private sealed class Frame(IReadOnlyList<Command> commands, int remaining)
+    private sealed class Frame(IReadOnlyList<Command> commands, int count, Guid? repeatId)
     {
         public IReadOnlyList<Command> Commands { get; } = commands;
 
         public int Index { get; set; }
 
-        public int Remaining { get; set; } = remaining;
+        public Guid? RepeatId { get; } = repeatId;
+
+        public int Count { get; } = count;
+
+        public int Remaining { get; set; } = count;
     }
 }

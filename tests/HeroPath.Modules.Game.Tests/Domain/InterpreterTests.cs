@@ -403,6 +403,7 @@ public class InterpreterTests
         var first = RunToEnd(new Interpreter(program, grid));
         var second = RunToEnd(new Interpreter(program, grid));
 
-        Assert.Equal(first, second);
+        Assert.Equal(first.Select(s => s with { Repeats = [] }), second.Select(s => s with { Repeats = [] }));
+        Assert.Equal(first.Select(s => s.Repeats.Select(r => (r.RepeatId, r.Round, r.Count))), second.Select(s => s.Repeats.Select(r => (r.RepeatId, r.Round, r.Count))));
     }
 }

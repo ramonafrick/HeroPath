@@ -151,3 +151,22 @@
     fill: var(--hp-flag);
     stroke: var(--hp-outline);
 }
+
+.repeat-round {
+    margin-left: auto;
+    padding: 0.125rem 0.5rem;
+    font-weight: 700;
+    white-space: nowrap;
+    background: var(--hp-surface);
+    border: 2px solid var(--hp-outline);
+    border-radius: 999px;
+}
+
+.program-block[data-active-repeat="true"] > .block-row {
+    background: repeating-linear-gradient(135deg, var(--hp-cell) 0 0.5rem, var(--hp-surface) 0.5rem 1rem);
+}
+
+.program-block[data-active-repeat="true"] > .repeat-body {
+    border-left-style: dotted;
+    border-left-width: 10px;
+}

@@ -156,4 +156,8 @@
     <value>Neue Bausteine kommen in: Wiederhole-Block {0}</value>
     <comment>Line above the program: the next block goes into this repeat block. {0} = block number, for example 3 or 3.2.</comment>
   </data>
+  <data name="Repeat_Round" xml:space="preserve">
+    <value>Runde {0} von {1}</value>
+    <comment>{0} = current round (1-based), {1} = total rounds of the repeat block that is running.</comment>
+  </data>
 </root>
