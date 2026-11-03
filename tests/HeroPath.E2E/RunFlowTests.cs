@@ -251,6 +251,16 @@ public class RunFlowTests(AppFixture app)
 
     private static async Task AssertFitsAsync(IPage page, string viewport)
     {
+        var small = await page.EvaluateAsync<string[]>(@"() => [...document.querySelectorAll('[data-testid=side-panel] button')]
+            .filter(b => { const r = b.getBoundingClientRect(); return r.height < 43.5 || r.width < 43.5; })
+            .map(b => b.dataset.testid)");
+        Assert.Empty(small);
+
+        var clipped = await page.EvaluateAsync<string[]>(@"() => [...document.querySelectorAll('[data-testid=side-panel] button, [data-testid=program-block]')]
+            .filter(e => e.scrollWidth > e.clientWidth + 1)
+            .map(e => e.dataset.testid)");
+        Assert.Empty(clipped);
+
         if (viewport != "laptop")
         {
             return;

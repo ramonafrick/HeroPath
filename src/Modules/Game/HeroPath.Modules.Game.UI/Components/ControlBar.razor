@@ -39,6 +39,11 @@
                value="@((int)Session.Tempo)"
                aria-valuetext="@TempoName"
                @oninput="ChangeTempo" />
+        <div class="tempo-steps" aria-hidden="true">
+            <span>@Localizer["Tempo_Slow"]</span>
+            <span>@Localizer["Tempo_Medium"]</span>
+            <span>@Localizer["Tempo_Fast"]</span>
+        </div>
     </div>
     <p class="status"
        data-testid="status"

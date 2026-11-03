@@ -21,7 +21,7 @@
     --hp-tree-light: #5fb878;
     --hp-pond-light: #d6efff;
     --hp-cell: #dff0cf;
-    --hp-cell-border: #b7d3a0;
+    --hp-cell-border: #8fb276;
 
     --hp-surface: #ffffff;
     --hp-background: #f3f8ee;
@@ -58,4 +58,8 @@ button {
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
     }
+}
+
+h1[tabindex="-1"]:focus {
+    outline: none;
 }

@@ -52,3 +52,13 @@
         transition: none;
     }
 }
+
+.hero {
+    display: grid;
+    place-items: center;
+}
+
+.hero ::deep svg {
+    width: 80%;
+    height: 80%;
+}

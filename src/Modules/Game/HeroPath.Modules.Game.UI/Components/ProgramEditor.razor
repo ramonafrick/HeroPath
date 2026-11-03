@@ -41,11 +41,13 @@
                     <svg class="program-marker" role="img" aria-label="@Localizer[isError ? "Program_Error" : "Program_Current"]" viewBox="0 0 24 24" focusable="false">
                         @if (isError)
                         {
-                            <path d="M6 6 L18 18 M18 6 L6 18" />
+                            <path class="marker-shape" d="M12 2.5 L22.5 21 H1.5 Z" />
+                            <path class="marker-glyph" d="M12 9 V14.5 M12 17.8 V18" />
                         }
                         else
                         {
-                            <path d="M7 4 L20 12 L7 20 Z" />
+                            <circle class="marker-shape" cx="12" cy="12" r="10" />
+                            <path class="marker-glyph-fill" d="M9.5 7 L17 12 L9.5 17 Z" />
                         }
                     </svg>
                 }
@@ -56,7 +58,7 @@
                         disabled="@(!Session.IsEditable)"
                         @onclick="() => Session.Remove(command.Id)">
                     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                        <path d="M6 6 L18 18 M18 6 L6 18" />
+                        <path d="M3.5 6.5 H20.5 M9 6.5 V3.5 H15 V6.5 M5.5 6.5 L6.7 20.5 H17.3 L18.5 6.5 M10 10.5 V16.5 M14 10.5 V16.5" />
                     </svg>
                 </button>
             </li>

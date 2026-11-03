@@ -7,7 +7,7 @@
 <PageTitle>@Localizer["App_Title"]</PageTitle>
 
 <main class="play-page">
-    <section class="board-area">
+    <section class="board-area" style="--board-cols: @Session.Grid!.Width; --board-rows: @Session.Grid!.Height;">
         <h2 class="level-name" data-testid="level-name">@LevelsLocalizer[$"Level_{_level.Id}"]</h2>
         <GameBoard Grid="Session.Grid!"
                    HeroPosition="Session.HeroPosition"
@@ -20,7 +20,7 @@
     </section>
     <aside class="side-panel" data-testid="side-panel">
         <BlockPalette />
-        <ProgramEditor />
         <ControlBar />
+        <ProgramEditor />
     </aside>
 </main>
