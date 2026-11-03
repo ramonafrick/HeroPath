@@ -1,6 +1,5 @@
 using System.Globalization;
 using HeroPath.Shared.Application.Contracts;
-using HeroPath.Shared.Tests.Fakes;
 using HeroPath.Shared.UI.Localization;
 
 namespace HeroPath.Shared.Tests.Localization;

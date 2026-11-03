@@ -23,7 +23,7 @@ You write focused tests for HeroPath, a .NET 10 Blazor WebAssembly learning game
 
 - External I/O and platform services → mock their existing abstraction rather than introducing a real external dependency in a unit test.
 - Storage services → use the repository's storage abstraction, if one exists.
-- For bUnit: register fakes via `Services.AddSingleton<IAppStorage>(new InMemoryAppStorage())` (test class inherits `BunitContext`)
+- For bUnit: register fakes via `Services.AddSingleton<IAppStorage>(new InMemoryAppStorage())` (test class inherits `BunitContext`, or `CultureBunitContext` when it asserts localized text; fakes live in `tests/HeroPath.Testing`)
 
 ## What NOT to mock (test the actual logic)
 

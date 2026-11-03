@@ -6,7 +6,7 @@ namespace HeroPath.Modules.Levels.Domain;
 /// Immutable playing field with start, goal, obstacles and items. The constructor throws on rule
 /// violations as a defensive net; <c>LevelValidator</c> reports the same rules as values.
 /// </summary>
-public sealed class Grid
+public sealed class Grid : IEquatable<Grid>
 {
     private readonly FrozenDictionary<Position, ItemKind> _items;
 
@@ -95,6 +95,22 @@ public sealed class Grid
     /// <summary>Number of strawberries; pizzas are optional and not counted.</summary>
     public int RequiredItemCount { get; }
 
+    /// <summary>Two grids are equal when size, start, goal, item rule, obstacles and items are the same, so reloading a level is recognised.</summary>
+    public bool Equals(Grid? other) =>
+        other is not null
+        && (ReferenceEquals(this, other)
+            || (Width == other.Width
+                && Height == other.Height
+                && Start == other.Start
+                && Goal == other.Goal
+                && RequireAllItems == other.RequireAllItems
+                && SameCells(Obstacles, other.Obstacles)
+                && SameCells(_items, other._items)));
+
+    public override bool Equals(object? obj) => Equals(obj as Grid);
+
+    public override int GetHashCode() => HashCode.Combine(Width, Height, Start, Goal, RequireAllItems, Obstacles.Count, _items.Count);
+
     public bool IsInside(Position position) => position.IsInside(Width, Height);
 
     public ObstacleKind? GetObstacle(Position position) =>
@@ -102,6 +118,10 @@ public sealed class Grid
 
     public ItemKind? GetItem(Position position) =>
         _items.TryGetValue(position, out var kind) ? kind : null;
+
+    private static bool SameCells<TKind>(IReadOnlyDictionary<Position, TKind> left, IReadOnlyDictionary<Position, TKind> right) =>
+        left.Count == right.Count
+        && left.All(cell => right.TryGetValue(cell.Key, out var kind) && EqualityComparer<TKind>.Default.Equals(kind, cell.Value));
 
     private void Place(Position position, string what, string parameterName, HashSet<Position> occupied, bool blocksGoal)
     {

@@ -12,7 +12,7 @@ using Microsoft.Extensions.Time.Testing;
 namespace HeroPath.Modules.Game.Tests.Components;
 
 [Collection("Culture")]
-public class ControlBarTests : BunitContext
+public class ControlBarTests : CultureBunitContext
 {
     private readonly GameSession _session;
     private readonly ExecutionRunner _runner;
@@ -188,13 +188,12 @@ public class ControlBarTests : BunitContext
     [InlineData("2", Tempo.Fast, "Schnell")]
     public async Task Tempo_Input_UpdatesRunnerAndLabel(string value, Tempo expected, string label)
     {
-        using var scope = new CultureScope();
         await Services.GetRequiredService<LanguageService>().SetAsync("de-CH", Xunit.TestContext.Current.CancellationToken);
         var bar = Render<ControlBar>();
 
         bar.Find("[data-testid=control-tempo]").Input(value);
 
-        bar.WaitForAssertion(() => Assert.Equal(expected, _runner.Tempo));
+        bar.WaitForAssertion(() => Assert.Equal(expected, _session.Tempo));
         Assert.Equal(label, bar.Find("[data-testid=tempo-value]").TextContent);
         Assert.Equal(label, bar.Find("[data-testid=control-tempo]").GetAttribute("aria-valuetext"));
     }
@@ -207,7 +206,7 @@ public class ControlBarTests : BunitContext
         bar.Find("[data-testid=control-tempo]").Input("7");
         bar.Find("[data-testid=control-tempo]").Input("abc");
 
-        Assert.Equal(Tempo.Medium, _runner.Tempo);
+        Assert.Equal(Tempo.Medium, _session.Tempo);
     }
 
     [Theory]
@@ -215,7 +214,6 @@ public class ControlBarTests : BunitContext
     [InlineData("en", "Ready", "Reset")]
     public async Task Texts_FollowLanguage(string culture, string ready, string reset)
     {
-        using var scope = new CultureScope();
         var bar = Render<ControlBar>();
 
         await Services.GetRequiredService<LanguageService>().SetAsync(culture, Xunit.TestContext.Current.CancellationToken);
@@ -227,7 +225,6 @@ public class ControlBarTests : BunitContext
     [Fact]
     public async Task LanguageSwitch_WhilePaused_KeepsStatusAndHero()
     {
-        using var scope = new CultureScope();
         TestLevels.Fill(_session, Direction.Up, Direction.Up);
         _runner.StepOnce();
         var bar = Render<ControlBar>();

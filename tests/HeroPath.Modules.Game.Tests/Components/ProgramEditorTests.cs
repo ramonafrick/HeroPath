@@ -8,7 +8,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace HeroPath.Modules.Game.Tests.Components;
 
-public class ProgramEditorTests : BunitContext
+[Collection("Culture")]
+public class ProgramEditorTests : CultureBunitContext
 {
     private readonly GameSession _session;
 
@@ -69,7 +70,7 @@ public class ProgramEditorTests : BunitContext
 
         var editor = Render<ProgramEditor>();
 
-        Assert.Contains("2", editor.Find("[data-testid=program-remove-1]").GetAttribute("aria-label"));
+        Assert.Equal("Baustein 2 entfernen", editor.Find("[data-testid=program-remove-1]").GetAttribute("aria-label"));
     }
 
     [Fact]

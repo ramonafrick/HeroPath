@@ -1,14 +1,19 @@
 using System.Globalization;
 using HeroPath.Modules.Levels.Domain;
 using HeroPath.Modules.Levels.UI.Resources;
-using HeroPath.Shared.UI.Localization;
+using HeroPath.Shared.UI.Components;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Localization;
 
 namespace HeroPath.Modules.Levels.UI.Components;
 
-public partial class GameBoard : IDisposable
+public partial class GameBoard : LocalizedComponentBase
 {
+    private Grid? _kindsGrid;
+    private string[] _kinds = [];
+    private string _boardStyle = string.Empty;
+    private string _heroStyle = string.Empty;
+
     [Parameter, EditorRequired]
     public required Grid Grid { get; set; }
 
@@ -25,20 +30,23 @@ public partial class GameBoard : IDisposable
     public RenderFragment? HeroContent { get; set; }
 
     [Inject]
-    private LanguageService Language { get; set; } = default!;
-
-    [Inject]
     private IStringLocalizer<LevelsResources> Localizer { get; set; } = default!;
 
-    private string BoardStyle => string.Create(CultureInfo.InvariantCulture, $"--cols: {Grid.Width}; --rows: {Grid.Height};");
+    protected override void OnParametersSet()
+    {
+        if (!ReferenceEquals(_kindsGrid, Grid))
+        {
+            _kindsGrid = Grid;
+            _kinds = [.. Enumerable.Range(0, Grid.Width * Grid.Height).Select(index => KindOf(new Position(index % Grid.Width, index / Grid.Width)))];
+            _boardStyle = string.Create(CultureInfo.InvariantCulture, $"--cols: {Grid.Width}; --rows: {Grid.Height};");
+        }
 
-    private string HeroStyle => string.Create(
-        CultureInfo.InvariantCulture,
-        $"--x: {HeroPosition.X}; --y: {HeroPosition.Y}; --hp-step-duration: {(int)StepDuration.TotalMilliseconds}ms;");
+        _heroStyle = string.Create(
+            CultureInfo.InvariantCulture,
+            $"--x: {HeroPosition.X}; --y: {HeroPosition.Y}; --hp-step-duration: {(int)StepDuration.TotalMilliseconds}ms;");
+    }
 
-    protected override void OnInitialized() => Language.Changed += HandleChanged;
-
-    public void Dispose() => Language.Changed -= HandleChanged;
+    private string KindAt(Position position) => _kinds[position.Y * Grid.Width + position.X];
 
     private bool IsMarked(Position position) => MarkedCell == position;
 
@@ -62,6 +70,4 @@ public partial class GameBoard : IDisposable
             _ => "empty",
         };
     }
-
-    private void HandleChanged() => _ = InvokeAsync(StateHasChanged);
 }

@@ -45,7 +45,7 @@ Discover the relevant test projects and follow their existing layout. If no rele
 
 - Use xUnit for domain/application tests in `tests/HeroPath.Modules.<X>.Tests`.
 - Cover acceptance criteria, meaningful edge cases, and failure modes. Test game rules with representative inputs and assert positions, status, errors, or other public results.
-- No mocking library is installed. Use small hand-written fakes for our own contracts (e.g. `InMemoryAppStorage`). `FakeTimeProvider` comes from the official `Microsoft.Extensions.TimeProvider.Testing` package (Game test project). Never call real external services in a unit test.
+- No mocking library is installed. Use small hand-written fakes for our own contracts (e.g. `InMemoryAppStorage`, shared in `tests/HeroPath.Testing`). `FakeTimeProvider` comes from the official `Microsoft.Extensions.TimeProvider.Testing` package (Game test project). Never call real external services in a unit test.
 - Use bUnit for important Razor UI behavior in the same module test project.
 - If the slice changes a visible user flow: add `data-testid` attributes and an E2E test in `tests/HeroPath.E2E` that captures screenshots (`e2e-playwright` skill). Run it with `HEROPATH_E2E=1` if a browser can be started. Otherwise report that E2E was not run.
 - Do not add a smoke-test convention unless it exists in the repository or is required by the slice.

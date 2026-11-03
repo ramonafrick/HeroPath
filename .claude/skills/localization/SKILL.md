@@ -24,11 +24,12 @@ Modules/Game/HeroPath.Modules.Game.UI/Resources/GameResources.cs (+ …)       b
 Modules/Levels/HeroPath.Modules.Levels.UI/Resources/LevelsResources.cs (+ …) level names (Level_<id>), editor texts
 ```
 
-- `Game.UI` keys so far: `Block_Up|Down|Left|Right`, `Palette_Title`, `Program_Title`, `Program_Empty`, `Program_Remove` ({0} = block number), `Program_Block` ({0} = number, {1} = direction), `Program_Clear`.
+- Keys so far. Shared: `App_Title`, `Language_Switch_Label`, `Language_German`, `Language_German_Short`, `Language_English`, `Language_English_Short`, `Graphic_<TypeName>` (`HeroMax`, `StartField`, `GoalCastle`, `ObstacleTree`, `ObstacleRock`, `ObstaclePond`). Levels: `Board_Label`, `Level_<id>` (`Level_demo`). Game: `Block_Up|Down|Left|Right`, `Palette_Title`, `Program_Title`, `Program_Empty`, `Program_Clear`, `Program_Remove` ({0} = block number), `Program_Block` ({0} = number, {1} = direction), `Program_Current`, `Program_Error`, `Controls_Title`, `Control_Play|Debug|Reset`, `Tempo_Label`, `Tempo_<Tempo>` (`Slow|Medium|Fast`), `Status_Label`, `Status_<RunStatus>` (`Ready|Running|Paused|Failed|Succeeded`). Every `Tempo` and `RunStatus` value must have its key in both resx files (`GameResourcesTests`).
 - `<X>Resources.cs` is an empty marker class (`public sealed class GameResources;`) in namespace `HeroPath.Modules.Game.UI.Resources`. Use `IStringLocalizer<GameResources>`, no ResX designer classes.
 - Neutral resx = German. `<NeutralLanguage>` is not needed.
 - Only UI projects contain resx. Pure module projects return error kinds and numbers, never texts.
 - `Hosts/HeroPath.Web/HeroPath.Web.csproj` already has `<BlazorWebAssemblyLoadAllGlobalizationData>true</BlazorWebAssemblyLoadAllGlobalizationData>` (required for switching culture at runtime). **Do not** set `InvariantGlobalization`.
+- **Satellite assemblies gotcha**: Blazor WebAssembly loads the satellite assemblies (the `en` resx) only for the culture active at startup, so switching the language at runtime would silently keep the German texts (bUnit does not notice, it runs on the .NET runtime). `Hosts/HeroPath.Web/wwwroot/index.html` therefore starts Blazor manually (`autostart="false"` plus `Blazor.start({ configureRuntime: dotnet => dotnet.withConfig({ loadAllSatelliteResources: true }) })`). `loadAllSatelliteResources` is read by the .NET runtime loader but is not in its public type definitions; `LanguageTests` (E2E, switch without reload) guards it. Remove neither the `autostart` attribute nor the script.
 - Supported cultures: `de-CH`, `en`. Unknown or stored garbage → `de-CH`.
 
 ## Key naming
@@ -82,9 +83,9 @@ public sealed class LanguageService(IAppStorage storage)
 ```
 
 - Real API (`HeroPath.Shared.UI.Localization`): `LanguageService` (scoped; `Current`, `ApplyStoredAsync`, `SetAsync`, `Changed`, `Normalize`); storage key `StorageKeys.Language`. Unsupported values are normalized to `de-CH`; a throwing `IAppStorage` is swallowed and the switch still happens.
-- Components with texts subscribe to `Changed` in `OnInitialized`, unsubscribe in `Dispose`, and re-render via `InvokeAsync(StateHasChanged)`. A page with `<PageTitle>` does the same (see `PlayPage`).
+- Components with texts derive from `LocalizedComponentBase` (or `SessionComponentBase` in Game.UI), which subscribes to `Changed` in `OnInitialized`, unsubscribes in `Dispose` and re-renders via `InvokeAsync(StateHasChanged)`. A page with `<PageTitle>` does the same (see `PlayPage`).
 - At startup (`Program.cs`, after `Build()`, before `RunAsync()`) call `await host.Services.ApplyStoredCultureAsync()`. Default is `de-CH`.
-- Tests that switch culture change process-wide state: put them in `[Collection("Culture")]` and restore the cultures afterwards (`CultureScope` in `HeroPath.Shared.Tests`).
+- Tests that switch culture change process-wide state: put them in `[Collection("Culture")]` and restore the cultures afterwards (`CultureScope`, or `CultureBunitContext` for bUnit, both in `tests/HeroPath.Testing`; pass the culture explicitly: `new CultureScope("de-CH")`).
 - Only the language is stored, never the hero name.
 
 ## Checklist for a text change

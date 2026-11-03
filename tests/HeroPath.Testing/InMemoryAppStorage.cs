@@ -1,23 +1,23 @@
 using HeroPath.Shared.Application.Contracts;
 
-namespace HeroPath.Modules.Game.Tests;
+namespace HeroPath.Testing;
 
 public sealed class InMemoryAppStorage : IAppStorage
 {
-    private readonly Dictionary<string, string> _values = [];
+    public Dictionary<string, string> Values { get; } = [];
 
     public ValueTask<string?> GetAsync(string key, CancellationToken cancellationToken) =>
-        ValueTask.FromResult(_values.GetValueOrDefault(key));
+        ValueTask.FromResult(Values.GetValueOrDefault(key));
 
     public ValueTask SetAsync(string key, string value, CancellationToken cancellationToken)
     {
-        _values[key] = value;
+        Values[key] = value;
         return ValueTask.CompletedTask;
     }
 
     public ValueTask RemoveAsync(string key, CancellationToken cancellationToken)
     {
-        _values.Remove(key);
+        Values.Remove(key);
         return ValueTask.CompletedTask;
     }
 }

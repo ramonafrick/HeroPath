@@ -13,6 +13,7 @@ public static class StandardLevels
 
     private static readonly Lazy<IReadOnlyList<LevelDefinition>> _all = new(Load);
 
+    /// <summary>All standard levels, ordered by file name.</summary>
     public static IReadOnlyList<LevelDefinition> All => _all.Value;
 
     /// <summary>Returns the standard level with the given id; throws <see cref="KeyNotFoundException"/> if there is none.</summary>
@@ -28,15 +29,11 @@ public static class StandardLevels
         var assembly = typeof(StandardLevels).Assembly;
         var resourcePrefix = $"{typeof(StandardLevels).Namespace}.Levels.";
 
-        var levels = new List<LevelDefinition>();
-        foreach (var name in assembly.GetManifestResourceNames()
+        return assembly.GetManifestResourceNames()
             .Where(name => name.StartsWith(resourcePrefix, StringComparison.Ordinal) && name.EndsWith(ResourceSuffix, StringComparison.Ordinal))
-            .Order(StringComparer.Ordinal))
-        {
-            levels.Add(ReadLevel(assembly, name));
-        }
-
-        return levels;
+            .Order(StringComparer.Ordinal)
+            .Select(name => ReadLevel(assembly, name))
+            .ToList();
     }
 
     private static LevelDefinition ReadLevel(Assembly assembly, string resourceName)

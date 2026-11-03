@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace HeroPath.Modules.Game.UI;
 
+/// <summary>Registration of the Game module in the DI container.</summary>
 public static class GameModuleExtensions
 {
     /// <summary>Registers the Game module: game session, execution runner.</summary>

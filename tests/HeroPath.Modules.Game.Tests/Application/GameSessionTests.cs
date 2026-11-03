@@ -271,4 +271,89 @@ public class GameSessionTests
     [Fact]
     public void Load_Null_Throws() =>
         Assert.Throws<ArgumentNullException>(() => new GameSession().Load(null!));
+
+    [Fact]
+    public void Load_SameGridTwice_KeepsProgramAndRunAndRaisesNoEvent()
+    {
+        var (session, runner) = Started(Direction.Up, Direction.Up);
+        runner.StepOnce();
+        var step = session.CurrentStep;
+        var changes = 0;
+        session.Changed += () => changes++;
+
+        session.Load(session.Grid!);
+
+        Assert.Equal(2, session.Commands.Count);
+        Assert.Equal(RunStatus.Paused, session.Status);
+        Assert.Same(step, session.CurrentStep);
+        Assert.False(session.IsEditable);
+        Assert.Equal(0, changes);
+    }
+
+    [Fact]
+    public void Load_EqualGridBuiltAgain_KeepsProgramAndRun()
+    {
+        var (session, runner) = Started(Direction.Up, Direction.Up);
+        runner.StepOnce();
+        var grid = session.Grid;
+
+        session.Load(TestLevels.DemoGrid());
+
+        Assert.Same(grid, session.Grid);
+        Assert.Equal(RunStatus.Paused, session.Status);
+        Assert.Equal(new Position(1, 5), session.HeroPosition);
+        Assert.Equal(2, session.Commands.Count);
+    }
+
+    [Fact]
+    public void Load_DifferentGrid_ResetsRunAndKeepsProgram()
+    {
+        var (session, runner) = Started(Direction.Right, Direction.Right);
+        runner.StepOnce();
+        runner.StepOnce();
+        Assert.Equal(RunStatus.Failed, session.Status);
+        Assert.NotNull(session.MarkedCell);
+        var other = CreateGrid();
+        var changes = 0;
+        session.Changed += () => changes++;
+
+        session.Load(other);
+
+        Assert.Same(other, session.Grid);
+        Assert.Equal(RunStatus.Ready, session.Status);
+        Assert.Null(session.CurrentStep);
+        Assert.Null(session.MarkedCell);
+        Assert.True(session.IsEditable);
+        Assert.Equal(new Position(2, 3), session.HeroPosition);
+        Assert.Equal(2, session.Commands.Count);
+        Assert.Equal(1, changes);
+    }
+
+    [Fact]
+    public void Load_DifferentGrid_RunnerStartsFreshInterpreterOnNewGrid()
+    {
+        var (session, runner) = Started(Direction.Up, Direction.Up);
+        runner.StepOnce();
+
+        session.Load(CreateGrid());
+        runner.StepOnce();
+
+        Assert.Equal(1, session.CurrentStep!.StepNumber);
+        Assert.Equal(new Position(2, 2), session.HeroPosition);
+    }
+
+    [Fact]
+    public void Tempo_DefaultsToMedium_AndRaisesChangedOnlyWhenDifferent()
+    {
+        var session = new GameSession();
+        var changes = 0;
+        session.Changed += () => changes++;
+        Assert.Equal(Tempo.Medium, session.Tempo);
+
+        session.Tempo = Tempo.Medium;
+        session.Tempo = Tempo.Slow;
+
+        Assert.Equal(Tempo.Slow, session.Tempo);
+        Assert.Equal(1, changes);
+    }
 }

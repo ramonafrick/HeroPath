@@ -7,6 +7,4 @@ public partial class DirectionIcon
 {
     [Parameter, EditorRequired]
     public Direction Direction { get; set; }
-
-    private string Slug => Direction.ToString().ToLowerInvariant();
 }

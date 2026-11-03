@@ -3,13 +3,19 @@ using HeroPath.Modules.Levels.Domain;
 
 namespace HeroPath.Modules.Game.Application;
 
-/// <summary>State of the current play page: loaded grid and the program the child assembles. Memory only.</summary>
+/// <summary>
+/// State of the current play page: loaded grid, the program the child assembles, the run state and the tempo.
+/// Memory only. The run state is written by the <see cref="ExecutionRunner"/> only.
+/// </summary>
 public sealed class GameSession
 {
     private readonly List<MoveCommand> _commands = [];
+    private Tempo _tempo = Tempo.Medium;
 
     /// <summary>Raised after every change of the session.</summary>
     public event Action? Changed;
+
+    internal event Action? RunDiscarded;
 
     /// <summary>The loaded level grid, or <c>null</c> before <see cref="Load"/> was called.</summary>
     public Grid? Grid { get; private set; }
@@ -23,6 +29,22 @@ public sealed class GameSession
     /// <summary>The last executed step of the current run, or <c>null</c> before the first step.</summary>
     public ExecutionStep? CurrentStep { get; private set; }
 
+    /// <summary>Speed of Play. A change during a run applies to the next wait.</summary>
+    public Tempo Tempo
+    {
+        get => _tempo;
+        set
+        {
+            if (_tempo == value)
+            {
+                return;
+            }
+
+            _tempo = value;
+            Changed?.Invoke();
+        }
+    }
+
     /// <summary>Whether the program may be changed: only while the run is <see cref="RunStatus.Ready"/>.</summary>
     public bool IsEditable => Status == RunStatus.Ready;
 
@@ -34,21 +56,28 @@ public sealed class GameSession
 
     /// <summary>
     /// Cell to mark after a failed move: the obstacle cell for <see cref="ExecutionError.Obstacle"/>, the hero cell for
-    /// <see cref="ExecutionError.OutOfBounds"/>, otherwise <c>null</c>.
+    /// <see cref="ExecutionError.OutOfBounds"/>, otherwise <c>null</c>. Computed when a step is applied.
     /// </summary>
-    public Position? MarkedCell => CurrentStep switch
-    {
-        { Error: ExecutionError.OutOfBounds } => HeroPosition,
-        { Error: ExecutionError.Obstacle } step when _commands.Find(command => command.Id == step.CommandId) is { } move =>
-            move.Direction.MoveFrom(HeroPosition),
-        _ => null,
-    };
+    public Position? MarkedCell { get; private set; }
 
-    /// <summary>Loads a level grid and keeps the current program.</summary>
+    /// <summary>
+    /// Loads a level grid. Loading an equal grid again is a no-op, so returning to the page or re-rendering keeps
+    /// program and run. A different grid discards the run (status <see cref="RunStatus.Ready"/>, hero on the new start,
+    /// editable) and keeps the program.
+    /// </summary>
     public void Load(Grid grid)
     {
         ArgumentNullException.ThrowIfNull(grid);
+        if (grid.Equals(Grid))
+        {
+            return;
+        }
+
         Grid = grid;
+        Status = RunStatus.Ready;
+        CurrentStep = null;
+        MarkedCell = null;
+        RunDiscarded?.Invoke();
         Changed?.Invoke();
     }
 
@@ -94,10 +123,25 @@ public sealed class GameSession
         Changed?.Invoke();
     }
 
+    /// <summary>Builds the program the interpreter runs.</summary>
+    public ProgramDefinition ToProgram() => new([.. _commands]);
+
     internal void UpdateRun(RunStatus status, ExecutionStep step)
     {
         Status = status;
         CurrentStep = step;
+        MarkedCell = MarkedCellOf(step);
+        Changed?.Invoke();
+    }
+
+    internal void PauseRun()
+    {
+        if (Status != RunStatus.Running)
+        {
+            return;
+        }
+
+        Status = RunStatus.Paused;
         Changed?.Invoke();
     }
 
@@ -110,11 +154,15 @@ public sealed class GameSession
 
         Status = RunStatus.Ready;
         CurrentStep = null;
+        MarkedCell = null;
         Changed?.Invoke();
     }
 
-    internal void NotifyChanged() => Changed?.Invoke();
-
-    /// <summary>Builds the program the interpreter runs.</summary>
-    public ProgramDefinition ToProgram() => new([.. _commands]);
+    private Position? MarkedCellOf(ExecutionStep step) => step switch
+    {
+        { Error: ExecutionError.OutOfBounds } => step.Position,
+        { Error: ExecutionError.Obstacle } when _commands.Find(command => command.Id == step.CommandId) is { } move =>
+            move.Direction.MoveFrom(step.Position),
+        _ => null,
+    };
 }

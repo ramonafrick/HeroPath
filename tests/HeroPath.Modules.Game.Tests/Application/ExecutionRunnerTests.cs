@@ -76,7 +76,7 @@ public class ExecutionRunnerTests
     public async Task Play_WaitsTempoDurationBetweenSteps(Tempo tempo, int milliseconds)
     {
         Program(Direction.Up, Direction.Up, Direction.Up);
-        _runner.Tempo = tempo;
+        _session.Tempo = tempo;
 
         var play = _runner.PlayAsync();
         await AdvanceStepAsync(milliseconds - 1);
@@ -92,7 +92,7 @@ public class ExecutionRunnerTests
     [Fact]
     public void Tempo_DefaultIsMediumAndDurationsMatch()
     {
-        Assert.Equal(Tempo.Medium, _runner.Tempo);
+        Assert.Equal(Tempo.Medium, _session.Tempo);
         Assert.Equal(TimeSpan.FromMilliseconds(900), Tempo.Slow.Duration);
         Assert.Equal(TimeSpan.FromMilliseconds(500), Tempo.Medium.Duration);
         Assert.Equal(TimeSpan.FromMilliseconds(200), Tempo.Fast.Duration);
@@ -107,7 +107,7 @@ public class ExecutionRunnerTests
         await AdvanceStepAsync();
         Assert.Equal(2, _session.CurrentStep!.StepNumber);
 
-        _runner.Tempo = Tempo.Fast;
+        _session.Tempo = Tempo.Fast;
         await AdvanceStepAsync();
         Assert.Equal(3, _session.CurrentStep!.StepNumber);
 
@@ -124,8 +124,8 @@ public class ExecutionRunnerTests
         var changes = 0;
         _session.Changed += () => changes++;
 
-        _runner.Tempo = Tempo.Fast;
-        _runner.Tempo = Tempo.Fast;
+        _session.Tempo = Tempo.Fast;
+        _session.Tempo = Tempo.Fast;
 
         Assert.Equal(1, changes);
     }
@@ -358,5 +358,176 @@ public class ExecutionRunnerTests
         Assert.Equal(_session.Status, debugSession.Status);
         Assert.Equal(_session.HeroPosition, debugSession.HeroPosition);
         Assert.Equal(_session.CurrentStep!.Error, debugSession.CurrentStep!.Error);
+    }
+
+    [Fact]
+    public void CanStart_NoGrid_IsFalse()
+    {
+        var session = new GameSession();
+        session.Add(Direction.Up);
+
+        Assert.False(new ExecutionRunner(session, _time).CanStart);
+    }
+
+    [Fact]
+    public void CanStart_EmptyProgram_IsFalse() => Assert.False(_runner.CanStart);
+
+    [Fact]
+    public async Task CanStart_FollowsRunStatus()
+    {
+        Program(Direction.Up, Direction.Up, Direction.Up);
+        Assert.Equal(RunStatus.Ready, _session.Status);
+        Assert.True(_runner.CanStart);
+
+        _runner.StepOnce();
+        Assert.Equal(RunStatus.Paused, _session.Status);
+        Assert.True(_runner.CanStart);
+
+        var play = _runner.PlayAsync();
+        Assert.Equal(RunStatus.Running, _session.Status);
+        Assert.False(_runner.CanStart);
+
+        await FinishAsync(play);
+        Assert.Equal(RunStatus.Failed, _session.Status);
+        Assert.False(_runner.CanStart);
+
+        _runner.Reset();
+        Assert.True(_runner.CanStart);
+    }
+
+    [Fact]
+    public void CanStart_Succeeded_IsFalse()
+    {
+        Program(TestLevels.DemoSolution);
+        for (var i = 0; i < TestLevels.DemoSolution.Length; i++)
+        {
+            _runner.StepOnce();
+        }
+
+        Assert.Equal(RunStatus.Succeeded, _session.Status);
+        Assert.False(_runner.CanStart);
+    }
+
+    [Fact]
+    public async Task Play_ChangedHandlerThrows_PausesInsteadOfStayingRunning()
+    {
+        Program(Direction.Up, Direction.Up, Direction.Up);
+        var calls = 0;
+        _session.Changed += () =>
+        {
+            if (++calls == 2)
+            {
+                throw new InvalidOperationException("handler failed");
+            }
+        };
+
+        var play = _runner.PlayAsync();
+        Assert.Equal(RunStatus.Running, _session.Status);
+        _time.Advance(TimeSpan.FromMilliseconds(500));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => play);
+
+        Assert.Equal(RunStatus.Paused, _session.Status);
+        Assert.Equal(2, _session.CurrentStep!.StepNumber);
+        Assert.True(_runner.CanStart);
+    }
+
+    [Fact]
+    public async Task Play_ChangedHandlerThrowsOnFirstStep_PausesAndPropagates()
+    {
+        Program(Direction.Up, Direction.Up);
+        var thrown = false;
+        _session.Changed += () =>
+        {
+            if (!thrown)
+            {
+                thrown = true;
+                throw new InvalidOperationException("handler failed");
+            }
+        };
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _runner.PlayAsync());
+
+        Assert.Equal(RunStatus.Paused, _session.Status);
+        Assert.Equal(1, _session.CurrentStep!.StepNumber);
+    }
+
+    [Fact]
+    public async Task Stop_DuringPlay_PausesAndAppliesNoFurtherStep()
+    {
+        Program(TestLevels.DemoSolution);
+        var play = _runner.PlayAsync();
+        await AdvanceStepAsync();
+        Assert.Equal(2, _session.CurrentStep!.StepNumber);
+
+        _runner.Stop();
+        await AdvanceStepAsync(10_000);
+        await play;
+
+        Assert.Equal(RunStatus.Paused, _session.Status);
+        Assert.Equal(2, _session.CurrentStep!.StepNumber);
+        Assert.Equal(new Position(1, 4), _session.HeroPosition);
+        Assert.Equal(TestLevels.DemoSolution.Length, _session.Commands.Count);
+    }
+
+    [Fact]
+    public async Task Stop_ThenPlay_ContinuesOnSameInterpreter()
+    {
+        Program(TestLevels.DemoSolution);
+        var firstPlay = _runner.PlayAsync();
+        await AdvanceStepAsync();
+        _runner.Stop();
+        await firstPlay;
+
+        await FinishAsync(_runner.PlayAsync());
+
+        Assert.Equal(RunStatus.Succeeded, _session.Status);
+        Assert.Equal(TestLevels.DemoSolution.Length, _session.CurrentStep!.StepNumber);
+    }
+
+    [Fact]
+    public void Stop_WhenNotRunning_DoesNothing()
+    {
+        Program(Direction.Up, Direction.Up);
+        _runner.StepOnce();
+        var changes = 0;
+        _session.Changed += () => changes++;
+
+        _runner.Stop();
+
+        Assert.Equal(RunStatus.Paused, _session.Status);
+        Assert.Equal(0, changes);
+    }
+
+    [Fact]
+    public async Task Load_DifferentGridDuringPlay_StopsLoopAndResetsRun()
+    {
+        Program(TestLevels.DemoSolution);
+        var play = _runner.PlayAsync();
+        await AdvanceStepAsync();
+
+        _session.Load(new Grid(10, 10, new Position(0, 0), new Position(9, 9), [], [], false));
+        await AdvanceStepAsync(10_000);
+        await play;
+
+        Assert.Equal(RunStatus.Ready, _session.Status);
+        Assert.Null(_session.CurrentStep);
+        Assert.Equal(new Position(0, 0), _session.HeroPosition);
+        Assert.True(_session.IsEditable);
+    }
+
+    [Fact]
+    public async Task Reset_ThenNewPlay_OldLoopDoesNotPauseNewRun()
+    {
+        Program(Direction.Up, Direction.Up, Direction.Up, Direction.Up);
+        var oldPlay = _runner.PlayAsync();
+        _runner.Reset();
+
+        var newPlay = _runner.PlayAsync();
+        await oldPlay;
+
+        Assert.Equal(RunStatus.Running, _session.Status);
+
+        _runner.Reset();
+        await newPlay;
     }
 }

@@ -1,3 +1,5 @@
+@inherits SessionComponentBase
+
 <section class="palette" aria-labelledby="palette-title">
     <h3 id="palette-title" class="palette-title">@Localizer["Palette_Title"]</h3>
     <div class="palette-buttons">
@@ -5,7 +7,7 @@
         {
             <button type="button"
                     class="palette-button"
-                    data-testid="@($"palette-{direction.ToString().ToLowerInvariant()}")"
+                    data-testid="@($"palette-{direction.ToSlug()}")"
                     disabled="@(!CanAdd)"
                     @onclick="() => Session.Add(direction)">
                 <DirectionIcon Direction="direction" />

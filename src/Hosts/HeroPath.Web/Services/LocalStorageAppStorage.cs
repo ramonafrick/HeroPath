@@ -4,44 +4,49 @@ using Microsoft.JSInterop;
 namespace HeroPath.Web.Services;
 
 /// <summary>
-/// <see cref="IAppStorage"/> on top of the browser localStorage. Blocked or full storage degrades silently:
-/// reads return <c>null</c>, writes are dropped, so the game stays playable.
+/// <see cref="IAppStorage"/> on top of the browser localStorage. Unavailable storage (blocked, full, circuit gone,
+/// interop timeout) degrades silently: reads return <c>null</c>, writes are dropped, so the game stays playable.
+/// A cancellation requested by the caller is not swallowed.
 /// </summary>
 public sealed class LocalStorageAppStorage(IJSRuntime js) : IAppStorage
 {
-    public async ValueTask<string?> GetAsync(string key, CancellationToken cancellationToken)
+    public ValueTask<string?> GetAsync(string key, CancellationToken cancellationToken) =>
+        TryAsync(runtime => runtime.InvokeAsync<string?>("localStorage.getItem", cancellationToken, key), cancellationToken);
+
+    public async ValueTask SetAsync(string key, string value, CancellationToken cancellationToken) =>
+        await TryAsync(
+            async runtime =>
+            {
+                await runtime.InvokeVoidAsync("localStorage.setItem", cancellationToken, key, value);
+                return true;
+            },
+            cancellationToken);
+
+    public async ValueTask RemoveAsync(string key, CancellationToken cancellationToken) =>
+        await TryAsync(
+            async runtime =>
+            {
+                await runtime.InvokeVoidAsync("localStorage.removeItem", cancellationToken, key);
+                return true;
+            },
+            cancellationToken);
+
+    private async ValueTask<T?> TryAsync<T>(Func<IJSRuntime, ValueTask<T>> operation, CancellationToken cancellationToken)
     {
         try
         {
-            return await js.InvokeAsync<string?>("localStorage.getItem", cancellationToken, key);
+            return await operation(js);
         }
-        catch (Exception ex) when (ex is JSException or InvalidOperationException)
+        catch (Exception ex) when (IsStorageUnavailable(ex, cancellationToken))
         {
-            return null;
+            return default;
         }
     }
 
-    public async ValueTask SetAsync(string key, string value, CancellationToken cancellationToken)
+    private static bool IsStorageUnavailable(Exception exception, CancellationToken cancellationToken) => exception switch
     {
-        try
-        {
-            await js.InvokeVoidAsync("localStorage.setItem", cancellationToken, key, value);
-        }
-        catch (Exception ex) when (ex is JSException or InvalidOperationException)
-        {
-            // Storage blocked or full: the setting is simply not remembered.
-        }
-    }
-
-    public async ValueTask RemoveAsync(string key, CancellationToken cancellationToken)
-    {
-        try
-        {
-            await js.InvokeVoidAsync("localStorage.removeItem", cancellationToken, key);
-        }
-        catch (Exception ex) when (ex is JSException or InvalidOperationException)
-        {
-            // Nothing to remove if storage is unavailable.
-        }
-    }
+        JSException or JSDisconnectedException or InvalidOperationException => true,
+        OperationCanceledException => !cancellationToken.IsCancellationRequested,
+        _ => false,
+    };
 }

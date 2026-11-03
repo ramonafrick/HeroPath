@@ -178,4 +178,30 @@ public class GridTests
         Assert.NotNull(description);
         Assert.Throws<ArgumentException>(() => Create(obstacles: obstacles, items: items));
     }
+
+    [Fact]
+    public void Equals_SameContentBuiltTwice_IsEqualWithSameHashCode()
+    {
+        LevelObstacle[] obstacles = [new(1, 1, ObstacleKind.Tree), new(2, 2, ObstacleKind.Rock)];
+        LevelItem[] items = [new(3, 1, ItemKind.Strawberry)];
+
+        var first = Create(obstacles: obstacles, items: items);
+        var second = Create(obstacles: [.. obstacles.Reverse()], items: items);
+
+        Assert.Equal(first, second);
+        Assert.Equal(first.GetHashCode(), second.GetHashCode());
+    }
+
+    [Fact]
+    public void Equals_DifferentContent_IsNotEqual()
+    {
+        var grid = Create(obstacles: [new LevelObstacle(1, 1, ObstacleKind.Tree)]);
+
+        Assert.NotEqual(grid, Create());
+        Assert.NotEqual(grid, Create(obstacles: [new LevelObstacle(1, 1, ObstacleKind.Rock)]));
+        Assert.NotEqual(grid, Create(obstacles: [new LevelObstacle(2, 1, ObstacleKind.Tree)]));
+        Assert.NotEqual(Create(), Create(width: 6));
+        Assert.NotEqual(Create(), Create(items: [new LevelItem(1, 1, ItemKind.Pizza)]));
+        Assert.False(grid.Equals(null));
+    }
 }

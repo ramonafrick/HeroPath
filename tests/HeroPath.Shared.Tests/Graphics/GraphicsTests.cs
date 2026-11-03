@@ -1,5 +1,4 @@
 using HeroPath.Shared.Application.Contracts;
-using HeroPath.Shared.Tests.Fakes;
 using HeroPath.Shared.UI;
 using HeroPath.Shared.UI.Graphics;
 using HeroPath.Shared.UI.Localization;

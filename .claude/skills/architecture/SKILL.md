@@ -32,6 +32,8 @@ tests/
   HeroPath.Shared.Tests/             xUnit + bUnit for Shared and Shared.UI (LanguageService, LanguageSwitcher)
   HeroPath.Modules.Levels.Tests/     xUnit + bUnit for Levels and Levels.UI
   HeroPath.Modules.Game.Tests/       xUnit + bUnit for Game and Game.UI
+  HeroPath.Testing/                  plain class library, no tests: shared fakes (InMemoryAppStorage, ThrowingAppStorage,
+                                     CultureScope, CultureBunitContext), referenced by the three *.Tests projects
   HeroPath.ArchitectureTests/        dependency rules (metadata-based)
   HeroPath.E2E/                      Playwright, opt-in via HEROPATH_E2E=1 (see e2e-playwright skill)
 ```
@@ -62,6 +64,7 @@ When you add a project-level rule, add it to `DependencyRuleTests.Rules`.
 | JSON, embedded resources, storage-backed implementation | `Modules.<X>/Infrastructure` |
 | Razor page/component of one feature | `Modules.<X>.UI/Pages` or `/Components` |
 | Texts of one module | `Modules.<X>.UI/Resources/<X>Resources.resx` (+ `.en.resx`) |
+| Component base classes (language / session subscription) | `Shared.UI/Components` (`LocalizedComponentBase`), `Modules.Game.UI/Components` (`SessionComponentBase`) |
 | Layout, theme, SVG graphics, app title, LanguageSwitcher | `Shared.UI` |
 | Platform contract (storage, files) | `Shared/Application/Contracts` |
 | Platform implementation (localStorage via JS interop) | `Hosts/HeroPath.Web/Services` |

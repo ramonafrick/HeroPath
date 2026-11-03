@@ -27,7 +27,7 @@ Adding a package: add `<PackageVersion>` in `Directory.Packages.props`, then `<P
 Layout, dependency rules and "where does it go" are in the **`architecture`** skill. C#-specific points:
 
 - Pure projects: `Microsoft.NET.Sdk` (`dotnet new classlib`). UI projects: `Microsoft.NET.Sdk.Razor` (`dotnet new razorclasslib`, then delete the sample `Component1`, `ExampleJsInterop`, `wwwroot/*`) with `<SupportedPlatform Include="browser" />`.
-- Test projects: `Microsoft.NET.Sdk`, `OutputType Exe`, `IsPackable false`.
+- Test projects: `Microsoft.NET.Sdk`, `OutputType Exe`, `IsPackable false`. Exception: `tests/HeroPath.Testing` is a plain class library (no `OutputType Exe`, `IsTestProject false`, no tests) with the shared fakes.
 - `ProjectReference` paths are relative (`..\..\Levels\HeroPath.Modules.Levels\...`). Add to `HeroPath.slnx` with `--solution-folder src/Modules/<X>`.
 
 ## C# style

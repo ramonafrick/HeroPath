@@ -26,7 +26,17 @@
         <a href="." class="reload">&#x21bb;</a>
         <span class="dismiss">&#x2715;</span>
     </div>
-    <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
+    <script src="_framework/blazor.webassembly#[.{fingerprint}].js" autostart="false"></script>
+    <!--
+        Blazor WebAssembly only loads the satellite assemblies (resx) of the culture active at startup. The app switches
+        language at runtime without a reload, so all of them are loaded up front. loadAllSatelliteResources is read by the
+        .NET runtime loader but is not part of its public type definitions (dotnet.d.ts); LanguageTests (E2E) guards it.
+    -->
+    <script>
+        Blazor.start({
+            configureRuntime: dotnet => dotnet.withConfig({ loadAllSatelliteResources: true })
+        });
+    </script>
 </body>
 
 </html>

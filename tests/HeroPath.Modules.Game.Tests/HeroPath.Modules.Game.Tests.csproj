@@ -14,11 +14,13 @@
   <ItemGroup>
     <Using Include="Xunit" />
     <Using Include="Bunit" />
+    <Using Include="HeroPath.Testing" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Modules\Game\HeroPath.Modules.Game\HeroPath.Modules.Game.csproj" />
     <ProjectReference Include="..\..\src\Modules\Game\HeroPath.Modules.Game.UI\HeroPath.Modules.Game.UI.csproj" />
+    <ProjectReference Include="..\HeroPath.Testing\HeroPath.Testing.csproj" />
   </ItemGroup>
 
 </Project>

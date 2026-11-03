@@ -1,17 +1,19 @@
+@inherits SessionComponentBase
+
 <section class="controls" aria-label="@Localizer["Controls_Title"]">
     <div class="controls-buttons">
         <button type="button"
                 class="control-button"
                 data-testid="control-play"
-                disabled="@(!CanStart)"
-                @onclick="PlayAsync">
+                disabled="@(!Runner.CanStart)"
+                @onclick="Runner.PlayAsync">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 4 L20 12 L7 20 Z" /></svg>
             <span>@Localizer["Control_Play"]</span>
         </button>
         <button type="button"
                 class="control-button"
                 data-testid="control-debug"
-                disabled="@(!CanStart)"
+                disabled="@(!Runner.CanStart)"
                 @onclick="Runner.StepOnce">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 4 L14 12 L4 20 Z M17 4 H20 V20 H17 Z" /></svg>
             <span>@Localizer["Control_Debug"]</span>
@@ -34,13 +36,13 @@
                max="2"
                step="1"
                data-testid="control-tempo"
-               value="@((int)Runner.Tempo)"
+               value="@((int)Session.Tempo)"
                aria-valuetext="@TempoName"
                @oninput="ChangeTempo" />
     </div>
     <p class="status"
        data-testid="status"
-       data-state="@StateName"
+       data-state="@Session.Status.ToSlug()"
        data-error="@ErrorName"
        aria-live="polite">
         <svg class="status-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">

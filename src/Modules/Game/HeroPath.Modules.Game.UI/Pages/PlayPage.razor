@@ -1,4 +1,5 @@
 @page "/"
+@inherits SessionComponentBase
 @using HeroPath.Modules.Game.UI.Components
 @using HeroPath.Modules.Levels.UI.Components
 @using HeroPath.Shared.UI.Graphics
@@ -8,10 +9,10 @@
 <main class="play-page">
     <section class="board-area">
         <h2 class="level-name" data-testid="level-name">@LevelsLocalizer[$"Level_{_level.Id}"]</h2>
-        <GameBoard Grid="_grid"
+        <GameBoard Grid="Session.Grid!"
                    HeroPosition="Session.HeroPosition"
                    MarkedCell="Session.MarkedCell"
-                   StepDuration="Runner.Tempo.Duration">
+                   StepDuration="Session.Tempo.Duration">
             <HeroContent>
                 <HeroMax />
             </HeroContent>

@@ -1,3 +1,5 @@
+@inherits SessionComponentBase
+
 <section class="program" aria-labelledby="program-title">
     <div class="program-header">
         <h3 id="program-title" class="program-title">@Localizer["Program_Title"]</h3>
@@ -27,7 +29,7 @@
                 data-testid="program-block"
                 data-index="@position"
                 data-command-id="@command.Id"
-                data-direction="@command.Direction.ToString().ToLowerInvariant()"
+                data-direction="@command.Direction.ToSlug()"
                 data-current="@(isCurrent ? "true" : null)"
                 data-error="@(isError ? "true" : null)"
                 aria-label="@Localizer["Program_Block", number, name]">

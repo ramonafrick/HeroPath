@@ -1,16 +1,18 @@
+@using HeroPath.Shared.UI.Components
 @using HeroPath.Shared.UI.Graphics
+@inherits LocalizedComponentBase
 
 <div class="game-board"
      data-testid="game-board"
      role="group"
      aria-label="@Localizer["Board_Label"]"
-     style="@BoardStyle">
+     style="@_boardStyle">
     @for (var y = 0; y < Grid.Height; y++)
     {
         for (var x = 0; x < Grid.Width; x++)
         {
             var position = new Position(x, y);
-            var kind = KindOf(position);
+            var kind = KindAt(position);
             <div class="cell"
                  @key="position"
                  data-testid="@($"cell-{x}-{y}")"
@@ -41,7 +43,7 @@
          data-testid="hero"
          data-x="@HeroPosition.X"
          data-y="@HeroPosition.Y"
-         style="@HeroStyle">
+         style="@_heroStyle">
         @HeroContent
     </div>
 </div>

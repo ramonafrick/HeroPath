@@ -27,7 +27,7 @@ Game depends on Levels (the interpreter runs on a `Grid`), never the other way r
 - Origin `(0,0)` is **top-left**, `X` grows to the right, `Y` grows downward. `Up` = `Y - 1`, `Down` = `Y + 1`.
 - `Position` is a `readonly record struct (int X, int Y)`.
 - Width and height each `3..20`, default `10×10`, not necessarily square.
-- `Grid` is **immutable** after construction (start, goal, obstacles, items). Run state (person position, collected items, step count) lives in the `Interpreter`, so Reset = create a new interpreter. No undo/"step back" (out of scope).
+- `Grid` is **immutable** after construction (start, goal, obstacles, items) and has value equality (size, start, goal, `RequireAllItems`, obstacles, items), so `GameSession.Load` recognises a reloaded level. Run state (person position, collected items, step count) lives in the `Interpreter`, so Reset = create a new interpreter. No undo/"step back" (out of scope).
 
 ## Movement (`Person.Move(Direction, Grid)`)
 
@@ -146,8 +146,12 @@ Standard levels are embedded resources in `HeroPath.Modules.Levels/Infrastructur
 ## Run state (ExecutionRunner, GameSession)
 
 - `RunStatus`: `Ready`, `Running` (Play), `Paused` (Debug between steps), `Failed`, `Succeeded`. `Tempo`: `Slow` 900 ms, `Medium` 500 ms (default), `Fast` 200 ms; `Tempo.Duration` (in `TempoExtensions`) maps to the wait and to the board animation.
-- `ExecutionRunner(GameSession, TimeProvider)` is the only writer of run state: `PlayAsync()`, `StepOnce()` (Debug), `Reset()`, `Tempo`. `GameSession.UpdateRun/ResetRun/NotifyChanged` are `internal`; tests drive the state through the runner.
+- `ExecutionRunner(GameSession, TimeProvider)` is the only writer of run state: `PlayAsync()`, `StepOnce()` (Debug), `Stop()`, `Reset()`, `CanStart`. `GameSession.UpdateRun/PauseRun/ResetRun` are `internal`; tests drive the state through the runner. `Tempo` lives in `GameSession` (settable, raises `Changed`), the runner only reads it.
+- `CanStart` is the single start rule for Play and Debug: grid loaded, program not empty, status `Ready` or `Paused`. `PlayAsync`/`StepOnce` are no-ops otherwise, and `ControlBar` binds both buttons to it.
 - One `Interpreter` per run, created lazily from `session.ToProgram()` + `session.Grid` on the first Play/Debug after Ready. Play after Debug continues on it.
 - Play executes the first step immediately, then `Task.Delay(Tempo.Duration, timeProvider, token)` between steps; a tempo change applies to the next wait. Reset cancels the token; the token is checked after the wait, so no step is applied after Reset. `OperationCanceledException` is caught only in the runner.
+- `PlayAsync` runs in `try/finally`: if anything throws mid-run (for example a `Changed` handler), the run ends `Paused` (position and program kept, Debug or Reset still work) and the exception propagates. It never stays `Running`. Its `CancellationTokenSource` is disposed when the run ends and only touched while it is still the runner's current one (an old loop never pauses a newer run).
+- `Stop()` cancels a running Play and sets `Paused` (interpreter kept, Play continues where it stopped). `PlayPage` calls it in `Dispose`, so leaving the page leaves no running loop and returning shows a consistent paused state. `Reset()` is the only way back to `Ready`.
+- `GameSession.Load(grid)`: an equal grid is a no-op (no event; program, run and interpreter stay, so returning to the page or re-rendering never resets anything). A different grid discards the run: status `Ready`, no `CurrentStep`, no `MarkedCell`, hero on the new start, editable; the program stays. The runner listens to the session's internal `RunDiscarded` event, cancels a running Play and drops its interpreter.
 - Play while `Running`, Play/Debug after an end state and on an empty program are no-ops. Debug while `Running` is ignored. The first step locks editing (`GameSession.IsEditable` is `Status == Ready`); only Reset unlocks it.
-- `GameSession.CurrentStep`, `HeroPosition` (= `CurrentStep.Position`, else `Grid.Start`), `MarkedCell`: for `Obstacle` the obstacle cell (hero position + direction of the failed `MoveCommand`), for `OutOfBounds` the hero cell, otherwise `null`.
+- `GameSession.CurrentStep`, `HeroPosition` (= `CurrentStep.Position`, else `Grid.Start`), `MarkedCell` (computed once when a step is applied): for `Obstacle` the obstacle cell (hero position + direction of the failed `MoveCommand`), for `OutOfBounds` the hero cell, otherwise `null`.

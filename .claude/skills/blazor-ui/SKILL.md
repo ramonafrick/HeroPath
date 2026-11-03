@@ -43,10 +43,25 @@ The services are pure C# in the module's `Application` folder (no Blazor types),
 | `LevelRepository` (Levels) | scoped | embedded standard levels + custom levels via `IAppStorage` |
 | `IAppStorage` (Shared contract) | scoped, host implementation | `GetAsync`/`SetAsync`/`RemoveAsync` for strings (JSON) |
 
-- `GameSession` raises `event Action? Changed`. Components subscribe in `OnInitialized`, unsubscribe in `Dispose` (`@implements IDisposable`), and re-render via `InvokeAsync(StateHasChanged)`.
-- `ExecutionRunner.PlayAsync`: `while` running → `Step()` → `session.UpdateRun(status, step)` → `await Task.Delay(tempo, timeProvider, ct)`. Reset cancels the token and discards the interpreter. Catch `OperationCanceledException` only in the runner.
+- `GameSession` raises `event Action? Changed`. Components get the subscription from the base classes below.
+- `ExecutionRunner.PlayAsync`: `while` running → `Step()` → `session.UpdateRun(status, step)` → `await Task.Delay(session.Tempo.Duration, timeProvider, ct)`, in `try/finally` (an exception ends the run `Paused`, never `Running`). `Reset` cancels the token and discards the interpreter, `Stop` cancels and leaves the run `Paused`. Catch `OperationCanceledException` only in the runner.
 - Disable controls by state: Play/Debug disabled while running, the editor is read-only during a run, Reset always enabled.
 - The hero name never goes into `IAppStorage`.
+
+## Component lifecycle (rules for ALL components)
+
+Base classes remove the subscription boilerplate: `LocalizedComponentBase` (`Shared.UI/Components`, subscribes `LanguageService.Changed`, `Dispose(bool)`, idempotent) and `SessionComponentBase : LocalizedComponentBase` (`Game.UI/Components`, adds `GameSession.Changed`, protected `Session`). `GraphicBase`, `MainLayout`, `LanguageSwitcher`, `GameBoard` use the first, `PlayPage`, `ControlBar`, `ProgramEditor`, `BlockPalette` the second. A razor file repeats the base with `@inherits` (the code-behind names the same base). `MainLayout` is a layout by convention: it declares `[Parameter] Body` itself.
+
+| Hook | Use for | Never |
+|---|---|---|
+| `OnInitialized` | one-time work: load state into services (`PlayPage`: `Session.Load`, **before** `base.OnInitialized()`), subscribe to service events (in the base classes) | async loading, re-reading parameters |
+| `OnParametersSet` | derive render values from parameters, only where parameters exist (`GameBoard`: styles and cell kinds, rebuilt when the `Grid` instance changes) | subscribing, loading services |
+| `OnAfterRender` | JS interop that needs the DOM | loading or changing state (it triggers another render) |
+| service event | `InvokeAsync(StateHasChanged)` (`HandleChanged` in the base) | calling `StateHasChanged` directly: events can arrive outside the render context |
+| own UI handler (`@onclick`) | change the service, nothing else: Blazor re-renders after the handler | manual `StateHasChanged` |
+| `Dispose` | unsubscribe; `PlayPage` additionally calls `Runner.Stop()` | leaving a loop running |
+
+State is durable because it lives in the scoped services, not in components: `GameSession.Load` of an equal grid is a no-op, so a component that is created again (return to the page, re-render) finds program and run as they were. Leaving `PlayPage` pauses a running Play (`Runner.Stop()`: status `Paused`, program, position and interpreter kept), so the page shows a consistent state on return and the child continues with Play or Debug. Reset would have thrown away progress the child did not ask to lose.
 
 ## Web host (`Hosts/HeroPath.Web/Program.cs`)
 
@@ -82,8 +97,8 @@ await host.RunAsync();
 - `GameBoard` (Levels.UI, no Game types): parameters `Grid` (required), `HeroPosition` (`Position`), `MarkedCell` (`Position?`), `StepDuration` (default 500 ms), `HeroContent` (`RenderFragment?`, e.g. `<HeroMax />`). CSS Grid `grid-template-columns: repeat(var(--cols), 1fr)`, square cells via `aspect-ratio: 1`; the width follows the available height (`--hp-board-reserved`).
 - Board test ids: `game-board`, `cell-{x}-{y}` with `data-kind` (`start|goal|tree|rock|pond|empty`) and `data-marked="true"` (dashed outline plus hatching, readable in greyscale), `hero` with `data-x`/`data-y`. `PlayPage` has `side-panel` (palette, program and controls follow) and `level-name`.
 - Program editing (S3): `BlockPalette` buttons `palette-up|down|left|right` (disabled when `!CanAdd || !IsEditable`); `ProgramEditor` has `program` (the `<ol>`), `program-empty` (hint), `program-clear`, and per block `program-block` with `data-index` (0-based), `data-command-id`, `data-direction` (`up|down|left|right`) plus `program-remove-{index}`. The list scrolls inside the side panel (flex column, `overflow-y: auto`), never the page.
-- `GameSession` API: `Load(Grid)`, `Grid`, `HeroPosition`, `Commands` (read-only `MoveCommand` list), `Add(Direction)`, `Remove(Guid)`, `Clear()`, `CanAdd` (false at `ProgramLimits.MaxProgramCommands`), `IsEditable` (read-only, true only while `Status == Ready`), `Status` (`RunStatus`), `CurrentStep`, `MarkedCell`, `ToProgram()`, `Changed`. Add/Remove/Clear are silent no-ops when locked, full or unknown; `Changed` fires only on real changes. Run state is written only by `ExecutionRunner` (internal mutators).
-- Run controls (S4): `ControlBar` with `control-play`, `control-debug`, `control-reset` (always enabled), `control-tempo` (`<input type=range min=0 max=2 step=1>`, `aria-valuetext`, label `tempo-value`) and `status` (`aria-live=polite`, `data-state` = `ready|running|paused|failed|succeeded`, `data-error` = `ExecutionError` name only when failed, icon shape plus text). Play and Debug are disabled for an empty program, while `Running` (both) and after an end state; Debug stays enabled while `Paused`. Play is awaited in the click handler (`Task`), the loop yields at `Task.Delay`. `ProgramEditor` marks the block of `CurrentStep.CommandId` with `data-current="true"` (thick outline plus arrow marker) and on `Failed` additionally `data-error="true"` (dashed outline plus cross marker). `PlayPage` places `ControlBar` below the program in the side panel and passes `HeroPosition`, `MarkedCell` and `StepDuration = Runner.Tempo.Duration` to `GameBoard`.
+- `GameSession` API: `Load(Grid)` (equal grid: no-op; different grid: run reset, program kept), `Grid`, `HeroPosition`, `Commands` (read-only `MoveCommand` list), `Add(Direction)`, `Remove(Guid)`, `Clear()`, `CanAdd` (false at `ProgramLimits.MaxProgramCommands`), `IsEditable` (read-only, true only while `Status == Ready`), `Status` (`RunStatus`), `CurrentStep`, `MarkedCell` (computed once per applied step), `Tempo` (settable, raises `Changed`), `ToProgram()`, `Changed`. Add/Remove/Clear are silent no-ops when locked, full or unknown; `Changed` fires only on real changes. Run state is written only by `ExecutionRunner` (internal mutators).
+- Run controls (S4): `ControlBar` with `control-play`, `control-debug`, `control-reset` (always enabled), `control-tempo` (`<input type=range min=0 max=2 step=1>`, `aria-valuetext`, label `tempo-value`) and `status` (`aria-live=polite`, `data-state` = `ready|running|paused|failed|succeeded`, `data-error` = `ExecutionError` name only when failed, icon shape plus text). Play and Debug are disabled for an empty program, while `Running` (both) and after an end state; Debug stays enabled while `Paused`. Play is awaited in the click handler (`Task`), the loop yields at `Task.Delay`. `ProgramEditor` marks the block of `CurrentStep.CommandId` with `data-current="true"` (thick outline plus arrow marker) and on `Failed` additionally `data-error="true"` (dashed outline plus cross marker). `PlayPage` places `ControlBar` below the program in the side panel and passes `HeroPosition`, `MarkedCell` and `StepDuration = Session.Tempo.Duration` to `GameBoard`. Play and Debug are bound to `Runner.CanStart` (the only place of that rule).
 - The hero is an absolutely positioned layer that moves with `transform: translate(...)` and `transition` (duration bound to the tempo). Don't re-render the hero inside different cells; that breaks the animation.
 - Highlight the current block via `ExecutionStep.CommandId`. On an error, mark both the block and the board cell.
 - Respect `@media (prefers-reduced-motion: reduce)` (no transitions or confetti).
@@ -113,7 +128,8 @@ public class ControlBarTests : BunitContext
 ```
 
 - bUnit 2.x API: `BunitContext`, `Render<T>()`, `Find`, `FindAll`, `WaitForAssertion`.
-- `InMemoryAppStorage` lives as a test fake in each test project that needs it (no shared test library until two modules need the same fakes).
+- Shared fakes live in `tests/HeroPath.Testing` (a plain class library without tests): `InMemoryAppStorage`, `ThrowingAppStorage`, `CultureScope`, `CultureBunitContext`. Don't copy them into a test project; the three test projects have `HeroPath.Testing` as a global using.
+- bUnit classes that assert localized text derive from `CultureBunitContext` (explicit culture, default `de-CH`, restored on dispose) and carry `[Collection("Culture")]`. `DisposeComponentsAsync()` simulates leaving a page.
 - Full user flows across components are E2E tests (`e2e-playwright` skill), not bUnit.
 - Priority per Architektur §8: `ProgramEditor` (add, remove, nest), `ControlBar`, `GameBoard` rendering, language switching.
 - Test via the click alternative (drag events are hard to simulate). Real drag & drop is covered by one dedicated E2E test and a manual check.

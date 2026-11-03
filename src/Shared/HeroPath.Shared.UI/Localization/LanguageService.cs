@@ -10,9 +10,12 @@ namespace HeroPath.Shared.UI.Localization;
 /// </summary>
 public sealed class LanguageService(IAppStorage storage)
 {
+    /// <summary>Culture name of German (Switzerland), the default language.</summary>
     public const string German = "de-CH";
+    /// <summary>Culture name of English.</summary>
     public const string English = "en";
 
+    /// <summary>Raised after the language was switched with <see cref="SetAsync"/>.</summary>
     public event Action? Changed;
 
     /// <summary>Name of the active culture, always one of <see cref="German"/> or <see cref="English"/>.</summary>
@@ -22,6 +25,7 @@ public sealed class LanguageService(IAppStorage storage)
     public static string Normalize(string? cultureName) =>
         string.Equals(cultureName, English, StringComparison.OrdinalIgnoreCase) ? English : German;
 
+    /// <summary>Applies the stored language (default <see cref="German"/>) without raising <see cref="Changed"/>; call once at startup.</summary>
     public async Task ApplyStoredAsync(CancellationToken cancellationToken)
     {
         string? stored = null;
@@ -37,6 +41,7 @@ public sealed class LanguageService(IAppStorage storage)
         Apply(Normalize(stored));
     }
 
+    /// <summary>Switches the culture of the process, remembers it in storage (best effort) and raises <see cref="Changed"/>.</summary>
     public async Task SetAsync(string cultureName, CancellationToken cancellationToken)
     {
         var culture = Normalize(cultureName);

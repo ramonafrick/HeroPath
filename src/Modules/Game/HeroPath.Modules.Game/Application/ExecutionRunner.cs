@@ -5,34 +5,40 @@ namespace HeroPath.Modules.Game.Application;
 /// <summary>
 /// Runs the program of a <see cref="GameSession"/> for Play and Debug with one shared <see cref="Interpreter"/>.
 /// The first step locks editing; <see cref="Reset"/> unlocks it again. Play executes the first step immediately and
-/// waits for the <see cref="Tempo"/> duration between steps.
+/// waits for the <see cref="GameSession.Tempo"/> duration between steps. The runner lives as long as its session and
+/// drops its run whenever the session loads a different grid.
 /// </summary>
-public sealed class ExecutionRunner(GameSession session, TimeProvider timeProvider)
+public sealed class ExecutionRunner
 {
+    private readonly GameSession _session;
+    private readonly TimeProvider _timeProvider;
     private Interpreter? _interpreter;
     private CancellationTokenSource? _cancellation;
-    private Tempo _tempo = Tempo.Medium;
 
-    /// <summary>Speed of Play. A change during a run applies to the next wait.</summary>
-    public Tempo Tempo
+    public ExecutionRunner(GameSession session, TimeProvider timeProvider)
     {
-        get => _tempo;
-        set
-        {
-            if (_tempo == value)
-            {
-                return;
-            }
-
-            _tempo = value;
-            session.NotifyChanged();
-        }
+        _session = session;
+        _timeProvider = timeProvider;
+        _session.RunDiscarded += DiscardRun;
     }
 
-    /// <summary>Executes steps until the run ends or <see cref="Reset"/> cancels it. Does nothing while running, after an end state or for an empty program.</summary>
+    /// <summary>
+    /// Whether Play or Debug may start or continue: a grid is loaded, the program is not empty and the run is
+    /// <see cref="RunStatus.Ready"/> or <see cref="RunStatus.Paused"/>. This is the only place for the rule.
+    /// </summary>
+    public bool CanStart =>
+        _session.Grid is not null
+        && _session.Commands.Count > 0
+        && _session.Status is RunStatus.Ready or RunStatus.Paused;
+
+    /// <summary>
+    /// Executes steps until the run ends, <see cref="Reset"/> or <see cref="Stop"/> cancels it. Does nothing while running,
+    /// after an end state or for an empty program. If anything throws mid-run (for example a <see cref="GameSession.Changed"/>
+    /// handler), the run ends <see cref="RunStatus.Paused"/> instead of staying <see cref="RunStatus.Running"/> and the exception propagates.
+    /// </summary>
     public async Task PlayAsync()
     {
-        if (!CanStart() || session.Status == RunStatus.Running)
+        if (!CanStart)
         {
             return;
         }
@@ -47,49 +53,76 @@ public sealed class ExecutionRunner(GameSession session, TimeProvider timeProvid
             {
                 var step = interpreter.Step();
                 var status = StatusOf(step, RunStatus.Running);
-                session.UpdateRun(status, step);
+                _session.UpdateRun(status, step);
                 if (status != RunStatus.Running)
                 {
                     return;
                 }
 
-                await Task.Delay(_tempo.Duration, timeProvider, token);
+                await Task.Delay(_session.Tempo.Duration, _timeProvider, token);
                 token.ThrowIfCancellationRequested();
             }
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
+        }
+        finally
+        {
+            if (ReferenceEquals(_cancellation, cancellation))
+            {
+                _cancellation = null;
+                cancellation.Dispose();
+                _session.PauseRun();
+            }
         }
     }
 
     /// <summary>Executes exactly one step (Debug). Does nothing while running, after an end state or for an empty program.</summary>
     public void StepOnce()
     {
-        if (!CanStart() || session.Status == RunStatus.Running)
+        if (!CanStart)
         {
             return;
         }
 
         var step = (_interpreter ??= CreateInterpreter()).Step();
-        session.UpdateRun(StatusOf(step, RunStatus.Paused), step);
+        _session.UpdateRun(StatusOf(step, RunStatus.Paused), step);
+    }
+
+    /// <summary>Stops a running Play and leaves the run <see cref="RunStatus.Paused"/>: program, position and interpreter stay. Does nothing when not running.</summary>
+    public void Stop()
+    {
+        if (_session.Status != RunStatus.Running)
+        {
+            return;
+        }
+
+        ReleaseCancellation();
+        _session.PauseRun();
     }
 
     /// <summary>Cancels a running Play, discards the interpreter and returns the hero to the start. The program stays.</summary>
     public void Reset()
     {
-        _cancellation?.Cancel();
-        _cancellation?.Dispose();
-        _cancellation = null;
-        _interpreter = null;
-        session.ResetRun();
+        DiscardRun();
+        _session.ResetRun();
     }
 
-    private bool CanStart() =>
-        session.Grid is not null
-        && session.Commands.Count > 0
-        && session.Status is RunStatus.Ready or RunStatus.Paused or RunStatus.Running;
+    private void DiscardRun()
+    {
+        ReleaseCancellation();
+        _interpreter = null;
+    }
 
-    private Interpreter CreateInterpreter() => new(session.ToProgram(), session.Grid!);
+    private void ReleaseCancellation()
+    {
+        var cancellation = _cancellation;
+        _cancellation = null;
+        cancellation?.Cancel();
+        cancellation?.Dispose();
+    }
+
+    private Interpreter CreateInterpreter() => new(_session.ToProgram(), _session.Grid!);
 
     private static RunStatus StatusOf(ExecutionStep step, RunStatus whileRunning) => step.State switch
     {

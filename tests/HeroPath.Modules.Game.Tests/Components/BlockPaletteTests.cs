@@ -8,7 +8,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace HeroPath.Modules.Game.Tests.Components;
 
-public class BlockPaletteTests : BunitContext
+[Collection("Culture")]
+public class BlockPaletteTests : CultureBunitContext
 {
     private readonly GameSession _session;
 

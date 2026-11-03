@@ -57,6 +57,7 @@ dotnet publish src/Hosts/HeroPath.Web -c Release
 - Windows Application Control can block freshly built DLLs on load («An Application Control policy has blocked this file»). Tests that inspect assemblies therefore read metadata instead of calling `Assembly.Load`.
 - A test project without tests makes `dotnet test` fail (MTP exit code 8).
 - Unnecessary `using`s are build errors (IDE0005).
+- Blazor WebAssembly only loads the satellite assemblies of the startup culture, so a runtime language switch needs `loadAllSatelliteResources` in `index.html` (see `localization` skill). bUnit cannot catch this, `LanguageTests` (E2E) does.
 
 ## Skills
 

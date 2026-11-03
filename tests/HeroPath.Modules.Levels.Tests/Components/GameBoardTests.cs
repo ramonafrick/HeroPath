@@ -7,7 +7,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace HeroPath.Modules.Levels.Tests.Components;
 
-public class GameBoardTests : BunitContext
+[Collection("Culture")]
+public class GameBoardTests : CultureBunitContext
 {
     private static readonly Grid _grid = new LevelDefinition
     {
@@ -122,7 +123,7 @@ public class GameBoardTests : BunitContext
     {
         var cut = RenderBoard();
 
-        Assert.False(string.IsNullOrWhiteSpace(cut.Find("[data-testid=game-board]").GetAttribute("aria-label")));
+        Assert.Equal("Spielfeld", cut.Find("[data-testid=game-board]").GetAttribute("aria-label"));
     }
 
     private IRenderedComponent<GameBoard> RenderBoard(Action<ComponentParameterCollectionBuilder<GameBoard>>? configure = null) =>

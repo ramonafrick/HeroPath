@@ -13,11 +13,13 @@
   <ItemGroup>
     <Using Include="Xunit" />
     <Using Include="Bunit" />
+    <Using Include="HeroPath.Testing" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Shared\HeroPath.Shared\HeroPath.Shared.csproj" />
     <ProjectReference Include="..\..\src\Shared\HeroPath.Shared.UI\HeroPath.Shared.UI.csproj" />
+    <ProjectReference Include="..\HeroPath.Testing\HeroPath.Testing.csproj" />
   </ItemGroup>
 
 </Project>

@@ -409,6 +409,7 @@ HeroPath/
 │  ├─ HeroPath.Shared.Tests/           xUnit + bUnit (Sprache, LanguageSwitcher)
 │  ├─ HeroPath.Modules.Levels.Tests/   xUnit + bUnit
 │  ├─ HeroPath.Modules.Game.Tests/     xUnit + bUnit
+│  ├─ HeroPath.Testing/                Gemeinsame Test-Hilfen (InMemoryAppStorage, ThrowingAppStorage, CultureScope), keine Tests
 │  ├─ HeroPath.ArchitectureTests/      Abhängigkeitsregeln
 │  └─ HeroPath.E2E/                    Playwright, Screenshots nach artifacts/screenshots
 └─ docs/

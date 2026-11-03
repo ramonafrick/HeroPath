@@ -1,6 +1,6 @@
 using HeroPath.Shared.Application.Contracts;
 
-namespace HeroPath.Shared.Tests.Fakes;
+namespace HeroPath.Testing;
 
 public sealed class ThrowingAppStorage : IAppStorage
 {
