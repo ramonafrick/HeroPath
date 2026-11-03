@@ -71,7 +71,6 @@ builder.Services
     .AddLevelsModule()
     .AddGameModule();
 builder.Services.AddScoped<IAppStorage, LocalStorageAppStorage>();   // Hosts/HeroPath.Web/Services
-builder.Services.AddFluentUIComponents();
 var host = builder.Build();
 await host.Services.ApplyStoredCultureAsync();        // see localization skill
 await host.RunAsync();
@@ -81,7 +80,7 @@ await host.RunAsync();
 
 ## Fluent UI Blazor
 
-- No Fluent UI component is used so far (decision D4 of M4: the start page has own cards, the LevelPicker will be a native `<select>`). Fluent UI is only a candidate for a slider or dialogs later. Board, palette and program blocks are **custom** components with playful styling.
+- No Fluent UI component is used so far (decision D4 of M4: the start page has own cards, the LevelPicker is a native `<select>`; the package is in `Directory.Packages.props` but not referenced or registered). Fluent UI is only a candidate for a slider or dialogs later. Board, palette and program blocks are **custom** components with playful styling.
 - Override the look with CSS custom properties / isolated CSS. Don't fight Fluent's internals with `!important` chains.
 - Fluent UI's web components and CSS ship with the NuGet package (local `_content`), so no CDN is needed. Verify that after publishing.
 
@@ -142,6 +141,7 @@ await host.RunAsync();
 ## Accessibility (for kids, but it applies to all)
 
 - Real `<button>` elements for all actions (keyboard-accessible by default), visible focus.
+- A `<button>` may contain only phrasing content (no `<div>`, no `GameBoard`). For a clickable card with block content use a `<div>` card with a real button whose `::after` is stretched over the card (StartPage level cards).
 - Start and goal distinguishable by **pattern and shape**, not just colour.
 - Localized `aria-label`/`<title>` on blocks and SVGs.
 
@@ -153,7 +153,6 @@ public class ControlBarTests : BunitContext
     public ControlBarTests()
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
-        Services.AddFluentUIComponents();
         Services.AddLocalization();
         Services.AddSingleton<IAppStorage, InMemoryAppStorage>();
     }

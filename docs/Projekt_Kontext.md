@@ -15,7 +15,7 @@ Browser-Lern-App «HeroPath» (HeldenWeg / Hero's Path) für den Zukunftstag: Ki
 | Dauer | Ca. 4 Stunden Halbtag, danach ist der Einsatz vorbei |
 | Technik | .NET 10, Blazor WebAssembly, rein clientseitig |
 | Plattformen | Heute Browser. Die Architektur ist für .NET MAUI Blazor Hybrid (Mobile) als zweiten Host vorbereitet, Umsetzung später |
-| UI-Bibliothek | Fluent UI Blazor für Dialoge, Auswahl, Slider und Buttons, eigenes verspieltes Styling |
+| UI-Bibliothek | Fluent UI Blazor für Dialoge, Auswahl, Slider und Buttons, eigenes verspieltes Styling. Stand nach M4 nicht verwendet: Startseite und Level-Auswahl nutzen eigene Karten und ein natives `select` (`Architektur C4.md` §6, Nr. 24) |
 | Steuerung | Absolut: Hoch, Runter, Links, Rechts. Dazu Wiederhole-Block (verschachtelbar, 2 Ebenen) |
 | Spielfeld | Frei einstellbar, Standard 10×10, nicht zwingend quadratisch |
 | Start und Ziel | Eigene Felder mit anderer Farbe und Muster (Fussabdrücke, Burg auf Schachbrett) |
@@ -71,7 +71,8 @@ Browser-Lern-App «HeroPath» (HeldenWeg / Hero's Path) für den Zukunftstag: Ki
 - **Sprache und Framework:** C# (aktueller Sprachstand von .NET 10), Blazor WebAssembly.
 - **Architektur:** Modular nach Clean Architecture. Module `Levels` (Spielfeld, Level, Editor) und `Game` (Held, Bausteine, Interpreter) plus `Shared`. Jedes Modul hat ein reines C#-Projekt (`Domain`, `Application`, `Infrastructure`, ohne UI-Abhängigkeit) und ein `.UI`-Projekt (Razor Class Library). Abhängigkeitsrichtung `Shared ← Levels ← Game`, automatisch geprüft. Hosts unter `src/Hosts`: heute `HeroPath.Web`, `HeroPath.Maui` kann später folgen. Details in `Architektur C4.md` §3.
 - **Plattformdienste:** Speicher, Datei-Export und Ähnliches laufen über Schnittstellen in `Shared` (z. B. `IAppStorage`), die jeder Host implementiert.
-- **Standard-Levels:** Eingebettete JSON-Ressourcen in `HeroPath.Modules.Levels`, damit sie in jedem Host funktionieren. Heute über die statische Klasse `StandardLevels` gelesen (ein Demo-Level), `ILevelSource` und `LevelRepository` folgen mit M5.
+- **Standard-Levels:** Eingebettete JSON-Ressourcen in `HeroPath.Modules.Levels`, damit sie in jedem Host funktionieren. Seit M4 sieben Level (`free-field`, `easy-1`, `easy-2`, `strawberries`, `small-maze`, `long-road`, `castle-maze`), das Demo-Level entfällt. Sie werden weiter über die statische Klasse `StandardLevels` gelesen, `LevelProgress` (Game) bekommt die Reihenfolge aus `StandardLevels.All`. `ILevelSource` und `LevelRepository` folgen mit M5.
+- **Heldenwahl, Name und Fortschritt (seit M4):** `HeroChoice` (Held, normalisierter Name, gewähltes Level) und `LevelProgress` (Reihenfolge, gelöste Level) sind scoped Dienste in `Modules.Game/Application` und halten ihre Daten nur im Speicher. Nichts davon geht in `localStorage`, die URL oder die Domain. Ein Neuladen der Seite setzt Held, Name und Fortschritt zurück, `/play` ohne Wahl leitet auf `/` um. Namensregeln: höchstens 20 Zeichen, Steuer- und Formatzeichen entfernt, leer ergibt den Standardnamen. Details in `Architektur C4.md` §4.2 («Held, Level und Fortschritt») und §6 (Nr. 21 bis 26).
 - **Interpreter:** Ein Interpreter für Play und Debug. Er liefert pro `Step()` einen `ExecutionStep` mit Position, Status, ggf. Fehler und (seit M3) den Runden der umschliessenden Wiederhole-Blöcke.
 - **Ablaufsteuerung (seit M2):** `GameSession` hält Programm, Lauf-Status (`RunStatus`) und Tempo, `ExecutionRunner` führt Play, Debug und Reset über den Interpreter aus. Beide sind reines C# in `Modules.Game/Application`. Details in `Architektur C4.md` §4.2.
 - **Programm als Baum (seit M3):** Das Programm ist eine unveränderliche `ProgramDefinition` mit verschachtelten Wiederhole-Blöcken. Alle Bearbeitungen (Einfügen, Verschieben, Entfernen, Anzahl ändern) sind reine Funktionen in `ProgramEditing` (Domain). `GameSession` hält zusätzlich Auswahl und Meldung (`GameMessage`). Details in `Architektur C4.md` §4.2 und §6 (Nr. 15 bis 20).
@@ -111,17 +112,17 @@ Browser-Lern-App «HeroPath» (HeldenWeg / Hero's Path) für den Zukunftstag: Ki
 | M1 | Domain der Module `Levels` (Grid, Level) und `Game` (Person, Befehle, Interpreter) mit Tests | ✅ erledigt |
 | M2 | Blazor-Grundgerüst, Spielfeld, Figur, Play, Debug, Reset (Programm zunächst per Klick) | ✅ erledigt |
 | M3 | Drag & Drop, Wiederhole-Block, Block-Hervorhebung, Fehlermeldungen | ✅ erledigt |
-| M4 | Level-Vorlagen, Start-Dialog, Items | offen |
+| M4 | Level-Vorlagen, Start-Dialog, Items | ✅ erledigt |
 | M5 | Level-Editor und Speicherung | offen |
 | M6 | Deutsch und Englisch, Feinschliff, Probelauf auf dem Ziel-Laptop | offen |
 | M7 | (später, nach dem Zukunftstag) `Hosts/HeroPath.Maui` als Host, responsives Layout und Touch-Bedienung | offen |
 
-Wenn die Zeit knapp wird, entfallen zuerst M5 und die Items. M1 bis M4 ergeben bereits ein vollwertiges Spiel. Abweichungen und offene Punkte aus M1: `requirements-M1.md`, Abschnitt «Umsetzungsstand und bekannte Einschränkungen». Aus M2: `requirements-M2.md`, Abschnitt «Umsetzungsstand und bekannte Einschränkungen». Aus M3: `requirements-M3.md`, Abschnitt «Umsetzungsstand und bekannte Einschränkungen».
+Wenn die Zeit knapp wird, entfallen zuerst M5 und die Items. M1 bis M4 ergeben bereits ein vollwertiges Spiel. Abweichungen und offene Punkte aus M1: `requirements-M1.md`, Abschnitt «Umsetzungsstand und bekannte Einschränkungen». Aus M2: `requirements-M2.md`, Abschnitt «Umsetzungsstand und bekannte Einschränkungen». Aus M3: `requirements-M3.md`, Abschnitt «Umsetzungsstand und bekannte Einschränkungen». Aus M4: `requirements.md`, Abschnitt «Umsetzungsstand und bekannte Einschränkungen».
 
 ## 8. Offene Punkte
 
 - [ ] Datum des Zukunftstags und verfügbare Entwicklungszeit
-- [ ] Hindernisse und Items final festlegen (Vorschlag: Baum, Stein, Teich; Erdbeere, Pizza)
+- [x] Hindernisse und Items final festlegen: Baum, Stein, Teich; Erdbeere, Pizza (seit M4 in den sieben Standard-Levels umgesetzt, weitere Arten wären Could)
 - [ ] Freigabe der IT/Security für die lokale Installation auf den Laptops
 - [ ] Ablauf des Halbtags (App als Einstieg, danach weitere Aufgaben?)
 - [ ] Soll jedes Kind seine Levels am Ende mitnehmen können (Export)?

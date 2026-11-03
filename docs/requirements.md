@@ -124,3 +124,50 @@ Bleibt M4 aus, gibt es am Zukunftstag nur eine Aufgabe und keine Wahl der Figur.
 ## Open Questions
 
 - Keine. Technische Wahl (Fluent UI oder eigene Komponenten, Ort des Gelöst-Status, Startseite in `Game.UI`) wird im Plan mit Optionen vorgelegt.
+
+## Umsetzungsstand und bekannte Einschränkungen
+
+Stand nach M4 (Code in `src/` und `tests/`). Die Abschnitte oben beschreiben die Anforderung, dieser Abschnitt den tatsächlichen Stand. Die Entscheidungen mit Alternativen stehen in `Architektur C4.md` §6 (Nr. 21 bis 26), der Plan in `plan.md`.
+
+### Abweichungen und Ergänzungen, im Verlauf entschieden
+
+- **Level (FR15, FR17):** `free-field` startet auf (2,7) und endet auf (7,3) statt in den Ecken. Mit Ecken (unten links nach oben rechts auf 10×10) wären es 18 Bausteine. Die Regel «erste Level mit höchstens 10 Bausteinen lösbar» geht vor, hier sind es 9. `easy-2` ist das bisherige Demo-Layout mit drei Hindernissen (Baum, Stein, Teich; Plan D5), damit die Unit- und E2E-Tests ihre Koordinaten behalten.
+- **LevelPicker (FR11):** Er steht in den Werkzeugen der Seitenleiste, ganz oben in der Werkzeug-Spalte (`side-tools`), nicht im Kopf über dem Spielfeld, weil die Kopfzeile auf 1366×768 umbrach. Es ist ein natives `<select>` (kein Fluent UI, Entscheid Nr. 24).
+- **Zähler (FR21):** `ItemCounter` hat eine eigene Zeile zwischen Kopf (`board-head`) und Spielfeld. In Levels mit Items (`data-has-items` auf `board-area`, Reserve 12.75 rem statt 10.25 rem) ist das Spielfeld dadurch etwas kleiner.
+- **Startseite (FR4):**
+  - Eine Level-Karte ist ein `div` mit einem gestreckten `button` (`level-card-button`, die Klickfläche reicht per `::after` über die ganze Karte). So ist das HTML gültig (kein `button` mit Vorschau-Inhalt) und die ganze Karte bleibt klickbar.
+  - Die Vorschau hat eine feste Zellgrösse von 16 px (`--hp-preview-cell`) und eine einheitliche Höhe der Vorschau-Box (15 Zellen), damit die Karten nicht springen.
+  - Auf 1366×768 scrollt die Startseite senkrecht. Die linke Spalte mit Held, Name und «Los!» ist ab 60 rem Breite `position: sticky` und bleibt sichtbar.
+- **Breite Spielfelder:** Ist ein Spielfeld mindestens doppelt so breit wie hoch (`cols ≥ 2 × rows`, heute `long-road`, `data-wide` auf `play-page`), bekommt die Seitenleiste im Laptop-Layout eine schmalere Spalte (höchstens 36 rem statt 42 rem). Die Zellen sind dann etwa 49 px statt 40 px gross. Die untere Bildschirmhälfte bleibt trotzdem teilweise leer. Grenze: Das zweispaltige Seitenfeld (Werkzeuge und Programm) braucht etwa 36 rem, schmaler wird es nicht.
+- **Heldenname (FR3, NFR2):** `HeroChoice.NormalizeName` entfernt Steuerzeichen, Unicode-Formatzeichen (Zero-Width, Bidi-Steuerzeichen) sowie Zeilen- und Absatztrenner, entfernt Leerraum am Rand und schneidet auf höchstens 20 Textelemente (nie mitten in einem Surrogatpaar oder einer Kombination). Bleibt nichts übrig, gilt der Standardname. Das Eingabefeld begrenzt zusätzlich per `maxlength`. Das Kopf-Element `HeroBadge` zeigt den Namen mit `unicode-bidi: isolate`. Der Name wird nirgends gespeichert oder geloggt.
+- **Navigation (FR6, FR14):** `StartPage.Go` lädt das Level nicht mehr, es ruft `HeroChoice.Choose` und navigiert relativ nach `play`. `PlayPage` lädt beim Öffnen das Level aus `HeroChoice.LevelId` (bis zur Wahl `null`) über `LevelProgress.Find`. Ohne Wahl leitet `/play` per `NavigateTo("", replace: true)` auf `/` um. LevelPicker und «Nächstes Level» rufen `HeroChoice.SelectLevel` und `GameSession.Load`.
+- **Texte (FR21):** Der Pizza-Zähler hat einen einzigen Schlüssel für alle Anzahlen (`ItemCounter_Pizza`), der Erdbeeren-Zähler hat Einzahl und Mehrzahl.
+- **E2E-Tests:** `LevelCoverageTests` löst alle 7 Level per Klick (LevelPicker, feste Lösung je Level) und prüft «Du hast alle Level geschafft!» in DE und EN. Die E2E-Screenshots laufen mit reduzierter Bewegung (siehe Animation).
+- **Animation (FR20):** Ein eingesammeltes Item hüpft und blendet in 400 ms aus (`data-collected`). Bei `prefers-reduced-motion` ist es sofort versteckt. Weil die E2E-Screenshots mit reduzierter Bewegung laufen, ist die Animation selbst auf Screenshots nicht sichtbar.
+
+### Offen (nicht umgesetzt)
+
+- **Aus dem Code-Review, [COULD], nicht behoben:**
+  - `HeroChoice.Changed` wird von niemandem abonniert.
+  - `LevelPicker` setzt an den Optionen sowohl `value` als auch `selected`.
+  - `@key` am einzelnen Item-Kind im `GameBoard` hat keine Wirkung.
+  - `GameBoard` berechnet Zellarten und Items in zwei Durchläufen.
+  - Die Zuordnung Item → Grafik steht doppelt in `GameBoard` und `ItemCounter`. `Shared.UI` kann `ItemKind` nicht kennen und die Zuordnung deshalb nicht anbieten.
+  - Der Pizza-Text des `ItemCounter` hat einen Schlüssel für alle Anzahlen.
+  - Die Regeln der Level-Karten in `StartPage.razor.css` stehen nicht gruppiert (`.level-card` und zugehörige Regeln sind über die Datei verteilt).
+  - `StandardLevels.Get` wirft `KeyNotFoundException` für eine unbekannte Id. `PlayPage` verwendet es nicht mehr, sondern `LevelProgress.Find`, und leitet bei `null` um. Die Exception ist über die Oberfläche daher nicht erreichbar. Für M5 offen: `LevelProgress` kennt nur die Standard-Level, eigene Levels brauchen eine andere Quelle.
+  - `LevelPicker` zeigt nur Namen aus resx (`Level_<id>`). Eigene Levels aus M5 brauchen einen Rückfall auf `LevelDefinition.Name`.
+  - `ExecutionRunnerProgressTests` und `MessageBoxTests` verwenden noch die echten Standard-Level-Ids.
+  - `LevelProgress.MarkSolved` läuft vor `GameSession.UpdateRun`. Das kostet einen zusätzlichen Render.
+- **Visuell [COULD], nicht behoben:**
+  - Die Animation eines eingesammelten Items läuft einmal erneut ab, wenn das Kind auf die Spielseite zurückkehrt.
+  - Auf dem Desktop (1920×1080) bleibt der untere Teil der Startseite leer.
+  - Auf dem Desktop bricht im Level `small-maze` der Unterhinweis um.
+- **Verschoben (Out of Scope):**
+  - Konfetti (M6).
+  - Level-Editor und eigene Levels (M5).
+  - Fortschritt und Heldenwahl in `localStorage`.
+  - Level in der URL (`/play/<id>`).
+  - Freischalten der Level nacheinander.
+  - Programm pro Level merken.
+- **Fluent UI:** In M4 nicht verwendet (`Architektur C4.md` §6, Nr. 24). Das Setup von Version 5 ist unverifiziert.
