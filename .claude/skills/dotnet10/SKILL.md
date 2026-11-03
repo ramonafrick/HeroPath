@@ -117,7 +117,7 @@ Keep it minimal — it's a client-side kids' app. `ILogger<T>` with structured p
 - One test project per module (`tests/HeroPath.Modules.<X>.Tests`) with **xUnit v3** for domain/application and **bUnit** for that module's components. Package `xunit.v3.mtp-v2` (Microsoft Testing Platform v2, matches the MTP runner in `global.json`), test projects are `OutputType Exe`, `Xunit`/`Bunit` are global usings in the csproj.
 - `tests/HeroPath.ArchitectureTests` enforces the module dependency rules. It reads DLL metadata instead of loading assemblies, because Windows Application Control on this machine can block loading freshly built DLLs. Keep it that way.
 - `tests/HeroPath.E2E` (Playwright) only runs with `HEROPATH_E2E=1` (see the `e2e-playwright` skill).
-- A test project without any test makes `dotnet test` fail (MTP exit code 8). Every test project needs at least one real test.
+- A test project without any test makes `dotnet test` fail (MTP exit code 8). Every test project needs at least one real test. The same exit code appears when `--filter` on `--solution` matches nothing in some projects: filter with `--project` instead.
 - Every logic change in a module gets a test (rule from `Projekt_Kontext.md`).
 - `[Theory]` + `[InlineData]` for movement/obstacle/edge tables; cover nested repeat, step limit, items, `RequireAllItems`, level validation.
 - Assertions: plain xUnit `Assert` by default. Don't add FluentAssertions (v8+ has a commercial license, conflicts with an MIT kids' project without discussion).

@@ -114,3 +114,40 @@ Die Spielregeln aus M1 (`Grid`, `Person`, `Interpreter`) sind getestet, aber noc
   - Das Demo-Level hat die Id `demo` und ist keine der 7 Vorlagen. M4 darf es ersetzen oder als Vorlage übernehmen.
   - Bei `OutOfBounds` wird das Feld markiert, auf dem Max stehen bleibt (der Zug wird nicht ausgeführt).
   - Die M1-Dokumente liegen jetzt als `docs/requirements-M1.md` und `docs/plan-M1.md` vor. Der Verweis in `Projekt_Kontext.md` §7 ist nachgeführt.
+
+## Umsetzungsstand und bekannte Einschränkungen
+
+Stand nach M2 (Code in `src/` und `tests/`). Die Abschnitte oben beschreiben die Anforderung, dieser Abschnitt den tatsächlichen Stand. Die Reihenfolge der Entscheidungen mit Alternativen steht in `Architektur C4.md` §6 (Nr. 11 bis 14).
+
+### Abweichungen, im Review entschieden
+
+- **Sprachwechsel und Satellite-Assemblies (FR19):** Blazor WebAssembly lädt die Satellite-Assemblies (die `en`-resx) nur für die beim Start aktive Kultur. `Hosts/HeroPath.Web/wwwroot/index.html` startet Blazor deshalb manuell (`autostart="false"`, dann `Blazor.start({ configureRuntime: dotnet => dotnet.withConfig({ loadAllSatelliteResources: true }) })`), alle Sprachen werden beim Start geladen. Das Flag `loadAllSatelliteResources` liest der .NET-Runtime-Loader, es steht aber nicht in der öffentlichen `dotnet.d.ts`. Abgesichert ist es durch den E2E-Test `LanguageTests.Switch_ChangesTexts_AndPersists` (Wechsel ohne Neuladen). bUnit würde den Fehler nicht bemerken, weil es auf der .NET-Runtime läuft. Alternativen: `Architektur C4.md` §6, Nr. 11.
+- **`GameSession.Load` (FR1, FR11):** `Load(Grid)` mit einem gleichen Grid (Wertgleichheit über `Grid.Equals`: Grösse, Start, Ziel, `RequireAllItems`, Hindernisse, Items) ändert nichts, Programm und Lauf bleiben. Ein anderes Grid verwirft den Lauf (Status `Ready`, Held auf dem neuen Start, entsperrt), das Programm bleibt. `PlayPage` ruft `Load` beim Öffnen auf.
+- **Verlassen der Seite stoppt Play (nicht in den Anforderungen):** `PlayPage.Dispose` ruft `ExecutionRunner.Stop()`. Ein laufendes Play endet im Status `Paused` mit unverändertem Interpreter und Programm. Es wird nicht zurückgesetzt. Die UI hat weiterhin keinen Pause-Knopf (FR10), `Stop` wird nur hier verwendet. Alternativen: `Architektur C4.md` §6, Nr. 14.
+- **Tempo in `GameSession`, Startregel im Runner:** Das Tempo (`Tempo`, Standard `Medium`) ist Zustand von `GameSession`; eine Änderung wirkt auf die nächste Wartezeit und löst `Changed` aus. Die Regel, ob Play oder Debug starten dürfen (Grid geladen, Programm nicht leer, Status `Ready` oder `Paused`), steht nur in `ExecutionRunner.CanStart`. `ControlBar` und `PlayAsync`/`StepOnce` verwenden dieselbe Eigenschaft. Reset ist immer aktiv (kein `disabled`).
+- **Play-Schleife mit `try/finally`:** `PlayAsync` führt den ersten Schritt sofort aus und wartet danach `Tempo.Duration` (mit `TimeProvider`). Beendet eine Ausnahme die Schleife (z. B. aus einem `Changed`-Handler), wechselt der Status im `finally` von `Running` auf `Paused`, die Ausnahme wird weitergereicht. Bei Abbruch durch Reset oder Stop passiert das nicht doppelt (Vergleich der `CancellationTokenSource`).
+- **Seitenleiste:** Reihenfolge Palette → Steuerung → Programm (`PlayPage.razor`), geändert gegenüber der Annahme «Palette, Programm, Steuerung». Der Entfernen-Knopf ist ein Papierkorb-Symbol (44-px-Ziel, `aria-label` «Baustein N entfernen»). Aktueller und fehlerhafter Baustein tragen ein Eck-Abzeichen (Kreis mit Pfeil bzw. Dreieck mit Ausrufezeichen) zusätzlich zu Rahmen und Muster, damit sie auch in Graustufen erkennbar sind.
+- **`StandardLevels` statisch (FR1):** Der «kleine Level-Dienst» ist die statische Klasse `Modules.Levels/Infrastructure/StandardLevels` (`All`, `Get(id)`), die die eingebetteten `Infrastructure/Levels/*.json` über `LevelJson.Read` liest, nach Dateiname sortiert. Es gibt noch kein `ILevelSource` und kein `LevelRepository`; sie kommen mit M5. Das Demo-Level heisst `00-demo.json` (Id `demo`, Start (1,6), Ziel (6,3)). Ein ungültiges eingebettetes Level wirft beim ersten Zugriff. Alternativen: `Architektur C4.md` §6, Nr. 13.
+- **Testinfrastruktur:**
+  - Neues Testprojekt `tests/HeroPath.Shared.Tests` (Sprache, `LanguageSwitcher`, `LocalizedComponentBase`, Grafiken).
+  - Neue Test-Hilfsbibliothek `tests/HeroPath.Testing` ohne Tests (`InMemoryAppStorage`, `ThrowingAppStorage`, `CultureScope`, `CultureBunitContext`), von den drei `*.Tests`-Projekten referenziert.
+  - Neues Testpaket `Microsoft.Extensions.TimeProvider.Testing` (`FakeTimeProvider`), nur in `HeroPath.Modules.Game.Tests` referenziert. Das ist die einzige neue NuGet-Abhängigkeit. NFR6 bezieht sich damit auf Produktionscode: Die Projekte unter `src/` haben keine neuen Pakete. Alternativen: `Architektur C4.md` §6, Nr. 12.
+- **Plattformzugriff:** `LocalStorageAppStorage` (Host) fängt `JSException`, `JSDisconnectedException`, `InvalidOperationException` und Zeitüberschreitungen ab: Lesen liefert `null`, Schreiben wird verworfen. Ein vom Aufrufer angeforderter Abbruch wird nicht verschluckt.
+
+### Offen (nicht umgesetzt)
+
+- **Visuell [COULD]** (Befunde des visuellen Checks, nicht behoben):
+  - Max verdeckt die Burg beim Erfolg grösstenteils.
+  - Der Erfolgsstatus hat keine Feier. Konfetti ist Should und kommt später.
+  - Das Warn-Abzeichen ist in Graustufen klein und kontrastarm.
+  - Max wird am Rand vom gestrichelten Feldrahmen leicht angeschnitten.
+  - Die Statusbezeichnungen sind uneinheitlich: DE «Pause», EN «Paused». Zu prüfen ist «Pausiert».
+  - Die Figuren wirken auf dem 10×10-Feld klein.
+  - Das Tempo bleibt nach Reset erhalten. Das ist gewollt, FR11 setzt das Tempo nicht zurück.
+- **Kein Screenshot mit mehr als 8 Bausteinen:** NFR4 nennt «bis ca. 10 Bausteine». Ob das Layout mit 10 Bausteinen ohne Scrollen passt, ist nicht verifiziert.
+- **Kein Unit-Test für `LocalStorageAppStorage`:** Es gibt kein Testprojekt für den Host. Abgedeckt ist die Klasse nur indirekt durch den E2E-Test `LanguageTests`.
+- **`ProgramEditor` rendert pro Klick zweimal:** einmal nach dem Klick-Handler, einmal durch das `Changed`-Ereignis (`SessionComponentBase`). Bewusst belassen, weil der zweite Render nur das identische Ergebnis neu zeichnet.
+- **Sicherheit (Info):**
+  - `index.html` enthält keine Content-Security-Policy als `<meta>`-Tag.
+  - `dotnet list package --vulnerable` läuft nicht in der CI. Im Repository gibt es noch keinen `.github`-Ordner und damit keine CI.
+- **Fehlermeldungen:** Kindgerechte Meldungen pro Fehlerart folgen in M3 (FR17). In M2 zeigt der Status nur den Zustand und `data-error` den Namen der `ExecutionError`.

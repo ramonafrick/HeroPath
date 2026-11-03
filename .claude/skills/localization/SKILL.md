@@ -94,3 +94,4 @@ public sealed class LanguageService(IAppStorage storage)
 2. German without `ß`, guillemets, «du» form.
 3. Placeholders documented in `<comment>`.
 4. Used via `Localizer["Key"]` / `Localizer["Key", arg]`, no fallback string in code.
+5. Keys built from enum values (`Status_{RunStatus}`, `Tempo_{Tempo}`) get a completeness test per culture (`GameResourcesTests`). Use `ResourceManager.GetResourceSet(culture, createIfNotExists: true, tryParents: false)`: `GetString` for `en` silently falls back to German and hides a missing key.
