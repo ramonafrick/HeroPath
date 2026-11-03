@@ -82,6 +82,8 @@ public class LevelFileTests(AppFixture app)
             await Expect(page.Locator("[data-testid^=custom-level-export-]")).ToHaveCountAsync(2);
             await Expect(page.GetByTestId("editor-status")).ToHaveAttributeAsync("data-state", "solvable");
             await Expect(page.GetByTestId("editor-name")).Not.ToHaveValueAsync(LevelName);
+            await LayoutAssertions.AssertVisibleInEditorPanelAsync(page, "[data-testid=editor-import-message]", "[data-testid^=custom-level-custom-]");
+            await Expect(page.GetByTestId("editor-export-hint")).ToHaveTextAsync("Der Name deines Levels steht in der Datei. Verwende nicht deinen echten Namen.");
             await Screenshots.CaptureAsync(page, "editor-import-ok.laptop.de");
             await SwitchLanguageAsync(page, "en");
             await Expect(message).ToHaveTextAsync("«Käse-Weg» is now in your list.");
@@ -105,6 +107,12 @@ public class LevelFileTests(AppFixture app)
             await File.WriteAllTextAsync(tooLarge, new string(' ', 300 * 1024), TestContext.Current.CancellationToken);
             await importInput.SetInputFilesAsync(tooLarge);
             await Expect(message).ToHaveTextAsync("Die Datei ist zu gross.");
+            await LayoutAssertions.AssertVisibleInEditorPanelAsync(page, "[data-testid=editor-import-message]");
+            await Screenshots.CaptureAsync(page, "editor-import-too-large.laptop.de");
+            await SwitchLanguageAsync(page, "en");
+            await Expect(message).ToHaveTextAsync("The file is too large.");
+            await Screenshots.CaptureAsync(page, "editor-import-too-large.laptop.en");
+            await SwitchLanguageAsync(page, "de");
             await Expect(page.Locator("[data-testid^=custom-level-export-]")).ToHaveCountAsync(2);
 
             await page.GotoAsync("/");

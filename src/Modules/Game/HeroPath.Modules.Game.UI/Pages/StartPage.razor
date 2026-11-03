@@ -12,6 +12,10 @@
     <section class="start-intro">
         <h2 class="start-title">@GameLocalizer["Start_Title"]</h2>
         <p class="start-text">@GameLocalizer["Start_Intro"]</p>
+        @if (Repository.Custom.Count > 0)
+        {
+            <a class="start-jump-custom" data-testid="start-jump-custom" href="#custom-levels">@GameLocalizer["Start_JumpCustom"]</a>
+        }
     </section>
 
     <div class="start-setup">
@@ -65,7 +69,7 @@
 
         @if (Repository.Custom.Count > 0)
         {
-            <section class="start-custom-levels" data-testid="custom-levels" aria-labelledby="start-custom-levels-title">
+            <section id="custom-levels" class="start-custom-levels" data-testid="custom-levels" aria-labelledby="start-custom-levels-title">
                 <h3 id="start-custom-levels-title" class="start-section-title">@GameLocalizer["Start_CustomLevelsTitle"]</h3>
                 <div class="level-cards">
                     @foreach (var level in Repository.Custom)
@@ -80,6 +84,7 @@
 
 @code {
     private RenderFragment LevelCard(LevelDefinition level) => @<div class="level-card"
+         id="@($"level-card-{level.Id}")"
          @key="level.Id"
          data-solved="@(Progress.IsSolved(level.Id) ? "true" : "false")"
          data-selected="@(_levelId == level.Id ? "true" : "false")">

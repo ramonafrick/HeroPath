@@ -262,6 +262,29 @@ public class StartPageTests : CultureBunitContext
     }
 
     [Fact]
+    public async Task Render_WithCustomLevels_HasAJumpLinkAndMatchingIds()
+    {
+        await AddCustomLevelsAsync(("custom-a", "Mein Burgweg"));
+
+        var page = Render<StartPage>();
+
+        var link = page.Find("[data-testid=start-jump-custom]");
+        Assert.Equal("Zu meinen Levels", link.TextContent.Trim());
+        Assert.Equal("#custom-levels", link.GetAttribute("href"));
+        Assert.Equal("custom-levels", page.Find("[data-testid=custom-levels]").Id);
+        Assert.Equal("level-card-custom-a", page.Find("[data-testid=level-card-custom-a]").ParentElement!.Id);
+        Assert.Equal("level-card-easy-1", page.Find("[data-testid=level-card-easy-1]").ParentElement!.Id);
+    }
+
+    [Fact]
+    public void Render_WithoutCustomLevels_HasNoJumpLink()
+    {
+        var page = Render<StartPage>();
+
+        Assert.Empty(page.FindAll("[data-testid=start-jump-custom]"));
+    }
+
+    [Fact]
     public async Task Render_WithCustomLevels_ShowsThemInASectionAfterTheStandardCards()
     {
         await AddCustomLevelsAsync(("custom-a", "Mein Burgweg"), ("custom-b", "Zweiter"));

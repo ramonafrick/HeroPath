@@ -61,4 +61,44 @@ public static class LayoutAssertions
         }");
         Assert.Empty(problems);
     }
+
+    /// <summary>
+    /// For every selector the last matching element must be fully visible inside the editor side panel (which scrolls as a whole) and inside the viewport: the result
+    /// message of a save or import and the entry it created must not sit behind the panel edge.
+    /// </summary>
+    public static async Task AssertVisibleInEditorPanelAsync(IPage page, params string[] selectors)
+    {
+        var problems = await page.EvaluateAsync<string[]>(@"selectors => {
+            const panel = document.querySelector('[data-testid=editor-panel]').getBoundingClientRect();
+            const problems = [];
+            for (const selector of selectors) {
+                const matches = document.querySelectorAll(selector);
+                const element = matches[matches.length - 1];
+                if (!element) {
+                    problems.push(`${selector}: missing`);
+                    continue;
+                }
+                const r = element.getBoundingClientRect();
+                if (r.top < panel.top - 0.5 || r.bottom > panel.bottom + 0.5) {
+                    problems.push(`${selector}: ${Math.round(r.top)}-${Math.round(r.bottom)} outside panel ${Math.round(panel.top)}-${Math.round(panel.bottom)}`);
+                }
+                if (r.top < 0 || r.bottom > window.innerHeight) {
+                    problems.push(`${selector}: outside the viewport`);
+                }
+            }
+            return problems;
+        }", selectors);
+        Assert.Empty(problems);
+    }
+
+    /// <summary>The element is fully inside the viewport (used after a fragment navigation scrolled to it).</summary>
+    public static async Task AssertInViewportAsync(IPage page, string selector)
+    {
+        var box = await page.Locator(selector).BoundingBoxAsync();
+        Assert.NotNull(box);
+        var size = page.ViewportSize!;
+        Assert.True(
+            box.Y >= -0.5 && box.Y + box.Height <= size.Height + 0.5 && box.X >= -0.5 && box.X + box.Width <= size.Width + 0.5,
+            $"{selector} is at {box.X},{box.Y} size {box.Width}x{box.Height}, outside the {size.Width}x{size.Height} viewport.");
+    }
 }

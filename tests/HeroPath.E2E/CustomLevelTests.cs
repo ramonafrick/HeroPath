@@ -20,12 +20,14 @@ public class CustomLevelTests(AppFixture app)
         ]
         """;
 
-    [Fact]
-    public async Task CustomLevel_ShowsOnStartPage_CanBePlayedAndSolved_AndSurvivesReload()
+    [Theory]
+    [InlineData(1366, 768, "laptop")]
+    [InlineData(1920, 1080, "desktop")]
+    public async Task CustomLevel_ShowsOnStartPage_CanBePlayedAndSolved_AndSurvivesReload(int width, int height, string viewport)
     {
         Assert.SkipUnless(E2EEnvironment.Enabled, "Set HEROPATH_E2E=1 to run E2E tests.");
 
-        await using var context = await app.NewContextAsync("de-CH", 1366, 768);
+        await using var context = await app.NewContextAsync("de-CH", width, height);
         var page = await context.NewPageAsync();
         var errors = BrowserErrors.Track(page);
         await page.AddInitScriptAsync(
@@ -38,9 +40,18 @@ public class CustomLevelTests(AppFixture app)
         await Expect(section).ToBeVisibleAsync();
         await Expect(section.GetByTestId($"level-card-{LevelId}")).ToHaveTextAsync(LevelName);
         await Expect(section.GetByTestId($"level-preview-{LevelId}")).ToBeVisibleAsync();
+        var jump = page.GetByTestId("start-jump-custom");
+        await Expect(jump).ToHaveTextAsync("Zu meinen Levels");
+        var jumpBox = await jump.BoundingBoxAsync();
+        Assert.True(jumpBox is { Height: >= 43.5f }, "start-jump-custom is smaller than 44 px.");
+        await LayoutAssertions.AssertInViewportAsync(page, "[data-testid=start-jump-custom]");
         await Expect(page.GetByTestId("level-card-custom-broken")).ToHaveCountAsync(0);
         await Expect(page.GetByTestId("level-card-easy-1")).ToBeVisibleAsync();
-        await Screenshots.CaptureAsync(page, "start-custom-levels.laptop.de");
+        await Screenshots.CaptureAsync(page, $"start-custom-levels.{viewport}.de");
+
+        await jump.ClickAsync();
+        await Expect(page).ToHaveURLAsync(new System.Text.RegularExpressions.Regex("/#custom-levels$"));
+        await LayoutAssertions.AssertInViewportAsync(page, "[data-testid=custom-levels]");
 
         await page.GetByTestId($"level-card-{LevelId}").ClickAsync();
         await page.GetByTestId("start-go").ClickAsync();
@@ -61,19 +72,19 @@ public class CustomLevelTests(AppFixture app)
         await Expect(page.GetByTestId("status")).ToHaveAttributeAsync("data-state", "succeeded");
         await Expect(page.GetByTestId($"level-picker-option-{LevelId}")).ToHaveAttributeAsync("data-solved", "true");
         await Expect(page.GetByTestId("next-level")).ToHaveCountAsync(0);
-        await Screenshots.CaptureAsync(page, "play-custom-level.laptop.de");
+        await Screenshots.CaptureAsync(page, $"play-custom-level.{viewport}.de");
 
         await page.GetByTestId("language-en").ClickAsync();
         await Expect(page.GetByTestId("control-play")).ToHaveTextAsync("Play");
         await Expect(page.GetByTestId("level-name")).ToHaveTextAsync(LevelName);
-        await Screenshots.CaptureAsync(page, "play-custom-level.laptop.en");
+        await Screenshots.CaptureAsync(page, $"play-custom-level.{viewport}.en");
 
         await page.GetByTestId("hero-change").ClickAsync();
         await page.WaitForRenderedAsync("[data-testid=start-page]", errors);
         await Expect(page.GetByTestId("custom-levels").GetByRole(AriaRole.Heading)).ToHaveTextAsync("My levels");
         await Expect(page.GetByTestId($"level-card-{LevelId}")).ToHaveAttributeAsync("data-solved", "true");
         await Expect(page.GetByTestId($"level-solved-{LevelId}")).ToBeVisibleAsync();
-        await Screenshots.CaptureAsync(page, "start-custom-levels.laptop.en");
+        await Screenshots.CaptureAsync(page, $"start-custom-levels.{viewport}.en");
 
         await page.ReloadAsync();
         await page.WaitForRenderedAsync("[data-testid=start-page]", errors);

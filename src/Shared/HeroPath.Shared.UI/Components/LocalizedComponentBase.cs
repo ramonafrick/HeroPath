@@ -15,7 +15,7 @@ public abstract class LocalizedComponentBase : ComponentBase, IDisposable
     [Inject]
     protected LanguageService Language { get; set; } = default!;
 
-    protected override void OnInitialized() => Language.Changed += HandleChanged;
+    protected override void OnInitialized() => Language.Changed += LanguageChanged;
 
     public void Dispose()
     {
@@ -33,8 +33,19 @@ public abstract class LocalizedComponentBase : ComponentBase, IDisposable
     {
         if (disposing)
         {
-            Language.Changed -= HandleChanged;
+            Language.Changed -= LanguageChanged;
         }
+    }
+
+    /// <summary>Called on a language switch before the component re-renders. Override to adapt state that depends on the language.</summary>
+    protected virtual void OnLanguageChanged()
+    {
+    }
+
+    private void LanguageChanged()
+    {
+        OnLanguageChanged();
+        HandleChanged();
     }
 
     /// <summary>Service events arrive outside the render context, so they re-render through the dispatcher.</summary>

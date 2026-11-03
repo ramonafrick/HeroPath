@@ -60,6 +60,110 @@ public class LevelEditorStateTests
         Assert.Equal("Mein Level 2", _state.Draft.Name);
     }
 
+    private static string EnglishName(int number) => $"My level {number}";
+
+    [Fact]
+    public void RenameDefault_UntouchedDefaultName_IsRegeneratedAndStaysClean()
+    {
+        _state.OpenNew(DefaultName);
+
+        var renamed = _state.RenameDefault(EnglishName);
+
+        Assert.True(renamed);
+        Assert.Equal("My level 1", _state.Draft.Name);
+        Assert.False(_state.IsDirty);
+        Assert.True(_state.HasDefaultName);
+        Assert.True(_state.Check.CanSave);
+    }
+
+    [Fact]
+    public void RenameDefault_AfterOtherEditsOfTheBoard_KeepsDirtyAndRenames()
+    {
+        _state.OpenNew(DefaultName);
+        ClickAll(EditorTool.Tree, new Position(5, 5));
+
+        Assert.True(_state.RenameDefault(EnglishName));
+
+        Assert.Equal("My level 1", _state.Draft.Name);
+        Assert.True(_state.IsDirty);
+    }
+
+    [Fact]
+    public void RenameDefault_BackAndForth_FollowsTheLanguage()
+    {
+        _state.OpenNew(DefaultName);
+
+        _state.RenameDefault(EnglishName);
+        _state.RenameDefault(DefaultName);
+
+        Assert.Equal("Mein Level 1", _state.Draft.Name);
+    }
+
+    [Fact]
+    public void RenameDefault_SameNameAlready_ReturnsFalseWithoutEvent()
+    {
+        _state.OpenNew(DefaultName);
+        var events = 0;
+        _state.Changed += () => events++;
+
+        Assert.False(_state.RenameDefault(DefaultName));
+
+        Assert.Equal(0, events);
+    }
+
+    [Fact]
+    public void RenameDefault_TypedName_Stays()
+    {
+        _state.OpenNew(DefaultName);
+        _state.SetName("Burgweg");
+
+        Assert.False(_state.RenameDefault(EnglishName));
+
+        Assert.Equal("Burgweg", _state.Draft.Name);
+        Assert.False(_state.HasDefaultName);
+    }
+
+    [Fact]
+    public void RenameDefault_NameTypedAsTheDefault_CountsAsTyped()
+    {
+        _state.OpenNew(DefaultName);
+        _state.SetName("Mein Level 1");
+
+        Assert.False(_state.RenameDefault(EnglishName));
+
+        Assert.Equal("Mein Level 1", _state.Draft.Name);
+    }
+
+    [Fact]
+    public async Task RenameDefault_AfterSaving_KeepsTheSavedName()
+    {
+        _state.OpenNew(DefaultName);
+        await _state.SaveAsync(Token);
+
+        Assert.False(_state.RenameDefault(EnglishName));
+
+        Assert.Equal("Mein Level 1", _state.Draft.Name);
+    }
+
+    [Fact]
+    public async Task RenameDefault_OpenedSavedLevel_Stays()
+    {
+        await _repository.SaveAsync(CustomLevelSamples.Valid("custom-a", "Mein Level 1"), Token);
+        _state.Open("custom-a");
+
+        Assert.False(_state.RenameDefault(EnglishName));
+    }
+
+    [Fact]
+    public void RenameDefault_Template_IsRegenerated()
+    {
+        Assert.True(_state.OpenTemplate("std-a", DefaultName));
+
+        Assert.True(_state.RenameDefault(EnglishName));
+
+        Assert.Equal("My level 1", _state.Draft.Name);
+    }
+
     [Fact]
     public async Task Open_CustomLevel_LoadsItAndKeepsItsId()
     {

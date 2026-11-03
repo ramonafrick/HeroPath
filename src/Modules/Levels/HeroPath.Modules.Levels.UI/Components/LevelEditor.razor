@@ -1,15 +1,14 @@
 @using HeroPath.Modules.Levels.Application
 @using HeroPath.Shared.UI.Components
-@using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.AspNetCore.Components.Routing
 @inherits LocalizedComponentBase
 
 <NavigationLock OnBeforeInternalNavigation="BeforeNavigation" ConfirmExternalNavigation="false" />
 <ConfirmDialog Visible="_pending != Pending.None"
-               Title="@DialogTitle"
-               Message="@DialogMessage"
-               ConfirmLabel="@DialogConfirmLabel"
-               CancelLabel="@DialogCancelLabel"
+               Title="@Dialog.Title"
+               Message="@Dialog.Message"
+               ConfirmLabel="@Dialog.Yes"
+               CancelLabel="@Dialog.Cancel"
                OnConfirm="ConfirmPendingAsync"
                OnCancel="CancelPending" />
 
@@ -19,7 +18,7 @@
         <GameBoard Grid="BoardGrid" CellClicked="CellClicked" CellLabel="CellLabel" />
     </section>
 
-    <div class="editor-panel">
+    <div class="editor-panel" data-testid="editor-panel">
         <div class="editor-column">
             <section aria-labelledby="editor-tools-title">
                 <h3 id="editor-tools-title" class="editor-section-title">@Localizer["Editor_Tools_Title"]</h3>
@@ -107,6 +106,20 @@
                 <div class="editor-saved" data-testid="editor-saved" data-outcome="@State.LastSave" role="status">@saved</div>
             }
 
+            @if (_deleteFailed)
+            {
+                <div class="editor-saved" data-testid="editor-delete-failed" data-outcome="StorageFailed" role="alert">@Localizer["Editor_Delete_Failed"]</div>
+            }
+
+            <CustomLevelList Levels="Repository.Custom"
+                             OpenId="@State.EditingId"
+                             LevelOpened="AskOpen"
+                             NewRequested="AskNew"
+                             DeleteRequested="AskDelete"
+                             ExportRequested="ExportAsync" />
+
+            <EditorLevelFiles @ref="_files" DefaultName="DefaultName" />
+
             <div class="editor-template">
                 <label class="editor-label" for="editor-template">@Localizer["Editor_Template_Label"]</label>
                 <select @key="_templateKey"
@@ -121,39 +134,6 @@
                     }
                 </select>
             </div>
-
-            @if (_deleteFailed)
-            {
-                <div class="editor-saved" data-testid="editor-delete-failed" data-outcome="StorageFailed" role="alert">@Localizer["Editor_Delete_Failed"]</div>
-            }
-
-            <section class="editor-import" aria-labelledby="editor-import-title">
-                <h3 id="editor-import-title" class="editor-section-title">@Localizer["Editor_Import_Title"]</h3>
-                <label class="import-button">
-                    <span>@Localizer["Editor_Import_Button"]</span>
-                    <InputFile @key="_importKey"
-                               OnChange="ImportAsync"
-                               accept=".json,application/json"
-                               data-testid="editor-import"
-                               aria-describedby="editor-import-hint" />
-                </label>
-                <span id="editor-import-hint" class="editor-name-hint">@Localizer["Editor_Import_Hint"]</span>
-                @if (ImportText is { } importMessage)
-                {
-                    <div class="editor-saved" data-testid="editor-import-message" data-state="@(_import == ImportMessage.Ok ? "ok" : "error")" role="status">@importMessage</div>
-                }
-                @if (_exportFailed)
-                {
-                    <div class="editor-saved" data-testid="editor-export-failed" data-state="error" role="alert">@Localizer["Editor_Export_Failed"]</div>
-                }
-            </section>
-
-            <CustomLevelList Levels="Repository.Custom"
-                             OpenId="@State.EditingId"
-                             LevelOpened="AskOpen"
-                             NewRequested="AskNew"
-                             DeleteRequested="AskDelete"
-                             ExportRequested="ExportAsync" />
         </div>
     </div>
 </div>

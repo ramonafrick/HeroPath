@@ -1,0 +1,31 @@
+@using HeroPath.Shared.UI.Components
+@using Microsoft.AspNetCore.Components.Forms
+@inherits LocalizedComponentBase
+
+<div class="files" data-testid="editor-level-files">
+    @if (Repository.Custom.Count > 0)
+    {
+        <p class="files-hint" data-testid="editor-export-hint">@Localizer["Editor_Export_Hint"]</p>
+    }
+    @if (_exportFailed)
+    {
+        <div @ref="_messageElement" class="files-message" tabindex="-1" data-testid="editor-export-failed" data-state="error" role="alert">@Localizer["Editor_Export_Failed"]</div>
+    }
+
+    <section class="files-import" aria-labelledby="editor-import-title">
+        <h3 id="editor-import-title" class="files-title">@Localizer["Editor_Import_Title"]</h3>
+        <label class="import-button">
+            <span>@Localizer["Editor_Import_Button"]</span>
+            <InputFile @key="_importKey"
+                       OnChange="ImportAsync"
+                       accept=".json,application/json"
+                       data-testid="editor-import"
+                       aria-describedby="editor-import-hint" />
+        </label>
+        <span id="editor-import-hint" class="files-hint">@Localizer["Editor_Import_Hint"]</span>
+        @if (ImportText is { } importMessage)
+        {
+            <div @ref="_messageElement" class="files-message" tabindex="-1" data-testid="editor-import-message" data-state="@(_import == ImportMessage.Ok ? "ok" : "error")" role="status">@importMessage</div>
+        }
+    </section>
+</div>

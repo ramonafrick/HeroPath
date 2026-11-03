@@ -294,4 +294,195 @@ public class LevelEditorFileTests : CultureBunitContext
         cut.WaitForAssertion(() => Assert.Equal("That is not a level for this game. Try another file.", Message(cut)));
         Assert.Contains("Import level", cut.Find(".import-button").TextContent);
     }
+
+    private static Task UploadAsync(IRenderedComponent<LevelEditor> cut, IBrowserFile file) =>
+        cut.InvokeAsync(() => cut.FindComponent<InputFile>().Instance.OnChange.InvokeAsync(new InputFileChangeEventArgs([file])));
+
+    public static TheoryData<Exception> ReadFailures() =>
+    [
+        new IOException("read failed"),
+        new InvalidOperationException("detached"),
+        new UnauthorizedAccessException("denied"),
+        new NotSupportedException("no"),
+        new Microsoft.JSInterop.JSException("js"),
+        new TaskCanceledException("aborted by the browser"),
+    ];
+
+    [Theory]
+    [MemberData(nameof(ReadFailures))]
+    public async Task Import_ReadFails_ShowsTheUnreadableMessage_AndChangesNothing(Exception failure)
+    {
+        var cut = RenderEditor();
+
+        await UploadAsync(cut, new FakeBrowserFile(_ => throw failure));
+
+        cut.WaitForAssertion(() => Assert.Equal("Die Datei konnte nicht gelesen werden.", Message(cut)));
+        Assert.Equal("error", MessageState(cut));
+        Assert.Empty(Repository.Custom);
+    }
+
+    [Fact]
+    public async Task Import_ReadFailsWhileReading_ShowsTheUnreadableMessage()
+    {
+        var cut = RenderEditor();
+
+        await UploadAsync(cut, new FakeBrowserFile(_ => new ThrowingStream()));
+
+        cut.WaitForAssertion(() => Assert.Equal("Die Datei konnte nicht gelesen werden.", Message(cut)));
+    }
+
+    [Fact]
+    public async Task Import_UnreadableMessage_IsEnglishAfterASwitch_AndAnImportAfterwardsStillWorks()
+    {
+        var cut = RenderEditor();
+        await UploadAsync(cut, new FakeBrowserFile(_ => throw new IOException()));
+        cut.WaitForAssertion(() => Assert.Equal("error", MessageState(cut)));
+
+        await Services.GetRequiredService<LanguageService>().SetAsync("en", Token);
+        cut.WaitForAssertion(() => Assert.Equal("The file could not be read.", Message(cut)));
+
+        Upload(cut, File(LevelJson.Write(CustomLevelSamples.Valid("custom-x", "Danach"))));
+        cut.WaitForAssertion(() => Assert.Equal("ok", MessageState(cut)));
+        Assert.Single(Repository.Custom);
+    }
+
+    [Fact]
+    public async Task Import_StreamDeliversShortReads_IsReadUntilTheEnd()
+    {
+        var cut = RenderEditor();
+        var bytes = System.Text.Encoding.UTF8.GetBytes(LevelJson.Write(CustomLevelSamples.Valid("custom-x", "Stueckweise")));
+
+        await UploadAsync(cut, new FakeBrowserFile(_ => new TrickleStream(bytes), bytes.Length));
+
+        cut.WaitForAssertion(() => Assert.Equal("ok", MessageState(cut)));
+        Assert.Equal("Stueckweise", Assert.Single(Repository.Custom).Name);
+    }
+
+    [Fact]
+    public async Task Import_StreamLongerThanTheJsonLimit_IsTooLargeEvenWithShortReads()
+    {
+        var cut = RenderEditor();
+        var bytes = new byte[LevelJson.MaxJsonLength + 50];
+        Array.Fill(bytes, (byte)' ');
+
+        await UploadAsync(cut, new FakeBrowserFile(_ => new TrickleStream(bytes), bytes.Length));
+
+        cut.WaitForAssertion(() => Assert.Equal("Die Datei ist zu gross.", Message(cut)));
+    }
+
+    [Fact]
+    public async Task Render_WithoutCustomLevels_HasNoExportHint_WithOneTheHintWarnsAboutRealNames()
+    {
+        var cut = RenderEditor();
+        Assert.Empty(cut.FindAll("[data-testid=editor-export-hint]"));
+
+        await Repository.SaveAsync(CustomLevelSamples.Valid("custom-1", "Eins"), Token);
+
+        cut.WaitForAssertion(() => Assert.Equal(
+            "Der Name deines Levels steht in der Datei. Verwende nicht deinen echten Namen.",
+            cut.Find("[data-testid=editor-export-hint]").TextContent.Trim()));
+        await Services.GetRequiredService<LanguageService>().SetAsync("en", Token);
+        cut.WaitForAssertion(() => Assert.Equal(
+            "Your level's name is stored in the file. Please do not use your real name.",
+            cut.Find("[data-testid=editor-export-hint]").TextContent.Trim()));
+    }
+
+    private sealed class FakeBrowserFile(Func<CancellationToken, Stream> open, long size = 10) : IBrowserFile
+    {
+        public string Name => "x.json";
+
+        public DateTimeOffset LastModified => DateTimeOffset.UnixEpoch;
+
+        public long Size => size;
+
+        public string ContentType => "application/json";
+
+        public Stream OpenReadStream(long maxAllowedSize = 512000, CancellationToken cancellationToken = default) => open(cancellationToken);
+    }
+
+    private sealed class ThrowingStream : Stream
+    {
+        public override bool CanRead => true;
+
+        public override bool CanSeek => false;
+
+        public override bool CanWrite => false;
+
+        public override long Length => throw new NotSupportedException();
+
+        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+
+        public override void Flush()
+        {
+        }
+
+        public override int Read(byte[] buffer, int offset, int count) => throw new IOException("broken");
+
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default) => throw new IOException("broken");
+
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+
+        public override void SetLength(long value) => throw new NotSupportedException();
+
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    }
+
+    private sealed class TrickleStream(byte[] data) : Stream
+    {
+        private int _position;
+
+        public override bool CanRead => true;
+
+        public override bool CanSeek => false;
+
+        public override bool CanWrite => false;
+
+        public override long Length => data.Length;
+
+        public override long Position { get => _position; set => throw new NotSupportedException(); }
+
+        public override void Flush()
+        {
+        }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            if (_position >= data.Length || count == 0)
+            {
+                return 0;
+            }
+
+            buffer[offset] = data[_position++];
+            return 1;
+        }
+
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            if (_position >= data.Length || buffer.Length == 0)
+            {
+                return ValueTask.FromResult(0);
+            }
+
+            buffer.Span[0] = data[_position++];
+            return ValueTask.FromResult(1);
+        }
+
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+
+        public override void SetLength(long value) => throw new NotSupportedException();
+
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    }
+
+    [Fact]
+    public void Import_Result_TakesTheFocusSoThePanelScrollsToIt()
+    {
+        var cut = RenderEditor();
+
+        Upload(cut, File(LevelJson.Write(CustomLevelSamples.Valid("custom-x", "Neu"))));
+
+        cut.WaitForAssertion(() => Assert.Equal("ok", MessageState(cut)));
+        JSInterop.VerifyFocusAsyncInvoke();
+        Assert.Equal("-1", cut.Find("[data-testid=editor-import-message]").GetAttribute("tabindex"));
+    }
 }

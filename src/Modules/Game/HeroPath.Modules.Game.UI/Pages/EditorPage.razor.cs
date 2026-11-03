@@ -64,7 +64,7 @@ public partial class EditorPage : LocalizedComponentBase
         }
     }
 
-    /// <summary>«Try it»: with a hero the level is played right away, without one the start page pre-selects it.</summary>
+    /// <summary>«Try it»: with a hero the level is played right away, without one the start page pre-selects it and scrolls to its card (fragment relative to the base href).</summary>
     private void TryOut(string levelId)
     {
         if (Choice.IsChosen)
@@ -75,7 +75,7 @@ public partial class EditorPage : LocalizedComponentBase
         else
         {
             Choice.Preselect(levelId);
-            Navigation.NavigateTo(string.Empty);
+            Navigation.NavigateTo($"#level-card-{levelId}");
         }
     }
 }

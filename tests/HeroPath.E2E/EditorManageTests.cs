@@ -176,7 +176,13 @@ public class EditorManageTests(AppFixture app)
         await Expect(card).ToHaveTextAsync(LevelName);
         await Expect(card).ToHaveAttributeAsync("aria-pressed", "true");
         await Expect(page.GetByTestId("level-card-free-field")).ToHaveAttributeAsync("aria-pressed", "false");
+        await LayoutAssertions.AssertInViewportAsync(page, "[id^=level-card-custom-]");
+        await Expect(page).ToHaveURLAsync(new System.Text.RegularExpressions.Regex("/#level-card-custom-[0-9a-f]{12}$"));
         await Screenshots.CaptureAsync(page, "start-preselected.laptop.de");
+        await SwitchLanguageAsync(page, "en");
+        await Expect(page.GetByTestId("start-go")).ToHaveTextAsync("Let's go!");
+        await Screenshots.CaptureAsync(page, "start-preselected.laptop.en");
+        await SwitchLanguageAsync(page, "de");
 
         await page.GetByTestId("start-go").ClickAsync();
         await page.WaitForRenderedAsync("[data-testid=game-board]", errors);
@@ -229,12 +235,14 @@ public class EditorManageTests(AppFixture app)
         Assert.Empty(errors.Errors);
     }
 
-    [Fact]
-    public async Task Leaving_ADirtyEditor_AsksFirst_CancelStays_ConfirmLeaves_AndACleanEditorNeverAsks()
+    [Theory]
+    [InlineData(1366, 768, "laptop")]
+    [InlineData(1920, 1080, "desktop")]
+    public async Task Leaving_ADirtyEditor_AsksFirst_CancelStays_ConfirmLeaves_AndACleanEditorNeverAsks(int width, int height, string viewport)
     {
         Assert.SkipUnless(E2EEnvironment.Enabled, "Set HEROPATH_E2E=1 to run E2E tests.");
 
-        await using var context = await app.NewContextAsync("de-CH", 1366, 768);
+        await using var context = await app.NewContextAsync("de-CH", width, height);
         var page = await context.NewPageAsync();
         var errors = BrowserErrors.Track(page);
         await OpenEditorFromStartPageAsync(page, errors);
@@ -255,13 +263,13 @@ public class EditorManageTests(AppFixture app)
         await Expect(page.GetByTestId("confirm-message")).ToHaveTextAsync("Deine Änderungen sind noch nicht gespeichert. Trotzdem weggehen?");
         await Expect(page.GetByTestId("confirm-yes")).ToBeFocusedAsync();
         await AssertButtonsBigEnoughAsync(page);
-        await Screenshots.CaptureAsync(page, "confirm-leave.laptop.de");
+        await Screenshots.CaptureAsync(page, $"confirm-leave.{viewport}.de");
         await page.GetByTestId("confirm-no").ClickAsync();
         await Expect(dialog).ToHaveCountAsync(0);
         await SwitchLanguageAsync(page, "en");
         await page.GetByTestId("editor-back").ClickAsync();
         await Expect(page.GetByTestId("confirm-message")).ToHaveTextAsync("Your changes are not saved yet. Leave anyway?");
-        await Screenshots.CaptureAsync(page, "confirm-leave.laptop.en");
+        await Screenshots.CaptureAsync(page, $"confirm-leave.{viewport}.en");
         await page.GetByTestId("confirm-no").ClickAsync();
         await SwitchLanguageAsync(page, "de");
         await Expect(page.GetByTestId("editor-page")).ToBeVisibleAsync();

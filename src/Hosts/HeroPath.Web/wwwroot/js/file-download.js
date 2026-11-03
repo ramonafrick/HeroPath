@@ -1,3 +1,5 @@
+const revokeDelayMs = 1000;
+
 export async function saveStream(fileName, streamReference) {
     const buffer = await streamReference.arrayBuffer();
     const blob = new Blob([buffer], { type: "application/json" });
@@ -11,6 +13,6 @@ export async function saveStream(fileName, streamReference) {
         anchor.click();
     } finally {
         anchor.remove();
-        URL.revokeObjectURL(url);
+        setTimeout(() => URL.revokeObjectURL(url), revokeDelayMs);
     }
 }

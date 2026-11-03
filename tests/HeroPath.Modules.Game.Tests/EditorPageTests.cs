@@ -120,7 +120,7 @@ public class EditorPageTests : CultureBunitContext
 
         page.Find("[data-testid=editor-try]").Click();
 
-        page.WaitForAssertion(() => Assert.Equal(Navigation.BaseUri, Navigation.Uri));
+        page.WaitForAssertion(() => Assert.Equal($"{Navigation.BaseUri}#level-card-{id}", Navigation.Uri));
         Assert.False(Choice.IsChosen);
         Assert.Equal(id, Choice.LevelId);
     }

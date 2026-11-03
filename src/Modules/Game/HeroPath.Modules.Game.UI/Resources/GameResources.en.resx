@@ -290,6 +290,10 @@
     <value>My levels</value>
     <comment>Heading above the cards of the child's own levels on the start page.</comment>
   </data>
+  <data name="Start_JumpCustom" xml:space="preserve">
+    <value>Go to my levels</value>
+    <comment>Link at the top of the start page that jumps to the section with the child's own levels.</comment>
+  </data>
   <data name="Start_Build" xml:space="preserve">
     <value>Build a level</value>
     <comment>Button on the start page that opens the level editor.</comment>

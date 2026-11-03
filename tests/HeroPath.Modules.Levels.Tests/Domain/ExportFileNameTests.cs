@@ -32,6 +32,30 @@ public class ExportFileNameTests
     }
 
     [Theory]
+    [InlineData("con", "level-con.heropath.json")]
+    [InlineData("CON", "level-con.heropath.json")]
+    [InlineData("Prn", "level-prn.heropath.json")]
+    [InlineData("aux", "level-aux.heropath.json")]
+    [InlineData("NUL", "level-nul.heropath.json")]
+    [InlineData("com1", "level-com1.heropath.json")]
+    [InlineData("COM9", "level-com9.heropath.json")]
+    [InlineData("lpt1", "level-lpt1.heropath.json")]
+    [InlineData("LPT9", "level-lpt9.heropath.json")]
+    [InlineData("  con  ", "level-con.heropath.json")]
+    public void ExportFileName_ReservedWindowsDeviceName_GetsPrefix(string name, string expected) =>
+        Assert.Equal(expected, LevelEditing.ExportFileName(name));
+
+    [Theory]
+    [InlineData("com0", "com0.heropath.json")]
+    [InlineData("com10", "com10.heropath.json")]
+    [InlineData("lpt", "lpt.heropath.json")]
+    [InlineData("console", "console.heropath.json")]
+    [InlineData("con 1", "con-1.heropath.json")]
+    [InlineData("nul level", "nul-level.heropath.json")]
+    public void ExportFileName_NamesThatOnlyLookReserved_AreUnchanged(string name, string expected) =>
+        Assert.Equal(expected, LevelEditing.ExportFileName(name));
+
+    [Theory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]

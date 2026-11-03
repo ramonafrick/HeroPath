@@ -796,4 +796,68 @@ public class LevelEditorTests : CultureBunitContext
         cut.WaitForAssertion(() => Assert.EndsWith($"/editor/{State.Draft.Id}", Navigation.Uri));
         Assert.Equal(0, DialogCount(cut));
     }
+
+    [Fact]
+    public void NavigationLock_AllowedNavigationIsConsumed_ALaterDirtyNavigationToTheSameUrlAsksAgain()
+    {
+        var cut = RenderEditor();
+        MakeDirty(cut);
+        Navigation.NavigateTo("play");
+        cut.WaitForAssertion(() => Assert.Equal(1, DialogCount(cut)));
+        Click(cut, "confirm-yes");
+        Assert.EndsWith("/play", Navigation.Uri);
+        Assert.Equal(0, DialogCount(cut));
+
+        Navigation.NavigateTo("elsewhere");
+        cut.WaitForAssertion(() => Assert.Equal(1, DialogCount(cut)));
+        Click(cut, "confirm-no");
+        Navigation.NavigateTo("play");
+
+        cut.WaitForAssertion(() => Assert.Equal(1, DialogCount(cut)));
+        Assert.EndsWith("/play", Navigation.Uri);
+    }
+
+    [Fact]
+    public void NavigationLock_EditorsOwnNavigation_DoesNotLeaveAnExemptionBehind()
+    {
+        var cut = RenderEditor();
+        MakeDirty(cut);
+        Click(cut, "editor-save");
+        cut.WaitForAssertion(() => Assert.EndsWith($"/editor/{State.Draft.Id}", Navigation.Uri));
+        MakeDirty(cut);
+
+        Navigation.NavigateTo($"editor/{State.Draft.Id}");
+
+        cut.WaitForAssertion(() => Assert.Equal(1, DialogCount(cut)));
+    }
+
+    [Fact]
+    public async Task DefaultName_Untouched_FollowsTheLanguage()
+    {
+        var cut = RenderEditor();
+        Assert.Equal("Mein Level 1", cut.Find("[data-testid=editor-name]").GetAttribute("value"));
+
+        await SwitchLanguageAsync("en");
+
+        cut.WaitForAssertion(() => Assert.Equal("My level 1", cut.Find("[data-testid=editor-name]").GetAttribute("value")));
+        Assert.Equal("My level 1", State.Draft.Name);
+        Assert.False(State.IsDirty);
+
+        await SwitchLanguageAsync("de-CH");
+
+        cut.WaitForAssertion(() => Assert.Equal("Mein Level 1", cut.Find("[data-testid=editor-name]").GetAttribute("value")));
+    }
+
+    [Fact]
+    public async Task DefaultName_TypedByTheChild_StaysAfterALanguageSwitch()
+    {
+        var cut = RenderEditor();
+        cut.Find("[data-testid=editor-name]").Input("Burgweg");
+
+        await SwitchLanguageAsync("en");
+
+        cut.WaitForAssertion(() => Assert.Equal("Your level needs at least 18 steps.", Text(cut, "editor-status .status-text")));
+        Assert.Equal("Burgweg", cut.Find("[data-testid=editor-name]").GetAttribute("value"));
+        Assert.Equal("Burgweg", State.Draft.Name);
+    }
 }

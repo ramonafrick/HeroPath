@@ -250,3 +250,32 @@
 .start-build:hover {
     background: var(--hp-cell);
 }
+
+.start-jump-custom {
+    display: inline-flex;
+    align-items: center;
+    min-height: 2.75rem;
+    margin-top: 0.5rem;
+    padding: 0 1rem;
+    box-sizing: border-box;
+    font-weight: 700;
+    color: var(--hp-text);
+    text-decoration: none;
+    background: var(--hp-surface);
+    border: 3px solid var(--hp-outline);
+    border-radius: 0.75rem;
+}
+
+.start-jump-custom:hover {
+    background: var(--hp-cell);
+}
+
+.start-jump-custom:focus-visible {
+    outline: 4px solid var(--hp-focus);
+    outline-offset: 2px;
+}
+
+.start-custom-levels,
+.level-card {
+    scroll-margin-top: 1rem;
+}

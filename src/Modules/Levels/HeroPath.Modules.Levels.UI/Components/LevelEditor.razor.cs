@@ -1,12 +1,8 @@
-using System.Text;
 using HeroPath.Modules.Levels.Application;
 using HeroPath.Modules.Levels.Domain;
-using HeroPath.Modules.Levels.Infrastructure;
 using HeroPath.Modules.Levels.UI.Resources;
-using HeroPath.Shared.Application.Contracts;
 using HeroPath.Shared.UI.Components;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Routing;
 using Microsoft.Extensions.Localization;
 
@@ -15,11 +11,22 @@ namespace HeroPath.Modules.Levels.UI.Components;
 /// <summary>
 /// The level editor: board, tools, size, name, check and save, plus the list of the child's own levels. All rules and the draft live in
 /// <see cref="LevelEditorState"/> (a service), so a language switch only re-renders. Opens the level named by <see cref="LevelId"/>
-/// (a new level when there is none or the id is not a custom level) whenever that parameter changes.
+/// (a new level when there is none or the id is not a custom level) whenever that parameter changes. Import and export are in <see cref="EditorLevelFiles"/>.
 /// </summary>
 public partial class LevelEditor : LocalizedComponentBase
 {
+    private static readonly Dictionary<Pending, Question> _questions = new()
+    {
+        [Pending.New] = new("Discard", CancelStays: true),
+        [Pending.Template] = new("Discard", CancelStays: true),
+        [Pending.Open] = new("Discard", CancelStays: true),
+        [Pending.Delete] = new("Delete", CancelStays: false),
+        [Pending.Clear] = new("Clear", CancelStays: false),
+        [Pending.Leave] = new("Leave", CancelStays: true),
+    };
+
     private readonly CancellationTokenSource _disposed = new();
+    private EditorLevelFiles? _files;
     private bool _opened;
     private string? _openedFor;
     private string _nameText = string.Empty;
@@ -33,12 +40,6 @@ public partial class LevelEditor : LocalizedComponentBase
     private bool _trying;
     private bool _deleteFailed;
     private int _templateKey;
-    private const long MaxImportBytes = 256 * 1024;
-
-    private ImportMessage _import;
-    private string? _importName;
-    private int _importKey;
-    private bool _exportFailed;
 
     /// <summary>The id of the custom level to open. <c>null</c> or an unknown id starts a new level.</summary>
     [Parameter]
@@ -58,10 +59,18 @@ public partial class LevelEditor : LocalizedComponentBase
     private NavigationManager Navigation { get; set; } = default!;
 
     [Inject]
-    private IFileDownload FileDownload { get; set; } = default!;
-
-    [Inject]
     private IStringLocalizer<LevelsResources> Localizer { get; set; } = default!;
+
+    private enum Pending
+    {
+        None,
+        New,
+        Template,
+        Open,
+        Delete,
+        Clear,
+        Leave,
+    }
 
     private Grid BoardGrid
     {
@@ -77,105 +86,20 @@ public partial class LevelEditor : LocalizedComponentBase
         }
     }
 
-    private enum Pending
-    {
-        None,
-        New,
-        Template,
-        Open,
-        Delete,
-        Clear,
-        Leave,
-    }
-
-    private enum ImportMessage
-    {
-        None,
-        Ok,
-        Invalid,
-        TooLarge,
-        NotSavable,
-        LimitReached,
-        StorageFailed,
-    }
-
-    private string? ImportText => _import switch
-    {
-        ImportMessage.Ok => Localizer["Editor_Import_Ok", _importName ?? string.Empty].Value,
-        ImportMessage.Invalid => Localizer["Editor_Import_Invalid"].Value,
-        ImportMessage.TooLarge => Localizer["Editor_Import_TooLarge"].Value,
-        ImportMessage.NotSavable => Localizer["Editor_Import_NotSavable"].Value,
-        ImportMessage.LimitReached => Localizer["Editor_Import_LimitReached", LevelLimits.MaxCustomLevels].Value,
-        ImportMessage.StorageFailed => Localizer["Editor_Import_StorageFailed"].Value,
-        _ => null,
-    };
-
     private bool HasStrawberry => State.Draft.Items.Any(item => item.Kind == ItemKind.Strawberry);
 
-    private string? HintText
-    {
-        get
-        {
-            if (State.Hint != EditHint.None)
-            {
-                return State.Hint switch
-                {
-                    EditHint.TooManyStrawberries => Localizer["Editor_Hint_TooManyStrawberries", LevelLimits.MaxStrawberries].Value,
-                    EditHint.TooManyPizzas => Localizer["Editor_Hint_TooManyPizzas", LevelLimits.MaxPizzas].Value,
-                    var hint => Localizer[$"Editor_Hint_{hint}"].Value,
-                };
-            }
+    private string? HintText => EditorTexts.Hint(Localizer, State.Hint, State.RemovedCount);
 
-            return State.RemovedCount switch
-            {
-                0 => null,
-                1 => Localizer["Editor_Removed_One", 1].Value,
-                var count => Localizer["Editor_Removed_Other", count].Value,
-            };
-        }
-    }
+    private string? SavedText => EditorTexts.Saved(Localizer, State.LastSave);
 
-    private string DialogTitle => _pending switch
-    {
-        Pending.Delete => Localizer["Confirm_Delete_Title"].Value,
-        Pending.Clear => Localizer["Confirm_Clear_Title"].Value,
-        Pending.Leave => Localizer["Confirm_Leave_Title"].Value,
-        Pending.None => string.Empty,
-        _ => Localizer["Confirm_Discard_Title"].Value,
-    };
-
-    private string DialogMessage => _pending switch
-    {
-        Pending.Delete => Localizer["Confirm_Delete_Message", _pendingName ?? string.Empty].Value,
-        Pending.Clear => Localizer["Confirm_Clear_Message"].Value,
-        Pending.Leave => Localizer["Confirm_Leave_Message"].Value,
-        Pending.None => string.Empty,
-        _ => Localizer["Confirm_Discard_Message"].Value,
-    };
-
-    private string? DialogConfirmLabel => _pending switch
-    {
-        Pending.Delete => Localizer["Confirm_Delete_Yes"].Value,
-        Pending.Clear => Localizer["Confirm_Clear_Yes"].Value,
-        Pending.Leave => Localizer["Confirm_Leave_Yes"].Value,
-        Pending.None => null,
-        _ => Localizer["Confirm_Discard_Yes"].Value,
-    };
-
-    private string? DialogCancelLabel => _pending switch
-    {
-        Pending.Leave or Pending.Open or Pending.New or Pending.Template => Localizer["Confirm_Stay"].Value,
-        _ => null,
-    };
-
-    private string? SavedText => State.LastSave switch
-    {
-        SaveOutcome.Saved => Localizer["Editor_Save_Saved"].Value,
-        SaveOutcome.LimitReached => Localizer["Editor_Save_LimitReached", LevelLimits.MaxCustomLevels].Value,
-        SaveOutcome.StorageFailed => Localizer["Editor_Save_StorageFailed"].Value,
-        SaveOutcome.Invalid => Localizer["Editor_Save_Invalid"].Value,
-        _ => null,
-    };
+    /// <summary>Texts of the open confirm question (resx keys <c>Confirm_{Prefix}_Title|Message|Yes</c>); empty while nothing is pending.</summary>
+    private DialogTexts Dialog => _questions.TryGetValue(_pending, out var question)
+        ? new(
+            Localizer[$"Confirm_{question.Prefix}_Title"].Value,
+            Localizer[$"Confirm_{question.Prefix}_Message", _pendingName ?? string.Empty].Value,
+            Localizer[$"Confirm_{question.Prefix}_Yes"].Value,
+            question.CancelStays ? Localizer["Confirm_Stay"].Value : null)
+        : new(string.Empty, string.Empty, null, null);
 
     protected override void OnInitialized()
     {
@@ -201,6 +125,15 @@ public partial class LevelEditor : LocalizedComponentBase
         _nameText = State.Draft.Name ?? string.Empty;
     }
 
+    /// <summary>An untouched default name follows the language («Mein Level 1» becomes «My level 1»); a name the child typed stays.</summary>
+    protected override void OnLanguageChanged()
+    {
+        if (State.RenameDefault(DefaultName))
+        {
+            _nameText = State.Draft.Name ?? string.Empty;
+        }
+    }
+
     protected override void Dispose(bool disposing)
     {
         if (disposing)
@@ -217,6 +150,8 @@ public partial class LevelEditor : LocalizedComponentBase
     private string DefaultName(int number) => Localizer["Editor_DefaultName", number].Value;
 
     private void CellClicked(Position position) => State.Apply(position);
+
+    private string CellLabel(Position position) => EditorTexts.CellLabel(Localizer, BoardGrid, position);
 
     private void NameInput(ChangeEventArgs args)
     {
@@ -262,9 +197,13 @@ public partial class LevelEditor : LocalizedComponentBase
         _pending = Pending.Delete;
     }
 
+    private Task ExportAsync(string id) => _files?.ExportAsync(id) ?? Task.CompletedTask;
+
     private Task BeforeNavigation(LocationChangingContext context)
     {
-        if (_trying || !State.IsDirty || IsAllowed(context.TargetLocation))
+        var allowed = IsAllowed(context.TargetLocation);
+        _allowedTarget = null;
+        if (allowed || _trying || !State.IsDirty)
         {
             return Task.CompletedTask;
         }
@@ -355,58 +294,6 @@ public partial class LevelEditor : LocalizedComponentBase
         }
     }
 
-    private async Task ExportAsync(string id)
-    {
-        _exportFailed = false;
-        _import = ImportMessage.None;
-        if (Repository.Custom.FirstOrDefault(level => level.Id == id) is not { } level)
-        {
-            return;
-        }
-
-        _exportFailed = !await FileDownload.SaveTextAsync(LevelEditing.ExportFileName(level.Name), LevelJson.Write(level), _disposed.Token);
-    }
-
-    private async Task ImportAsync(InputFileChangeEventArgs args)
-    {
-        _importKey++;
-        _exportFailed = false;
-        _importName = null;
-        var json = await ReadFileAsync(args.File);
-        if (json is null)
-        {
-            _import = ImportMessage.TooLarge;
-            return;
-        }
-
-        var result = await Repository.ImportAsync(json, DefaultName, _disposed.Token);
-        _importName = result.Level?.Name;
-        _import = result.Outcome switch
-        {
-            ImportOutcome.Imported => ImportMessage.Ok,
-            ImportOutcome.NotSavable => ImportMessage.NotSavable,
-            ImportOutcome.LimitReached => ImportMessage.LimitReached,
-            ImportOutcome.StorageFailed => ImportMessage.StorageFailed,
-            _ => ImportMessage.Invalid,
-        };
-    }
-
-    private async Task<string?> ReadFileAsync(IBrowserFile file)
-    {
-        try
-        {
-            await using var stream = file.OpenReadStream(MaxImportBytes, _disposed.Token);
-            using var reader = new StreamReader(stream, Encoding.UTF8);
-            var buffer = new char[LevelJson.MaxJsonLength + 1];
-            var length = await reader.ReadBlockAsync(buffer, _disposed.Token);
-            return length > LevelJson.MaxJsonLength ? null : new string(buffer, 0, length);
-        }
-        catch (IOException)
-        {
-            return null;
-        }
-    }
-
     private async Task SaveAsync()
     {
         var outcome = await State.SaveAsync(_disposed.Token);
@@ -433,23 +320,19 @@ public partial class LevelEditor : LocalizedComponentBase
         }
     }
 
+    /// <summary>
+    /// The editor's own navigation (open, new, URL replace after the first save) is exempt from the leave question. The exemption is only set when the
+    /// URL really changes and <see cref="BeforeNavigation"/> clears it on the next navigation, so it never lingers.
+    /// </summary>
     private void GoTo(string? id, bool replace = false)
     {
         _openedFor = id;
         var target = id is null ? "editor" : $"editor/{id}";
-        _allowedTarget = target;
+        _allowedTarget = Navigation.ToAbsoluteUri(target) == new Uri(Navigation.Uri) ? null : target;
         Navigation.NavigateTo(target, replace: replace);
     }
 
-    private string CellLabel(Position position)
-    {
-        var grid = BoardGrid;
-        var item = grid.GetItem(position);
-        var content = position == grid.Start ? "Cell_Start"
-            : position == grid.Goal ? (item switch { ItemKind.Strawberry => "Cell_Goal_Strawberry", ItemKind.Pizza => "Cell_Goal_Pizza", _ => "Cell_Goal" })
-            : grid.GetObstacle(position) is { } obstacle ? $"Cell_{obstacle}"
-            : item is { } itemKind ? $"Cell_{itemKind}"
-            : "Cell_Empty";
-        return Localizer["Cell_Label", position.X + 1, position.Y + 1, Localizer[content].Value].Value;
-    }
+    private readonly record struct Question(string Prefix, bool CancelStays);
+
+    private readonly record struct DialogTexts(string Title, string Message, string? Yes, string? Cancel);
 }

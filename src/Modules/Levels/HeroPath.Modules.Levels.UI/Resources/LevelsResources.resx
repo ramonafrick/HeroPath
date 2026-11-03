@@ -388,6 +388,10 @@
     <value>Die Datei konnte nicht gespeichert werden. Probier es noch einmal.</value>
     <comment>Shown when the browser could not start the download.</comment>
   </data>
+  <data name="Editor_Export_Hint" xml:space="preserve">
+    <value>Der Name deines Levels steht in der Datei. Verwende nicht deinen echten Namen.</value>
+    <comment>Privacy hint next to the export buttons: the level name is written into the file.</comment>
+  </data>
   <data name="Editor_Import_Title" xml:space="preserve">
     <value>Level aus einer Datei</value>
     <comment>Heading of the import section.</comment>
@@ -411,6 +415,10 @@
   <data name="Editor_Import_TooLarge" xml:space="preserve">
     <value>Die Datei ist zu gross.</value>
     <comment>Import: file is too large.</comment>
+  </data>
+  <data name="Editor_Import_Unreadable" xml:space="preserve">
+    <value>Die Datei konnte nicht gelesen werden.</value>
+    <comment>Import: the browser could not read the file (read error, no permission).</comment>
   </data>
   <data name="Editor_Import_NotSavable" xml:space="preserve">
     <value>Dieses Level kann man nicht lösen oder es braucht zu viele Schritte. Darum wurde es nicht importiert.</value>

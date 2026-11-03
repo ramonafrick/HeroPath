@@ -246,8 +246,21 @@ public static class LevelEditing
         }
 
         var baseName = builder.Length > MaxExportBaseLength ? builder.ToString(0, MaxExportBaseLength).TrimEnd('-') : builder.ToString();
-        return (baseName.Length == 0 ? "level" : baseName) + ExportExtension;
+        if (baseName.Length == 0)
+        {
+            baseName = "level";
+        }
+        else if (IsReservedDeviceName(baseName))
+        {
+            baseName = "level-" + baseName;
+        }
+
+        return baseName + ExportExtension;
     }
+
+    private static bool IsReservedDeviceName(string name) =>
+        name is "con" or "prn" or "aux" or "nul"
+        || (name.Length == 4 && name[3] is >= '1' and <= '9' && (name.StartsWith("com", StringComparison.Ordinal) || name.StartsWith("lpt", StringComparison.Ordinal)));
 
     private static EditResult Done(LevelDefinition level) => new(Normalized(level));
 

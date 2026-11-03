@@ -45,6 +45,9 @@ public sealed class LevelEditorState
     /// <summary>Result of the last save attempt of this draft; cleared by the next change.</summary>
     public SaveOutcome? LastSave { get; private set; }
 
+    /// <summary>The name is still the generated default of a new, never saved level (not typed by the child), so a language switch may regenerate it.</summary>
+    public bool HasDefaultName { get; private set; }
+
     public bool IsSaving { get; private set; }
 
     public LevelCheckResult Check { get; private set; }
@@ -56,7 +59,7 @@ public sealed class LevelEditorState
     public void OpenNew(Func<int, string> defaultNameFormat)
     {
         ArgumentNullException.ThrowIfNull(defaultNameFormat);
-        Open(LevelEditing.NewLevel(NewId(), _repository.NextDefaultName(defaultNameFormat)), editingId: null);
+        Open(LevelEditing.NewLevel(NewId(), _repository.NextDefaultName(defaultNameFormat)), editingId: null, hasDefaultName: true);
     }
 
     /// <summary>Opens a saved custom level. Returns <c>false</c> (and changes nothing) for unknown ids and standard levels.</summary>
@@ -83,7 +86,7 @@ public sealed class LevelEditorState
             return false;
         }
 
-        Open(LevelEditing.FromTemplate(template, NewId(), _repository.NextDefaultName(defaultNameFormat)), editingId: null);
+        Open(LevelEditing.FromTemplate(template, NewId(), _repository.NextDefaultName(defaultNameFormat)), editingId: null, hasDefaultName: true);
         return true;
     }
 
@@ -156,8 +159,33 @@ public sealed class LevelEditorState
     public void SetName(string? raw)
     {
         var name = LevelEditing.CleanName(raw);
+        HasDefaultName = false;
         LastSave = null;
         Commit(name != Draft.Name ? Draft with { Name = name } : Draft);
+    }
+
+    /// <summary>
+    /// Regenerates the default name in another language (<paramref name="defaultNameFormat"/> of the new culture) while the name is still the
+    /// untouched default of an unsaved level. A typed or saved name stays. The draft does not become dirty. Returns <c>true</c> when the name changed.
+    /// </summary>
+    public bool RenameDefault(Func<int, string> defaultNameFormat)
+    {
+        ArgumentNullException.ThrowIfNull(defaultNameFormat);
+        if (!HasDefaultName || EditingId is not null)
+        {
+            return false;
+        }
+
+        var name = _repository.NextDefaultName(defaultNameFormat);
+        if (name == Draft.Name)
+        {
+            return false;
+        }
+
+        Draft = Draft with { Name = name };
+        Check = _checkCache.Evaluate(Draft);
+        Changed?.Invoke();
+        return true;
     }
 
     /// <summary>Switches «all strawberries needed». Turning it on without a strawberry does nothing.</summary>
@@ -192,6 +220,7 @@ public sealed class LevelEditorState
                 if (outcome == SaveOutcome.Saved)
                 {
                     EditingId = saving.Id;
+                    HasDefaultName = false;
                     IsDirty = !ReferenceEquals(Draft, saving);
                 }
 
@@ -210,11 +239,12 @@ public sealed class LevelEditorState
         return outcome;
     }
 
-    private void Open(LevelDefinition level, string? editingId)
+    private void Open(LevelDefinition level, string? editingId, bool hasDefaultName = false)
     {
         _generation++;
         Draft = level;
         EditingId = editingId;
+        HasDefaultName = hasDefaultName;
         IsDirty = false;
         IsSaving = false;
         ClearMessages();

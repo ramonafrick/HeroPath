@@ -43,12 +43,14 @@ public class EditorTests(AppFixture app)
         await Expect(page.GetByTestId("editor-save")).ToHaveTextAsync("Save");
     }
 
-    [Fact]
-    public async Task BuildSaveAndPlay_ALevelFromTheStartPageToTheCheckMark()
+    [Theory]
+    [InlineData(1366, 768, "laptop")]
+    [InlineData(1920, 1080, "desktop")]
+    public async Task BuildSaveAndPlay_ALevelFromTheStartPageToTheCheckMark(int width, int height, string viewport)
     {
         Assert.SkipUnless(E2EEnvironment.Enabled, "Set HEROPATH_E2E=1 to run E2E tests.");
 
-        await using var context = await app.NewContextAsync("de-CH", 1366, 768);
+        await using var context = await app.NewContextAsync("de-CH", width, height);
         var page = await context.NewPageAsync();
         var errors = BrowserErrors.Track(page);
 
@@ -64,13 +66,15 @@ public class EditorTests(AppFixture app)
         await Expect(page.GetByTestId("custom-level-list")).ToBeVisibleAsync();
         await LayoutAssertions.AssertNoPageScrollAsync(page);
         await AssertTargetsAreBigEnoughAsync(page);
-        await Screenshots.CaptureAsync(page, "editor-new.laptop.de");
+        await Screenshots.CaptureAsync(page, $"editor-new.{viewport}.de");
 
         await SwitchToEnglishAsync(page);
         await Expect(page.GetByTestId("editor-name-hint")).ToHaveTextAsync("Please do not use your real name.");
-        await Screenshots.CaptureAsync(page, "editor-new.laptop.en");
+        await Expect(page.GetByTestId("editor-name")).ToHaveValueAsync("My level 1");
+        await Screenshots.CaptureAsync(page, $"editor-new.{viewport}.en");
         await page.GetByTestId("language-de").ClickAsync();
         await Expect(page.GetByTestId("editor-save")).ToHaveTextAsync("Speichern");
+        await Expect(page.GetByTestId("editor-name")).ToHaveValueAsync("Mein Level 1");
 
         await ShrinkToFiveByFiveAsync(page);
         await Expect(page.GetByTestId("editor-width")).ToHaveTextAsync("5");
@@ -97,11 +101,13 @@ public class EditorTests(AppFixture app)
         await page.GetByTestId("editor-save").ClickAsync();
         await Expect(page.GetByTestId("editor-saved")).ToHaveAttributeAsync("data-outcome", "Saved");
         await Expect(page.GetByTestId("custom-level-list").GetByRole(AriaRole.Button).Filter(new() { HasText = LevelName })).ToBeVisibleAsync();
-        await Screenshots.CaptureAsync(page, "editor-built.laptop.de");
+        await LayoutAssertions.AssertVisibleInEditorPanelAsync(page, "[data-testid=editor-saved]", "[data-testid^=custom-level-custom-]");
+        await Screenshots.CaptureAsync(page, $"editor-built.{viewport}.de");
 
         await SwitchToEnglishAsync(page);
         await Expect(page.GetByTestId("editor-saved")).ToContainTextAsync("Saved");
-        await Screenshots.CaptureAsync(page, "editor-built.laptop.en");
+        await Expect(page.GetByTestId("editor-name")).ToHaveValueAsync(LevelName);
+        await Screenshots.CaptureAsync(page, $"editor-built.{viewport}.en");
         await page.GetByTestId("language-de").ClickAsync();
 
         await page.GetByTestId("editor-back").ClickAsync();
@@ -160,12 +166,14 @@ public class EditorTests(AppFixture app)
         Assert.Empty(errors.Errors);
     }
 
-    [Fact]
-    public async Task Editor_RefusesAndExplains_WalledGoal_Shrinking_AndTooManyStrawberries()
+    [Theory]
+    [InlineData(1366, 768, "laptop")]
+    [InlineData(1920, 1080, "desktop")]
+    public async Task Editor_RefusesAndExplains_WalledGoal_Shrinking_AndTooManyStrawberries(int width, int height, string viewport)
     {
         Assert.SkipUnless(E2EEnvironment.Enabled, "Set HEROPATH_E2E=1 to run E2E tests.");
 
-        await using var context = await app.NewContextAsync("de-CH", 1366, 768);
+        await using var context = await app.NewContextAsync("de-CH", width, height);
         var page = await context.NewPageAsync();
         var errors = BrowserErrors.Track(page);
         await OpenEditorAsync(page, errors);
@@ -178,10 +186,10 @@ public class EditorTests(AppFixture app)
         await Expect(status).ToContainTextAsync("Der Held kommt nicht zur Burg");
         await Expect(page.GetByTestId("editor-save")).ToBeDisabledAsync();
         await Expect(page.GetByTestId("editor-save-reason")).ToBeVisibleAsync();
-        await Screenshots.CaptureAsync(page, "editor-unsolvable.laptop.de");
+        await Screenshots.CaptureAsync(page, $"editor-unsolvable.{viewport}.de");
         await SwitchToEnglishAsync(page);
         await Expect(status).ToContainTextAsync("The hero cannot reach the castle");
-        await Screenshots.CaptureAsync(page, "editor-unsolvable.laptop.en");
+        await Screenshots.CaptureAsync(page, $"editor-unsolvable.{viewport}.en");
         await page.GetByTestId("language-de").ClickAsync();
 
         await page.GetByTestId("edit-cell-9-1").ClickAsync();
@@ -192,6 +200,13 @@ public class EditorTests(AppFixture app)
         await page.GetByTestId("editor-name").FillAsync(string.Empty);
         await Expect(status).ToHaveAttributeAsync("data-state", "invalid");
         await Expect(page.GetByTestId("editor-save")).ToBeDisabledAsync();
+        await Expect(page.GetByTestId("editor-status")).ToContainTextAsync("Gib deinem Level einen Namen.");
+        await Screenshots.CaptureAsync(page, $"editor-name-empty.{viewport}.de");
+        await SwitchToEnglishAsync(page);
+        await Expect(page.GetByTestId("editor-status")).ToContainTextAsync("Give your level a name.");
+        await Screenshots.CaptureAsync(page, $"editor-name-empty.{viewport}.en");
+        await page.GetByTestId("language-de").ClickAsync();
+        await Expect(page.GetByTestId("editor-save")).ToHaveTextAsync("Speichern");
         await page.GetByTestId("editor-name").FillAsync("Test");
         await Expect(page.GetByTestId("editor-save")).ToBeEnabledAsync();
 
@@ -199,10 +214,10 @@ public class EditorTests(AppFixture app)
         await page.GetByTestId("editor-width-minus").ClickAsync();
         await Expect(page.GetByTestId("editor-width")).ToHaveTextAsync("9");
         await Expect(page.GetByTestId("editor-hint")).ToHaveTextAsync("2 Dinge wurden entfernt.");
-        await Screenshots.CaptureAsync(page, "editor-resized.laptop.de");
+        await Screenshots.CaptureAsync(page, $"editor-resized.{viewport}.de");
         await SwitchToEnglishAsync(page);
         await Expect(page.GetByTestId("editor-hint")).ToHaveTextAsync("2 things were removed.");
-        await Screenshots.CaptureAsync(page, "editor-resized.laptop.en");
+        await Screenshots.CaptureAsync(page, $"editor-resized.{viewport}.en");
         await page.GetByTestId("language-de").ClickAsync();
 
         await page.GetByTestId("editor-tool-strawberry").ClickAsync();
@@ -213,16 +228,22 @@ public class EditorTests(AppFixture app)
 
         await Expect(page.GetByTestId("editor-hint")).ToHaveTextAsync("Es passen höchstens 10 Erdbeeren in ein Level.");
         await Expect(page.Locator("[data-testid^=edit-cell-][data-item=strawberry]")).ToHaveCountAsync(10);
+        await Screenshots.CaptureAsync(page, $"editor-hint-strawberry.{viewport}.de");
+        await SwitchToEnglishAsync(page);
+        await Expect(page.GetByTestId("editor-hint")).ToHaveTextAsync("A level holds 10 strawberries at most.");
+        await Screenshots.CaptureAsync(page, $"editor-hint-strawberry.{viewport}.en");
 
         Assert.Empty(errors.Errors);
     }
 
-    [Fact]
-    public async Task Editor_TwentyByTwenty_WithTenStrawberries_ChecksFastAndStaysClickable()
+    [Theory]
+    [InlineData(1366, 768, "laptop")]
+    [InlineData(1920, 1080, "desktop")]
+    public async Task Editor_TwentyByTwenty_WithTenStrawberries_ChecksFastAndStaysClickable(int width, int height, string viewport)
     {
         Assert.SkipUnless(E2EEnvironment.Enabled, "Set HEROPATH_E2E=1 to run E2E tests.");
 
-        await using var context = await app.NewContextAsync("de-CH", 1366, 768);
+        await using var context = await app.NewContextAsync("de-CH", width, height);
         var page = await context.NewPageAsync();
         var errors = BrowserErrors.Track(page);
         await OpenEditorAsync(page, errors);
@@ -256,7 +277,7 @@ public class EditorTests(AppFixture app)
             $"20x20 with 10 strawberries and all required: from the 10th strawberry click until the status changed from {before} to {after} minimum steps took {stopwatch.ElapsedMilliseconds} ms (includes the Playwright click).");
         Console.WriteLine(report);
         Directory.CreateDirectory(E2EEnvironment.ScreenshotDirectory);
-        await File.WriteAllTextAsync(Path.Combine(E2EEnvironment.ScreenshotDirectory, "editor-20x20.timing.txt"), report, Xunit.TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(E2EEnvironment.ScreenshotDirectory, viewport == "laptop" ? "editor-20x20.timing.txt" : $"editor-20x20.{viewport}.timing.txt"), report, Xunit.TestContext.Current.CancellationToken);
         Xunit.TestContext.Current.TestOutputHelper?.WriteLine(report);
         Assert.InRange(stopwatch.ElapsedMilliseconds, 0, 1000);
 
@@ -264,9 +285,71 @@ public class EditorTests(AppFixture app)
         var cell = await page.GetByTestId("edit-cell-10-10").BoundingBoxAsync();
         Assert.NotNull(cell);
         Assert.True(cell.Width >= 28, $"A cell of the 20x20 board must stay clickable, but is {cell.Width} px wide.");
-        await Screenshots.CaptureAsync(page, "editor-20x20.laptop.de");
+        await Screenshots.CaptureAsync(page, $"editor-20x20.{viewport}.de");
         await SwitchToEnglishAsync(page);
-        await Screenshots.CaptureAsync(page, "editor-20x20.laptop.en");
+        await Screenshots.CaptureAsync(page, $"editor-20x20.{viewport}.en");
+
+        Assert.Empty(errors.Errors);
+    }
+
+    [Fact]
+    public async Task Save_WhenTheBrowserRefusesToStore_ShowsAMessageAndKeepsTheDraft()
+    {
+        Assert.SkipUnless(E2EEnvironment.Enabled, "Set HEROPATH_E2E=1 to run E2E tests.");
+
+        await using var context = await app.NewContextAsync("de-CH", 1366, 768);
+        var page = await context.NewPageAsync();
+        var errors = BrowserErrors.Track(page);
+        await OpenEditorAsync(page, errors);
+        await ClickCellsAsync(page, "tree", (4, 4));
+
+        // The app has loaded its levels by now, so only the write fails, like a full or blocked localStorage.
+        await page.EvaluateAsync("() => { Storage.prototype.setItem = () => { throw new DOMException('quota', 'QuotaExceededError'); }; }");
+        await page.GetByTestId("editor-save").ClickAsync();
+
+        var saved = page.GetByTestId("editor-saved");
+        await Expect(saved).ToHaveAttributeAsync("data-outcome", "StorageFailed");
+        await Expect(saved).ToHaveTextAsync("Speichern hat nicht geklappt. Du kannst dein Level exportieren.");
+        await Expect(page.Locator("[data-testid^=custom-level-custom-]")).ToHaveCountAsync(0);
+        await Expect(page).Not.ToHaveURLAsync(new Regex("/editor/custom-"));
+        await Expect(page.GetByTestId("edit-cell-4-4")).ToHaveAttributeAsync("data-kind", "tree");
+        await LayoutAssertions.AssertVisibleInEditorPanelAsync(page, "[data-testid=editor-saved]");
+        await Screenshots.CaptureAsync(page, "editor-storage-failed.laptop.de");
+        await SwitchToEnglishAsync(page);
+        await Expect(saved).ToHaveTextAsync("Saving did not work. You can export your level.");
+        await Screenshots.CaptureAsync(page, "editor-storage-failed.laptop.en");
+
+        Assert.Empty(errors.Errors);
+    }
+
+    [Fact]
+    public async Task Save_WithTwentyLevels_ShowsTheLimitMessage()
+    {
+        Assert.SkipUnless(E2EEnvironment.Enabled, "Set HEROPATH_E2E=1 to run E2E tests.");
+
+        var levels = Enumerable.Range(1, 20).Select(i => string.Create(
+            CultureInfo.InvariantCulture,
+            $$"""{"schemaVersion":1,"id":"custom-e2e{{i:D4}}","name":"Level {{i}}","width":5,"height":5,"start":{"x":0,"y":4},"goal":{"x":2,"y":4},"requireAllItems":false,"obstacles":[],"items":[]}"""));
+        var stored = "[" + string.Join(",", levels) + "]";
+        await using var context = await app.NewContextAsync("de-CH", 1366, 768);
+        var page = await context.NewPageAsync();
+        var errors = BrowserErrors.Track(page);
+        await page.AddInitScriptAsync(
+            $"if (localStorage.getItem('heropath.levels') === null) localStorage.setItem('heropath.levels', {System.Text.Json.JsonSerializer.Serialize(stored)});");
+        await OpenEditorAsync(page, errors);
+        await Expect(page.Locator("[data-testid^=custom-level-custom-]")).ToHaveCountAsync(20);
+
+        await page.GetByTestId("editor-save").ClickAsync();
+
+        var saved = page.GetByTestId("editor-saved");
+        await Expect(saved).ToHaveAttributeAsync("data-outcome", "LimitReached");
+        await Expect(saved).ToHaveTextAsync("Du hast schon 20 Levels. Lösche zuerst eines.");
+        await Expect(page.Locator("[data-testid^=custom-level-custom-]")).ToHaveCountAsync(20);
+        await LayoutAssertions.AssertVisibleInEditorPanelAsync(page, "[data-testid=editor-saved]");
+        await Screenshots.CaptureAsync(page, "editor-limit.laptop.de");
+        await SwitchToEnglishAsync(page);
+        await Expect(saved).ToHaveTextAsync("You already have 20 levels. Delete one first.");
+        await Screenshots.CaptureAsync(page, "editor-limit.laptop.en");
 
         Assert.Empty(errors.Errors);
     }
