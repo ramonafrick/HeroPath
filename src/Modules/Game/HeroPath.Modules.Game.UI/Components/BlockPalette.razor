@@ -1,0 +1,16 @@
+<section class="palette" aria-labelledby="palette-title">
+    <h3 id="palette-title" class="palette-title">@Localizer["Palette_Title"]</h3>
+    <div class="palette-buttons">
+        @foreach (var direction in _directions)
+        {
+            <button type="button"
+                    class="palette-button"
+                    data-testid="@($"palette-{direction.ToString().ToLowerInvariant()}")"
+                    disabled="@(!CanAdd)"
+                    @onclick="() => Session.Add(direction)">
+                <DirectionIcon Direction="direction" />
+                <span>@Localizer[$"Block_{direction}"]</span>
+            </button>
+        }
+    </div>
+</section>

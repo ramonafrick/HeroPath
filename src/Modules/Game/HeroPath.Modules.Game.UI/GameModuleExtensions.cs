@@ -1,3 +1,4 @@
+using HeroPath.Modules.Game.Application;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -9,6 +10,7 @@ public static class GameModuleExtensions
     public static IServiceCollection AddGameModule(this IServiceCollection services)
     {
         services.TryAddSingleton(TimeProvider.System);
+        services.AddScoped<GameSession>();
         return services;
     }
 }

@@ -38,7 +38,7 @@ The services are pure C# in the module's `Application` folder (no Blazor types),
 
 | Service | Lifetime | Role |
 |---|---|---|
-| `GameSession` (Game) | scoped (= one per tab in WASM) | current level, hero (avatar + name, **memory only**), program, current `ExecutionStep`, status |
+| `GameSession` (Game) | scoped (= one per tab in WASM) | current grid, hero (avatar + name, **memory only**), program, current `ExecutionStep`, status |
 | `ExecutionRunner` (Game) | scoped | Play loop / Debug step / Reset, owns the `Interpreter` and the `CancellationTokenSource` |
 | `LevelRepository` (Levels) | scoped | embedded standard levels + custom levels via `IAppStorage` |
 | `IAppStorage` (Shared contract) | scoped, host implementation | `GetAsync`/`SetAsync`/`RemoveAsync` for strings (JSON) |
@@ -81,6 +81,8 @@ await host.RunAsync();
 
 - `GameBoard` (Levels.UI, no Game types): parameters `Grid` (required), `HeroPosition` (`Position`), `MarkedCell` (`Position?`), `StepDuration` (default 500 ms), `HeroContent` (`RenderFragment?`, e.g. `<HeroMax />`). CSS Grid `grid-template-columns: repeat(var(--cols), 1fr)`, square cells via `aspect-ratio: 1`; the width follows the available height (`--hp-board-reserved`).
 - Board test ids: `game-board`, `cell-{x}-{y}` with `data-kind` (`start|goal|tree|rock|pond|empty`) and `data-marked="true"` (dashed outline plus hatching, readable in greyscale), `hero` with `data-x`/`data-y`. `PlayPage` has `side-panel` (palette, program and controls follow) and `level-name`.
+- Program editing (S3): `BlockPalette` buttons `palette-up|down|left|right` (disabled when `!CanAdd || !IsEditable`); `ProgramEditor` has `program` (the `<ol>`), `program-empty` (hint), `program-clear`, and per block `program-block` with `data-index` (0-based), `data-command-id`, `data-direction` (`up|down|left|right`) plus `program-remove-{index}`. The list scrolls inside the side panel (flex column, `overflow-y: auto`), never the page.
+- `GameSession` API: `Load(Grid)`, `Grid`, `HeroPosition` (= `Grid.Start`), `Commands` (read-only `MoveCommand` list), `Add(Direction)`, `Remove(Guid)`, `Clear()`, `CanAdd` (false at `ProgramLimits.MaxProgramCommands`), `IsEditable` + `SetEditable(bool)` (driven by the runner), `ToProgram()`, `Changed`. Add/Remove/Clear are silent no-ops when locked, full or unknown; `Changed` fires only on real changes.
 - The hero is an absolutely positioned layer that moves with `transform: translate(...)` and `transition` (duration bound to the tempo). Don't re-render the hero inside different cells; that breaks the animation.
 - Highlight the current block via `ExecutionStep.CommandId`. On an error, mark both the block and the board cell.
 - Respect `@media (prefers-reduced-motion: reduce)` (no transitions or confetti).

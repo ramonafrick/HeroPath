@@ -1,4 +1,5 @@
 @page "/"
+@using HeroPath.Modules.Game.UI.Components
 @using HeroPath.Modules.Levels.UI.Components
 @using HeroPath.Shared.UI.Graphics
 
@@ -7,11 +8,14 @@
 <main class="play-page">
     <section class="board-area">
         <h2 class="level-name" data-testid="level-name">@LevelsLocalizer[$"Level_{_level.Id}"]</h2>
-        <GameBoard Grid="_grid" HeroPosition="_grid.Start">
+        <GameBoard Grid="_grid" HeroPosition="Session.HeroPosition">
             <HeroContent>
                 <HeroMax />
             </HeroContent>
         </GameBoard>
     </section>
-    <aside class="side-panel" data-testid="side-panel"></aside>
+    <aside class="side-panel" data-testid="side-panel">
+        <BlockPalette />
+        <ProgramEditor />
+    </aside>
 </main>

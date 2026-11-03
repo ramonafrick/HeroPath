@@ -16,5 +16,10 @@
 }
 
 .side-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    height: calc(100dvh - 9rem);
+    min-height: 20rem;
     min-width: 0;
 }

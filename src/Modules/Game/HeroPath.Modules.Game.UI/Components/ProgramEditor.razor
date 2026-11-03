@@ -1,0 +1,46 @@
+<section class="program" aria-labelledby="program-title">
+    <div class="program-header">
+        <h3 id="program-title" class="program-title">@Localizer["Program_Title"]</h3>
+        <button type="button"
+                class="program-clear"
+                data-testid="program-clear"
+                disabled="@(!Session.IsEditable)"
+                @onclick="Session.Clear">
+            @Localizer["Program_Clear"]
+        </button>
+    </div>
+    @if (Session.Commands.Count == 0)
+    {
+        <p class="program-empty" data-testid="program-empty">@Localizer["Program_Empty"]</p>
+    }
+    <ol class="program-list" data-testid="program">
+        @for (var index = 0; index < Session.Commands.Count; index++)
+        {
+            var command = Session.Commands[index];
+            var number = index + 1;
+            var position = index;
+            var name = Localizer[$"Block_{command.Direction}"];
+            <li @key="command.Id"
+                class="program-block"
+                data-testid="program-block"
+                data-index="@position"
+                data-command-id="@command.Id"
+                data-direction="@command.Direction.ToString().ToLowerInvariant()"
+                aria-label="@Localizer["Program_Block", number, name]">
+                <span class="program-number" aria-hidden="true">@number</span>
+                <DirectionIcon Direction="command.Direction" />
+                <span class="program-text">@name</span>
+                <button type="button"
+                        class="program-remove"
+                        data-testid="@($"program-remove-{position}")"
+                        aria-label="@Localizer["Program_Remove", number]"
+                        disabled="@(!Session.IsEditable)"
+                        @onclick="() => Session.Remove(command.Id)">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                        <path d="M6 6 L18 18 M18 6 L6 18" />
+                    </svg>
+                </button>
+            </li>
+        }
+    </ol>
+</section>

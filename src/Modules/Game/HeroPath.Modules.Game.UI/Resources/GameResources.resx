@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Block_Up" xml:space="preserve">
+    <value>Hoch</value>
+    <comment>Name of the move-up block.</comment>
+  </data>
+  <data name="Block_Down" xml:space="preserve">
+    <value>Runter</value>
+    <comment>Name of the move-down block.</comment>
+  </data>
+  <data name="Block_Left" xml:space="preserve">
+    <value>Links</value>
+    <comment>Name of the move-left block.</comment>
+  </data>
+  <data name="Block_Right" xml:space="preserve">
+    <value>Rechts</value>
+    <comment>Name of the move-right block.</comment>
+  </data>
+  <data name="Palette_Title" xml:space="preserve">
+    <value>Bausteine</value>
+    <comment>Heading above the block palette.</comment>
+  </data>
+  <data name="Program_Title" xml:space="preserve">
+    <value>Dein Programm</value>
+    <comment>Heading above the program list.</comment>
+  </data>
+  <data name="Program_Empty" xml:space="preserve">
+    <value>Klick auf einen Baustein, um ihn ins Programm zu legen.</value>
+    <comment>Hint shown while the program has no blocks.</comment>
+  </data>
+  <data name="Program_Remove" xml:space="preserve">
+    <value>Baustein {0} entfernen</value>
+    <comment>Accessible name of the remove button. {0} = block number, starting at 1.</comment>
+  </data>
+  <data name="Program_Clear" xml:space="preserve">
+    <value>Alles löschen</value>
+    <comment>Button that removes all blocks from the program.</comment>
+  </data>
+  <data name="Program_Block" xml:space="preserve">
+    <value>Baustein {0}: {1}</value>
+    <comment>Accessible name of a program block. {0} = block number, starting at 1; {1} = direction name.</comment>
+  </data>
+</root>

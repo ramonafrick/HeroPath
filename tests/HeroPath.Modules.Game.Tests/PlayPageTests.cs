@@ -1,3 +1,4 @@
+using HeroPath.Modules.Game.UI;
 using HeroPath.Modules.Game.UI.Pages;
 using HeroPath.Shared.Application.Contracts;
 using HeroPath.Shared.UI;
@@ -10,6 +11,7 @@ public class PlayPageTests : BunitContext
     public PlayPageTests()
     {
         Services.AddSharedUI();
+        Services.AddGameModule();
         Services.AddSingleton<IAppStorage, InMemoryAppStorage>();
     }
 
@@ -34,5 +36,27 @@ public class PlayPageTests : BunitContext
         Assert.Equal("1", hero.GetAttribute("data-x"));
         Assert.Equal("6", hero.GetAttribute("data-y"));
         Assert.NotNull(page.Find("[data-testid=hero] [data-testid=graphic-hero-max]"));
+    }
+
+    [Fact]
+    public void Render_ShowsPaletteAndEmptyProgramInSidePanel()
+    {
+        var page = Render<PlayPage>();
+
+        Assert.NotNull(page.Find("[data-testid=side-panel] [data-testid=palette-up]"));
+        Assert.NotNull(page.Find("[data-testid=side-panel] [data-testid=program]"));
+        Assert.NotNull(page.Find("[data-testid=program-empty]"));
+    }
+
+    [Fact]
+    public void PaletteClick_AddsBlockToProgram()
+    {
+        var page = Render<PlayPage>();
+
+        page.Find("[data-testid=palette-right]").Click();
+
+        var block = Assert.Single(page.FindAll("[data-testid=program-block]"));
+        Assert.Equal("right", block.GetAttribute("data-direction"));
+        Assert.Equal("1", page.Find("[data-testid=hero]").GetAttribute("data-x"));
     }
 }

@@ -1,0 +1,22 @@
+.direction-icon {
+    display: block;
+    width: 1.5rem;
+    height: 1.5rem;
+    flex: none;
+    fill: var(--hp-start);
+    stroke: var(--hp-outline);
+    stroke-width: 1.6;
+    stroke-linejoin: round;
+}
+
+.dir-down {
+    transform: rotate(180deg);
+}
+
+.dir-left {
+    transform: rotate(-90deg);
+}
+
+.dir-right {
+    transform: rotate(90deg);
+}

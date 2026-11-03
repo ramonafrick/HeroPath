@@ -24,6 +24,7 @@ Modules/Game/HeroPath.Modules.Game.UI/Resources/GameResources.cs (+ …)       b
 Modules/Levels/HeroPath.Modules.Levels.UI/Resources/LevelsResources.cs (+ …) level names (Level_<id>), editor texts
 ```
 
+- `Game.UI` keys so far: `Block_Up|Down|Left|Right`, `Palette_Title`, `Program_Title`, `Program_Empty`, `Program_Remove` ({0} = block number), `Program_Block` ({0} = number, {1} = direction), `Program_Clear`.
 - `<X>Resources.cs` is an empty marker class (`public sealed class GameResources;`) in namespace `HeroPath.Modules.Game.UI.Resources`. Use `IStringLocalizer<GameResources>`, no ResX designer classes.
 - Neutral resx = German. `<NeutralLanguage>` is not needed.
 - Only UI projects contain resx. Pure module projects return error kinds and numbers, never texts.
