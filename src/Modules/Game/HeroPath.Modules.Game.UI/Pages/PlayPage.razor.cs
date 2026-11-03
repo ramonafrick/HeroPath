@@ -16,7 +16,7 @@ namespace HeroPath.Modules.Game.UI.Pages;
 /// </summary>
 public partial class PlayPage : SessionComponentBase
 {
-    private const string DemoLevelId = "demo";
+    private const string DemoLevelId = "easy-2";
 
     private LevelDefinition _level = default!;
 

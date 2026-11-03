@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "free-field",
+  "name": null,
+  "width": 10,
+  "height": 10,
+  "start": { "x": 2, "y": 7 },
+  "goal": { "x": 7, "y": 3 },
+  "requireAllItems": false,
+  "obstacles": [],
+  "items": []
+}

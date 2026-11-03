@@ -16,8 +16,32 @@
     <value>Game board</value>
     <comment>Accessible name of the game board.</comment>
   </data>
-  <data name="Level_demo" xml:space="preserve">
-    <value>Practice field</value>
-    <comment>Name of the demo level shown above the board.</comment>
+  <data name="Level_free-field" xml:space="preserve">
+    <value>Open field</value>
+    <comment>Name of a standard level shown above the board.</comment>
+  </data>
+  <data name="Level_easy-1" xml:space="preserve">
+    <value>Easy 1</value>
+    <comment>Name of a standard level shown above the board.</comment>
+  </data>
+  <data name="Level_easy-2" xml:space="preserve">
+    <value>Easy 2</value>
+    <comment>Name of a standard level shown above the board.</comment>
+  </data>
+  <data name="Level_strawberries" xml:space="preserve">
+    <value>Collect strawberries</value>
+    <comment>Name of a standard level shown above the board.</comment>
+  </data>
+  <data name="Level_small-maze" xml:space="preserve">
+    <value>Small maze</value>
+    <comment>Name of a standard level shown above the board.</comment>
+  </data>
+  <data name="Level_long-road" xml:space="preserve">
+    <value>Long road</value>
+    <comment>Name of a standard level shown above the board.</comment>
+  </data>
+  <data name="Level_castle-maze" xml:space="preserve">
+    <value>Castle maze</value>
+    <comment>Name of a standard level shown above the board.</comment>
   </data>
 </root>

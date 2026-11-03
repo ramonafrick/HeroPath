@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "id": "small-maze",
+  "name": null,
+  "width": 8,
+  "height": 5,
+  "start": { "x": 0, "y": 4 },
+  "goal": { "x": 7, "y": 3 },
+  "requireAllItems": false,
+  "obstacles": [
+    { "x": 5, "y": 1, "kind": "tree" },
+    { "x": 2, "y": 2, "kind": "pond" },
+    { "x": 6, "y": 2, "kind": "rock" },
+    { "x": 4, "y": 3, "kind": "pond" },
+    { "x": 4, "y": 4, "kind": "rock" }
+  ],
+  "items": []
+}

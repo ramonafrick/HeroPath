@@ -11,13 +11,6 @@ public class StandardLevelsTests
     public static TheoryData<string> LevelIds => [.. StandardLevels.All.Select(level => level.Id)];
 
     [Fact]
-    public void All_ContainsEmbeddedLevels_DemoFirst()
-    {
-        Assert.NotEmpty(StandardLevels.All);
-        Assert.Equal("demo", StandardLevels.All[0].Id);
-    }
-
-    [Fact]
     public void All_IdsAreUniqueAndMatchEmbeddedFileNamesInOrder()
     {
         var fileNames = typeof(StandardLevels).Assembly.GetManifestResourceNames()
@@ -51,17 +44,43 @@ public class StandardLevelsTests
         Assert.True(LevelSolver.IsSolvable(grid), $"Level '{id}' cannot be solved.");
     }
 
-    [Fact]
-    public void Get_Demo_ReturnsDemoLevel()
-    {
-        var level = StandardLevels.Get("demo");
 
-        Assert.Equal("demo", level.Id);
+    [Fact]
+    public void All_ContainsSevenStandardLevelsInOrder()
+    {
+        Assert.Equal(
+            ["free-field", "easy-1", "easy-2", "strawberries", "small-maze", "long-road", "castle-maze"],
+            StandardLevels.All.Select(level => level.Id));
+    }
+
+    [Theory]
+    [InlineData("free-field")]
+    [InlineData("easy-1")]
+    [InlineData("easy-2")]
+    [InlineData("strawberries")]
+    public void EarlyLevels_ShortestSolution_IsAtMostTenMoves(string id)
+    {
+        var moves = LevelSolver.ShortestSolution(StandardLevels.Get(id).ToGrid());
+
+        Assert.NotNull(moves);
+        Assert.InRange(moves.Value, 1, 10);
+    }
+
+    [Fact]
+    public void LongRoad_ShortestSolution_HasThirtyMoves()
+    {
+        Assert.Equal(30, LevelSolver.ShortestSolution(StandardLevels.Get("long-road").ToGrid()));
+    }
+
+    [Fact]
+    public void Easy2_HasFormerDemoLayout()
+    {
+        var level = StandardLevels.Get("easy-2");
+
         Assert.Equal(10, level.Width);
         Assert.Equal(10, level.Height);
         Assert.Equal(new Position(1, 6), level.Start);
         Assert.Equal(new Position(6, 3), level.Goal);
-        Assert.False(level.RequireAllItems);
         Assert.Empty(level.Items);
         Assert.Equal(
             [
@@ -70,20 +89,28 @@ public class StandardLevelsTests
                 new LevelObstacle(6, 5, ObstacleKind.Pond),
             ],
             level.Obstacles);
+        Assert.Equal(8, LevelSolver.ShortestSolution(level.ToGrid()));
     }
 
     [Fact]
-    public void Demo_ShortestSolution_HasEightMoves()
+    public void Strawberries_RequiresAllItems()
     {
-        var grid = StandardLevels.Get("demo").ToGrid();
+        var level = StandardLevels.Get("strawberries");
 
-        Assert.Equal(8, LevelSolver.ShortestPath(grid, grid.Start, grid.Goal));
+        Assert.True(level.RequireAllItems);
+        Assert.Equal(3, level.Items.Count(item => item.Kind == ItemKind.Strawberry));
+    }
+
+    [Fact]
+    public void AtLeastOneLevel_ContainsPizza()
+    {
+        Assert.Contains(StandardLevels.All, level => level.Items.Any(item => item.Kind == ItemKind.Pizza));
     }
 
     [Theory]
     [InlineData("unknown")]
     [InlineData("")]
-    [InlineData("DEMO")]
+    [InlineData("EASY-2")]
     public void Get_UnknownId_ThrowsKeyNotFound(string id)
     {
         Assert.Throws<KeyNotFoundException>(() => StandardLevels.Get(id));

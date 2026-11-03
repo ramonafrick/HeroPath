@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "castle-maze",
+  "name": null,
+  "width": 15,
+  "height": 15,
+  "start": { "x": 0, "y": 14 },
+  "goal": { "x": 12, "y": 2 },
+  "requireAllItems": true,
+  "obstacles": [
+    { "x": 3, "y": 14, "kind": "tree" },
+    { "x": 5, "y": 12, "kind": "rock" },
+    { "x": 7, "y": 10, "kind": "pond" },
+    { "x": 9, "y": 8, "kind": "tree" },
+    { "x": 11, "y": 6, "kind": "rock" },
+    { "x": 13, "y": 4, "kind": "pond" },
+    { "x": 1, "y": 13, "kind": "tree" },
+    { "x": 3, "y": 11, "kind": "rock" },
+    { "x": 5, "y": 9, "kind": "pond" },
+    { "x": 7, "y": 7, "kind": "tree" },
+    { "x": 9, "y": 5, "kind": "rock" },
+    { "x": 11, "y": 3, "kind": "pond" }
+  ],
+  "items": [
+    { "x": 4, "y": 11, "kind": "strawberry" },
+    { "x": 8, "y": 7, "kind": "strawberry" },
+    { "x": 14, "y": 14, "kind": "pizza" }
+  ]
+}

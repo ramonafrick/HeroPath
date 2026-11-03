@@ -125,6 +125,6 @@ public class PlayPageTests : CultureBunitContext
         var page = Render<PlayPage>();
 
         Assert.Equal("Bereit", page.Find("[data-testid=status] .status-text").TextContent);
-        Assert.Equal("Übungsfeld", page.Find("[data-testid=level-name]").TextContent);
+        Assert.Equal("Einfach 2", page.Find("[data-testid=level-name]").TextContent);
     }
 }

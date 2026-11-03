@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "long-road",
+  "name": null,
+  "width": 15,
+  "height": 5,
+  "start": { "x": 0, "y": 4 },
+  "goal": { "x": 0, "y": 2 },
+  "requireAllItems": false,
+  "obstacles": [
+    { "x": 0, "y": 3, "kind": "pond" },
+    { "x": 1, "y": 3, "kind": "pond" },
+    { "x": 2, "y": 3, "kind": "pond" },
+    { "x": 3, "y": 3, "kind": "pond" },
+    { "x": 4, "y": 3, "kind": "pond" },
+    { "x": 5, "y": 3, "kind": "pond" },
+    { "x": 6, "y": 3, "kind": "pond" },
+    { "x": 7, "y": 3, "kind": "pond" },
+    { "x": 8, "y": 3, "kind": "pond" },
+    { "x": 9, "y": 3, "kind": "pond" },
+    { "x": 10, "y": 3, "kind": "pond" },
+    { "x": 11, "y": 3, "kind": "pond" },
+    { "x": 12, "y": 3, "kind": "pond" },
+    { "x": 13, "y": 3, "kind": "pond" }
+  ],
+  "items": []
+}

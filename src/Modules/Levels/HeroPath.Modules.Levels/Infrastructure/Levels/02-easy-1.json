@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "easy-1",
+  "name": null,
+  "width": 10,
+  "height": 10,
+  "start": { "x": 2, "y": 5 },
+  "goal": { "x": 7, "y": 5 },
+  "requireAllItems": false,
+  "obstacles": [
+    { "x": 5, "y": 5, "kind": "tree" }
+  ],
+  "items": []
+}

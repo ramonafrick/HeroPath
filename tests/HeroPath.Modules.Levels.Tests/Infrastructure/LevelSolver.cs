@@ -33,16 +33,52 @@ internal static class LevelSolver
         return null;
     }
 
-    /// <summary>The goal is reachable and, with <c>RequireAllItems</c>, so is every strawberry.</summary>
-    public static bool IsSolvable(Grid grid)
+    /// <summary>Shortest number of moves that reach the goal after collecting every required strawberry, or <see langword="null"/>.</summary>
+    public static int? ShortestSolution(Grid grid)
     {
-        if (ShortestPath(grid, grid.Start, grid.Goal) is null)
+        var strawberries = grid.RequireAllItems
+            ? grid.Items.Where(item => item.Kind == ItemKind.Strawberry).Select(item => item.GetPosition()).ToList()
+            : [];
+        var full = (1 << strawberries.Count) - 1;
+        var start = (grid.Start, 0);
+        var distances = new Dictionary<(Position, int), int> { [start] = 0 };
+        var queue = new Queue<(Position Position, int Mask)>([start]);
+        while (queue.Count > 0)
         {
-            return false;
+            var (position, mask) = queue.Dequeue();
+            if (position == grid.Goal && mask == full)
+            {
+                return distances[(position, mask)];
+            }
+
+            foreach (var offset in _offsets)
+            {
+                var next = new Position(position.X + offset.X, position.Y + offset.Y);
+                if (!grid.IsInside(next) || grid.GetObstacle(next) is not null)
+                {
+                    continue;
+                }
+
+                var nextMask = mask;
+                var index = strawberries.IndexOf(next);
+                if (index >= 0)
+                {
+                    nextMask |= 1 << index;
+                }
+
+                if (distances.TryAdd((next, nextMask), distances[(position, mask)] + 1))
+                {
+                    queue.Enqueue((next, nextMask));
+                }
+            }
         }
 
-        return !grid.RequireAllItems
-            || grid.Items.Where(item => item.Kind == ItemKind.Strawberry)
-                .All(item => ShortestPath(grid, grid.Start, item.GetPosition()) is not null);
+        return null;
+    }
+
+    /// <summary>The goal is reachable and, with <c>RequireAllItems</c>, after every strawberry.</summary>
+    public static bool IsSolvable(Grid grid)
+    {
+        return ShortestSolution(grid) is not null;
     }
 }

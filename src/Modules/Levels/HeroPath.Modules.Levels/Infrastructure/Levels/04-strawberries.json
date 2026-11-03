@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "strawberries",
+  "name": null,
+  "width": 10,
+  "height": 10,
+  "start": { "x": 1, "y": 7 },
+  "goal": { "x": 6, "y": 2 },
+  "requireAllItems": true,
+  "obstacles": [
+    { "x": 1, "y": 4, "kind": "tree" },
+    { "x": 4, "y": 6, "kind": "rock" },
+    { "x": 5, "y": 2, "kind": "pond" }
+  ],
+  "items": [
+    { "x": 3, "y": 7, "kind": "strawberry" },
+    { "x": 3, "y": 4, "kind": "strawberry" },
+    { "x": 6, "y": 4, "kind": "strawberry" },
+    { "x": 5, "y": 6, "kind": "pizza" }
+  ]
+}

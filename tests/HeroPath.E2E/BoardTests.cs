@@ -33,7 +33,7 @@ public class BoardTests(AppFixture app)
         await Expect(page.GetByTestId("cell-3-6")).ToHaveAttributeAsync("data-kind", "tree");
         await Expect(page.GetByTestId("cell-4-3")).ToHaveAttributeAsync("data-kind", "rock");
         await Expect(page.GetByTestId("cell-6-5")).ToHaveAttributeAsync("data-kind", "pond");
-        await Expect(page.GetByTestId("level-name")).ToHaveTextAsync("Übungsfeld");
+        await Expect(page.GetByTestId("level-name")).ToHaveTextAsync("Einfach 2");
 
         if (viewport == "laptop")
         {
@@ -45,7 +45,7 @@ public class BoardTests(AppFixture app)
         await Screenshots.CaptureAsync(page, namePrefix + ".de");
 
         await page.GetByTestId("language-en").ClickAsync();
-        await Expect(page.GetByTestId("level-name")).ToHaveTextAsync("Practice field");
+        await Expect(page.GetByTestId("level-name")).ToHaveTextAsync("Easy 2");
         await Expect(page.GetByTestId("hero")).ToHaveAttributeAsync("data-x", "1");
         await Screenshots.CaptureAsync(page, namePrefix + ".en");
 

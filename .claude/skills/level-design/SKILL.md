@@ -11,9 +11,9 @@ The JSON schema and validation rules are in the `game-rules` skill. This skill c
 
 | # | id | Idea | Learning goal | Shape |
 |---|---|---|---|---|
-| 1 | `free-field` | 10×10, no obstacles | trying things out, sequence | start bottom-left, goal top-right |
+| 1 | `free-field` | 10×10, no obstacles | trying things out, sequence | start (2,7), goal (7,3), 9 blocks |
 | 2 | `easy-1` | one obstacle between start and goal | detour | goal in a line with start, one tree in between |
-| 3 | `easy-2` | two obstacles | planning | two detours in different directions |
+| 3 | `easy-2` | three obstacles (tree, rock, pond) | planning | former demo layout, detours in different directions, 8 blocks |
 | 4 | `strawberries` | a few items on the way, `requireAllItems: true` | problem decomposition | 2–3 strawberries close to the direct path |
 | 5 | `small-maze` | "3 forward, 2 up, 1 down", meandering | sequence, debugging | narrow corridors made of rocks/ponds |
 | 6 | `long-road` | long straight stretches | **repeat block** | e.g. 15×5, a long row, a turn, another long row |
@@ -36,7 +36,7 @@ Must-have: at least 4 levels (1–4). Levels 5–7 are a bonus.
 - `src/Modules/Levels/HeroPath.Modules.Levels/Infrastructure/Levels/<nn>-<id>.json` (e.g. `01-free-field.json`). The order comes from the file prefix.
 - Embedded via `<EmbeddedResource Include="Infrastructure\Levels\*.json" />` (already a wildcard in the csproj, so no change per level).
 - Add the display name as `Level_<id>` in **both** `LevelsResources` resx files (see the `localization` skill).
-- `00-demo.json` (id `demo`, 10×10, start (1,6), goal (6,3), tree/rock/pond, no items, shortest solution 8 moves) is the M2 demo level shown on the play page. It is not one of the 7 templates below; `StandardLevelsTests` still validates and solves it.
+- `easy-2` has the layout of the former M2 demo level (10×10, start (1,6), goal (6,3), tree/rock/pond, shortest solution 8 moves). It has three obstacles instead of two so all three graphics show early (decision D5 in `docs/plan.md`). `free-field` uses start (2,7) and goal (7,3) instead of corner to corner, to stay at 9 blocks (rule: first levels ≤ 10).
 
 ## Mandatory check (test in HeroPath.Modules.Levels.Tests)
 
@@ -44,7 +44,7 @@ One test class `StandardLevelsTests`, which for **every** embedded level:
 
 1. deserializes it (source-gen context),
 2. validates it with `LevelValidator` (no errors),
-3. checks with **BFS** over the grid (4 directions, obstacles blocked) that the goal is reachable. With `requireAllItems`, check that every required item and then the goal are reachable from the start,
+3. checks with **BFS** (`LevelSolver.ShortestSolution`, state = position plus collected strawberries) that the goal is reachable, with `requireAllItems` after every strawberry; levels 1-4 need at most 10 moves,
 4. checks that ids are unique and match the file name.
 
 ```csharp
