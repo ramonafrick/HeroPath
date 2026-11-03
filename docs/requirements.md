@@ -138,3 +138,51 @@ Bleibt M3 aus, fehlen am Zukunftstag Schleifen und verständliche Fehler. Die Ki
 ## Open Questions
 
 - Keine offenen Fragen. Die englischen Meldungstexte in FR20 sind Vorschläge und werden bei der Freigabe bestätigt oder korrigiert.
+
+## Umsetzungsstand und bekannte Einschränkungen
+
+Stand nach M3 (Code in `src/` und `tests/`). Die Abschnitte oben beschreiben die Anforderung, dieser Abschnitt den tatsächlichen Stand. Die Entscheidungen mit Alternativen stehen in `Architektur C4.md` §6 (Nr. 15 bis 20), der Plan in `plan.md`.
+
+### Abweichungen und Ergänzungen, im Verlauf entschieden
+
+- **Laptop-Layout (NFR4):** Die Seitenleiste ist einspaltig. Unter `@media (max-height: 56rem) and (min-width: 82rem)` (`PlayPage.razor.css`) wird sie zweispaltig (Spalten `0.9fr` / `1.1fr`): links die Werkzeuge (Palette, Steuerung, Status, Meldung), rechts das Programm. Auf 1366×768 zeigt das Layout 10 Zeilen ohne Seiten-Scrollen (Zielwert in NFR4 war «etwa 8»).
+- **Kopf eines Wiederhole-Blocks:** Der Kopf bleibt einzeilig («Wiederhole [−] N [+] mal»). ▲ ▼ 🗑 und die Runden-Anzeige («Runde 2 von 3») stehen in einer eigenen Fusszeile (`block-foot`) unter dem Kopf. Das Wiederhole-Symbol zeigt nur ein Wiederhole-Block der obersten Ebene (`Path.Count == 1`), kein verschachtelter. Bei einem Bewegungs-Baustein stehen ▲ ▼ 🗑 direkt in seiner Zeile.
+- **Hinweis bei leerem Programm (FR22):** Der Text «Zieh Bausteine ins Programm oder klick sie an.» (`Message_EmptyProgram`) steht nur im Meldungsfeld (`MessageBox`). Er nennt beide Wege und weicht damit vom Vorschlag «Zieh zuerst ein paar Bausteine ins Programm.» ab. Die Programmspalte zeigt bei leerem Programm eine Platzhalter-Zeichnung ohne Text (`program-placeholder`), damit kein Text doppelt steht. Der Schlüssel `Program_Empty` und das Test-Id `program-empty` aus M2 sind entfernt.
+- **Rangfolge der Meldungen (`GameSession.Message`):** Meldung des Laufs (Fehler oder Erfolg) vor dem Hinweis zum leeren Wiederhole-Block vor den abgeleiteten Hinweisen. Abgeleitet werden, nur solange das Programm bearbeitbar ist: `EmptyProgram`, `ProgramFull`, `NestingTooDeep` (in dieser Reihenfolge). Die abgeleiteten Hinweise werden bei jedem Lesen neu berechnet und müssen nicht gelöscht werden. Der Hinweis zum leeren Wiederhole-Block wird durch die nächste Bearbeitung und durch Reset gelöscht. `Load` mit einem anderen Grid und Reset löschen Hinweis und Meldung des Laufs.
+- **Leerer Wiederhole-Block (FR21):** Die Vorprüfung liegt im `ExecutionRunner` (`PlayAsync` und `StepOnce`, nur im Status `Ready`). Bei einem Treffer wird kein `Interpreter` erstellt, der Status bleibt `Ready`, `GameSession.HintedId` markiert den ersten leeren Block (`data-hint`). Play und Debug bleiben dafür aktiv (`CanStart` unverändert). `ExecutionError.EmptyRepeat` und `EmptyProgram` des Interpreters sind damit im normalen Ablauf kaum erreichbar. `GameMessage.FromStep` bildet sie trotzdem als Hinweis ab (Schutznetz).
+- **Drag & Drop (FR6 bis FR10, NFR6):**
+  - Es werden nur Blazor-Ereignisse verwendet (`@ondragstart`, `@ondragover:preventDefault="…"`, `@ondrop`), kein eigenes JavaScript (Entscheid D6, Variante A, `Architektur C4.md` §6).
+  - **Firefox ist unverifiziert:** Firefox startet einen Drag eventuell nur, wenn `dataTransfer.setData` aufgerufen wird, und Blazor kann das ohne JS nicht. Weder im Code noch in `docs/` ist das geprüft. Zu prüfen beim Probelauf (M6) auf dem Firmenbrowser. Die Klick-Alternative funktioniert unabhängig davon. E2E läuft nur in Chromium.
+  - Ungültige Ziele: Die eigene Position (keine Änderung), der eigene Rumpf und die 3. Ebene sind ungültig und zeigen beim Darüberfahren das «Nein»-Zeichen mit Schraffur (`zone-no`, `zone-hatch`). Das Ablegen bewirkt nichts.
+  - Ziehen ändert die Auswahl nie.
+  - Die Palette ist das Löschziel. Ein Feld «Hierher ziehen zum Löschen» (`palette-delete`, `Palette_DropDelete`) erscheint nur, solange ein bestehender Baustein gezogen wird.
+  - Die Drop-Zonen (`DropZone`) sind `aria-hidden` und nicht fokussierbar. Die Tastaturbedienung deckt die Klick-Alternative ab (Auswahl, ▲▼🗑).
+  - `ProgramDragState` hält nur die Quelle. Jede Zielfrage geht an `GameSession` (`CanAddAt`, `CanAddRepeatAt`, `CanMove`, `CanRemove`), jedes Ablegen wird erneut geprüft. Ein Drag bei gesperrtem Programm startet nicht (`Start` bricht ab).
+  - `PlayPage.Dispose` beendet einen laufenden Drag (`Drag.End()`), zusätzlich zu `Runner.Stop()` aus M2.
+- **E2E-Tests:** Die Drag-Tests (`DragDropTests`) verwenden eine manuelle Mausfolge und warten, bis die Zonen-Boxen stabil sind, weil die Zonen nach `dragstart` wachsen. Der E2E-Test für das Schrittlimit nutzt die Playwright-Browser-Uhr statt echter Wartezeit. `MessageTests` dauert trotzdem etwa 1.5 Minuten.
+- **`ExecutionStep.Repeats`:** Die Liste der umschliessenden Wiederhole-Blöcke (`RepeatProgress(RepeatId, Round, Count)`, aussen nach innen) ist eine `init`-Eigenschaft. Die `record`-Gleichheit von `ExecutionStep` vergleicht sie per Referenz, nicht nach Inhalt. Im Doc-Kommentar vermerkt.
+- **Meldungstexte:** `MessageBox` setzt den Heldennamen als feste Konstante «Max» ein (`HeroName`). Er wird nicht gespeichert und nicht geloggt (NFR7). `GameMessage` selbst enthält nur Werte, keine Texte und keinen Namen.
+
+### Offen (nicht umgesetzt)
+
+- **Aus dem Code-Review, [COULD], nicht behoben:**
+  - Der Snapshot eines Schritts alloziert pro Schritt.
+  - `DropZone.ParentNumber` verwendet den Zeichenwert `"root"` als Magic String.
+  - Redundantes `ArgumentNullException.ThrowIfNull` in `ProgramEditing.UpTarget` und `DownTarget`.
+  - `MessageBox` fällt bei `Obstacle` ohne Hindernisart auf `ObstacleKind.Tree` zurück (`?? ObstacleKind.Tree`).
+  - Unnötiges `foreach`-Capture (`var captured = direction`) in `BlockPalette`.
+  - `ProgramBlock` prüft die Grenzen 1 bis 20 im Kopf selbst (`MinRepeatCount`/`MaxRepeatCount`) und dupliziert damit die Regel aus `ProgramEditing.SetRepeatCount`.
+  - `GameSession.Message` und `DerivedHint` werden bei jedem Lesen neu berechnet.
+  - `GameMessage.FromStep` für `EmptyRepeat` und `EmptyProgram` ist im normalen Ablauf kaum erreichbar (Schutznetz des Interpreters).
+  - Einige UI-Klassen haben keinen XML-Doc-Kommentar.
+- **Visuell [COULD], nicht behoben:**
+  - Am linken Ende des schraffierten ungültigen Streifens steht ein kleiner Balkenstummel.
+  - Läuft die Programmliste über, gibt es keinen Hinweis zum Scrollen.
+  - Der überfahrene ungültige Streifen überlappt die Unterkante der Zeile darüber. Das ist beabsichtigt.
+- **Verschoben (Out of Scope):**
+  - Tastatur-Drag-&-Drop (M6, Could).
+  - Konfetti (M6).
+  - Rückgängig/Wiederherstellen (offener Punkt in `Projekt_Kontext.md` §8, Entscheid nach dem Probelauf).
+  - Heldenname und Lisa in den Meldungen (M4). Bis dahin fest «Max».
+- **Firefox-Drag:** Siehe oben, unverifiziert, Prüfung beim Probelauf (M6).
+- **Sicherheit:** Der Sicherheits-Review ergab keine Befunde. Info: Sobald M4 den Heldennamen in die Meldungen einsetzt, ist er erneut zu prüfen (nicht speichern, nicht loggen).

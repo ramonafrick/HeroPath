@@ -72,15 +72,16 @@ Browser-Lern-App «HeroPath» (HeldenWeg / Hero's Path) für den Zukunftstag: Ki
 - **Architektur:** Modular nach Clean Architecture. Module `Levels` (Spielfeld, Level, Editor) und `Game` (Held, Bausteine, Interpreter) plus `Shared`. Jedes Modul hat ein reines C#-Projekt (`Domain`, `Application`, `Infrastructure`, ohne UI-Abhängigkeit) und ein `.UI`-Projekt (Razor Class Library). Abhängigkeitsrichtung `Shared ← Levels ← Game`, automatisch geprüft. Hosts unter `src/Hosts`: heute `HeroPath.Web`, `HeroPath.Maui` kann später folgen. Details in `Architektur C4.md` §3.
 - **Plattformdienste:** Speicher, Datei-Export und Ähnliches laufen über Schnittstellen in `Shared` (z. B. `IAppStorage`), die jeder Host implementiert.
 - **Standard-Levels:** Eingebettete JSON-Ressourcen in `HeroPath.Modules.Levels`, damit sie in jedem Host funktionieren. Heute über die statische Klasse `StandardLevels` gelesen (ein Demo-Level), `ILevelSource` und `LevelRepository` folgen mit M5.
-- **Interpreter:** Ein Interpreter für Play und Debug. Er liefert pro `Step()` einen `ExecutionStep` mit Position, Status und ggf. Fehler.
+- **Interpreter:** Ein Interpreter für Play und Debug. Er liefert pro `Step()` einen `ExecutionStep` mit Position, Status, ggf. Fehler und (seit M3) den Runden der umschliessenden Wiederhole-Blöcke.
 - **Ablaufsteuerung (seit M2):** `GameSession` hält Programm, Lauf-Status (`RunStatus`) und Tempo, `ExecutionRunner` führt Play, Debug und Reset über den Interpreter aus. Beide sind reines C# in `Modules.Game/Application`. Details in `Architektur C4.md` §4.2.
+- **Programm als Baum (seit M3):** Das Programm ist eine unveränderliche `ProgramDefinition` mit verschachtelten Wiederhole-Blöcken. Alle Bearbeitungen (Einfügen, Verschieben, Entfernen, Anzahl ändern) sind reine Funktionen in `ProgramEditing` (Domain). `GameSession` hält zusätzlich Auswahl und Meldung (`GameMessage`). Details in `Architektur C4.md` §4.2 und §6 (Nr. 15 bis 20).
 - **Schrittlimit:** Maximal 1000 ausgeführte Schritte pro Lauf, Wiederhole-Anzahl 1 bis 20, Verschachtelung maximal 2 Ebenen.
 - **Programmgrösse:** Maximal 200 Bausteine pro Programm (Bewegungen und Wiederhole-Blöcke rekursiv gezählt, `ProgramLimits.MaxProgramCommands`).
 - **Spielfeldgrenzen:** Breite und Höhe je 3 bis 20.
 - **Level-JSON:** Maximal 64 KB (65 536 Zeichen, längere Eingaben werden vor dem Parsen abgelehnt) und maximale JSON-Tiefe 8. Level-Id nach `^[a-z0-9-]{1,40}$`, Level-Name (optional) höchstens 50 Zeichen, nicht nur Leerraum und ohne Steuerzeichen.
 - **Gewinnbedingung:** Ziel erreicht. Pro Level optional zusätzlich alle Items eingesammelt (`RequireAllItems`).
 - **Rendering:** CSS Grid für das Raster, SVG für Figuren, Hindernisse und Items. Bewegung mit CSS-Transitions.
-- **Drag & Drop:** Native HTML5-Ereignisse in einer eigenen Komponente `ProgramEditor`, dazu immer eine Alternative per Klick. Die Technik bleibt austauschbar. (Stand M2: nur die Klick-Variante ist umgesetzt.)
+- **Drag & Drop (seit M3):** Native HTML5-Ereignisse über Blazor (`ProgramEditor` mit `BlockList`, `ProgramBlock`, `DropZone`, dazu `BlockPalette`), kein eigenes JavaScript. Immer mit Alternative per Klick (Auswählen, Einfügeziel, ▲▼🗑). Die Technik bleibt austauschbar. Ob Firefox den Drag ohne `dataTransfer.setData` startet, ist unverifiziert (siehe §8). Entscheid: `Architektur C4.md` §6, Nr. 20.
 - **Lokalisierung:** `IStringLocalizer` mit resx-Dateien (`de`, `en`), Sprache im localStorage. Auch der Anzeigename der App wird lokalisiert (HeldenWeg / Hero's Path). Die Sprache wird ohne Neuladen umgeschaltet. Damit die `en`-Texte dann vorhanden sind, lädt `index.html` beim Start alle Satellite-Assemblies (`Blazor.start` mit `loadAllSatelliteResources`), siehe `Architektur C4.md` §6, Nr. 11.
 - **Keine externen Ressourcen:** Keine CDNs, Schriften und Grafiken liegen lokal im Projekt.
 
@@ -109,13 +110,13 @@ Browser-Lern-App «HeroPath» (HeldenWeg / Hero's Path) für den Zukunftstag: Ki
 |---|---|---|
 | M1 | Domain der Module `Levels` (Grid, Level) und `Game` (Person, Befehle, Interpreter) mit Tests | ✅ erledigt |
 | M2 | Blazor-Grundgerüst, Spielfeld, Figur, Play, Debug, Reset (Programm zunächst per Klick) | ✅ erledigt |
-| M3 | Drag & Drop, Wiederhole-Block, Block-Hervorhebung, Fehlermeldungen | offen |
+| M3 | Drag & Drop, Wiederhole-Block, Block-Hervorhebung, Fehlermeldungen | ✅ erledigt |
 | M4 | Level-Vorlagen, Start-Dialog, Items | offen |
 | M5 | Level-Editor und Speicherung | offen |
 | M6 | Deutsch und Englisch, Feinschliff, Probelauf auf dem Ziel-Laptop | offen |
 | M7 | (später, nach dem Zukunftstag) `Hosts/HeroPath.Maui` als Host, responsives Layout und Touch-Bedienung | offen |
 
-Wenn die Zeit knapp wird, entfallen zuerst M5 und die Items. M1 bis M4 ergeben bereits ein vollwertiges Spiel. Abweichungen und offene Punkte aus M1: `requirements-M1.md`, Abschnitt «Umsetzungsstand und bekannte Einschränkungen». Aus M2: `requirements-M2.md`, Abschnitt «Umsetzungsstand und bekannte Einschränkungen».
+Wenn die Zeit knapp wird, entfallen zuerst M5 und die Items. M1 bis M4 ergeben bereits ein vollwertiges Spiel. Abweichungen und offene Punkte aus M1: `requirements-M1.md`, Abschnitt «Umsetzungsstand und bekannte Einschränkungen». Aus M2: `requirements-M2.md`, Abschnitt «Umsetzungsstand und bekannte Einschränkungen». Aus M3: `requirements.md`, Abschnitt «Umsetzungsstand und bekannte Einschränkungen».
 
 ## 8. Offene Punkte
 
@@ -125,6 +126,8 @@ Wenn die Zeit knapp wird, entfallen zuerst M5 und die Items. M1 bis M4 ergeben b
 - [ ] Ablauf des Halbtags (App als Einstieg, danach weitere Aufgaben?)
 - [ ] Soll jedes Kind seine Levels am Ende mitnehmen können (Export)?
 - [ ] Zielplattformen für Mobile (Android, iOS)? Der iOS-Build braucht einen Mac
+- [ ] Rückgängig/Wiederherstellen (Undo/Redo) im Programm-Editor: nach dem Probelauf (M6) entscheiden
+- [ ] Drag & Drop im Firefox auf dem Firmenbrowser prüfen: Blazor kann `dataTransfer.setData` nicht aufrufen, ob Firefox den Drag dann startet, ist unverifiziert (`Architektur C4.md` §6, Nr. 20). Die Klick-Alternative funktioniert in jedem Fall
 
 ## 9. Risiken
 
