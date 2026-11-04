@@ -82,7 +82,7 @@ Regeln: Eine gedrückt gehaltene Taste zählt einmal (`event.repeat` wird ignori
 
 - **Ziel:** Jeder Push auf `main` prüft Format, Build, alle Tests und E2E.
 - **Dateien:** `.github/workflows/ci.yml`, `.claude/skills/release/SKILL.md` (Versionen, Tatsachen).
-- **Vorgehen:** `ubuntu-latest` wie im `release`-Skill. Rechte `contents: read`. Screenshots als Artefakt, auch bei Fehlern. Falls Chromium auf Linux Systembibliotheken braucht, `playwright.ps1 install --with-deps chromium` ergänzen.
+- **Vorgehen:** Job `build` auf `ubuntu-latest`, Job `e2e` auf `windows-latest` (Entscheid vom 2026-11-04: Die App nutzt die Systemschrift, unter Linux lief die Editor-Spalte auf 1366×768 über). Rechte `contents: read`. Screenshots als Artefakt, auch bei Fehlern.
 - **Tests:** Lauf auf GitHub. Pfade und Gross-/Kleinschreibung fallen erst unter Linux auf, Funde werden hier behoben.
 - **Akzeptanz:** CI auf `main` grün, Artefakt `screenshots` abrufbar.
 - **Abhängigkeiten:** keine. Braucht einen Push.
@@ -195,7 +195,7 @@ Ein Commit pro Slice auf `main`, nach grünem Build. Gepusht wird nach S1, danac
 
 | Risiko | Gegenmassnahme |
 |---|---|
-| CI zeigt Linux-Unterschiede (Pfade, Schriften, Laufzeit der E2E-Tests) | Eigener Slice S1 zuerst, Screenshots auf Linux gelten nicht als Vergleich zu Windows |
+| CI zeigt Linux-Unterschiede (Pfade, Laufzeit der Tests) | Eigener Slice S1 zuerst, E2E läuft auf Windows |
 | Beide Auslieferungswege scheitern auf dem Laptop | Früh testen, Rückfrage an die IT in der Prüfliste. Ohne Pages und ZIP bleibt nur eine Freigabe der IT |
 | Kürzel stören bestehende Bedienung | Bestehende E2E-Tests bleiben unverändert grün, Filter per E2E abgesichert |
 | Spielseite wird mit Tastenliste zu voll | Liste aufklappbar, Prüfung im visuellen Check auf den Laptop-Viewports |

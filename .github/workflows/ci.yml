@@ -31,8 +31,19 @@ jobs:
       - name: Test
         run: dotnet test --solution HeroPath.slnx -c Release --no-build
 
-      - name: Install Chromium with system libraries
-        run: pwsh tests/HeroPath.E2E/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+  # Windows like the target laptops: the app uses the system font, and the layout checks depend on its metrics.
+  e2e:
+    needs: build
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Build
+        run: dotnet build HeroPath.slnx -c Release
 
       - name: E2E
         shell: bash

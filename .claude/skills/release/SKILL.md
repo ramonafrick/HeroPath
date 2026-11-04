@@ -9,15 +9,20 @@ Docs: `docs/Architektur C4.md` §7, `docs/Projekt_Kontext.md` §6. **Pushing, ta
 
 ## CI — `.github/workflows/ci.yml`
 
-On `push` and `pull_request` to `main`, one job `build` on `ubuntu-latest`, `permissions: contents: read`. Action versions (checked with `git ls-remote` on 2026-11-04): `actions/checkout@v7`, `actions/setup-dotnet@v6` (`global-json-file: global.json`), `actions/upload-artifact@v7`. Steps in order:
+On `push` and `pull_request` to `main`, `permissions: contents: read`. Action versions (checked with `git ls-remote` on 2026-11-04): `actions/checkout@v7`, `actions/setup-dotnet@v6` (`global-json-file: global.json`), `actions/upload-artifact@v7`.
+
+Job `build` on `ubuntu-latest` (also finds case-sensitivity problems):
 
 1. `dotnet restore HeroPath.slnx`
 2. `dotnet format HeroPath.slnx --verify-no-changes --no-restore`
 3. `dotnet build HeroPath.slnx -c Release --no-restore`
 4. `dotnet test --solution HeroPath.slnx -c Release --no-build` (E2E skipped)
-5. `pwsh tests/HeroPath.E2E/bin/Release/net10.0/playwright.ps1 install --with-deps chromium` (Chromium plus Linux system libraries; the script is copied to the E2E output by the build)
-6. E2E: `dotnet test --project tests/HeroPath.E2E -c Release --no-build` with `HEROPATH_E2E: "1"`; the output also goes to `e2e.log`, and on failure a follow-up step publishes the failed tests as one error annotation (job logs need a login, annotations do not)
-7. `actions/upload-artifact` with `if: always()`, name `screenshots`, path `artifacts/screenshots`, `if-no-files-found: warn`
+
+Job `e2e` on `windows-latest`, after `build`. Windows on purpose: the app uses the `system-ui` font stack, and on Linux the wider fallback font made `AssertEditorColumnsFitAsync` fail at 1366x768 while Windows, the target platform, passes. Do not move E2E back to Linux.
+
+1. `dotnet build HeroPath.slnx -c Release`
+2. E2E: `dotnet test --project tests/HeroPath.E2E -c Release --no-build` with `HEROPATH_E2E: "1"`. The fixture installs Chromium. The output also goes to `e2e.log`, and on failure a follow-up step publishes the failed tests as one error annotation (job logs need a login, annotations do not)
+3. `actions/upload-artifact` with `if: always()`, name `screenshots`, path `artifacts/screenshots`, `if-no-files-found: warn`
 
 `AppFixture` starts the web host with `dotnet run -c <Debug|Release>` matching the test build (`#if DEBUG`), so under `-c Release` the already built Release host is reused instead of a Debug build inside the 3-minute startup timeout. Check action versions again when you change the workflow.
 
