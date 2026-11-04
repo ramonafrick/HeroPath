@@ -58,6 +58,12 @@ Bleibt M6 aus, lässt sich HeroPath am Zukunftstag nicht verlässlich einsetzen:
 - FR20: Die Spielseite zeigt eine kurze, lokalisierte Liste der Tasten.
 - FR21: Die Kürzel wirken nicht, solange ein Eingabefeld, das Level-Select, der Tempo-Regler oder ein Dialog den Fokus hat. Eine Taste auf einem fokussierten Knopf löst nur diesen Knopf aus, nicht zusätzlich ein Kürzel. Der Level-Editor bekommt keine Kürzel.
 
+### Installierbare App (ergänzt am 2026-11-04)
+
+- FR22: Die GitHub-Pages-Version lässt sich in Edge und Chrome als App installieren, mit Icon und eigenem Fenster.
+- FR23: Nach einem ersten Besuch mit Internet startet und läuft die installierte App vollständig ohne Internet.
+- FR24: Das ZIP und die lokale Entwicklung bleiben ohne Service Worker. Updates werden erst wirksam, wenn die App ganz geschlossen wurde, das steht in der Anleitung.
+
 ## Non-Functional Requirements
 
 - NFR1: Keine CDNs und keine externen Aufrufe zur Laufzeit. Der Publish-Ordner lädt nichts von fremden Servern.
@@ -89,6 +95,7 @@ Bleibt M6 aus, lässt sich HeroPath am Zukunftstag nicht verlässlich einsetzen:
 - [ ] Der Ton ist beim ersten Start aus, die Wahl überlebt ein Neuladen, und die drei Ereignisse lösen den richtigen Ton aus (Unit- oder bUnit-Test mit Fake, E2E für den Schalter). Das Hören selbst wird im Probelauf geprüft.
 - [ ] Ein Level lässt sich vom ersten Baustein bis zum Erfolg nur mit der Tastatur lösen (E2E).
 - [ ] Im Namensfeld, im Level-Select, im Tempo-Regler und im Dialog lösen Tasten keine Kürzel aus (bUnit oder E2E).
+- [ ] Die Pages-Version lässt sich installieren und läuft nach einem ersten Besuch offline (E2E für offline, Installation im Probelauf).
 - [ ] Die Textdurchsicht ist abgeschlossen. Die Tests prüfen weiter gleiche Schlüssel in DE und EN sowie kein «ß».
 - [ ] `dotnet build`, `dotnet test`, `dotnet format` und die E2E-Tests sind grün.
 

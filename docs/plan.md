@@ -16,6 +16,7 @@ Die Reihenfolge stellt die Auslieferung nach vorne, weil das Datum des Zukunftst
 | S6 | Tastatur | FR17 bis FR21, NFR4 | `Shared`, `Game`, `Game.UI`, `Hosts/HeroPath.Web` | `blazor-ui`, `game-rules`, `localization` |
 | S7 | Sprache | FR7 bis FR9 | `Shared`, `Shared.UI`, `Hosts/HeroPath.Web`, resx | `localization` |
 | S8 | Prüfliste Probelauf | FR5, FR6, NFR7 | `docs/Probelauf.md` | `release` |
+| S9 | Installierbare PWA | FR22 bis FR24 | `Hosts/HeroPath.Web`, `.github/workflows`, `deploy/`, `docs/Probelauf.md` | `release` |
 
 Abhängigkeiten: S2 und S3 bauen auf S1 auf. S4 bis S6 sind unabhängig voneinander. S7 folgt nach S4 bis S6, S8 nach allen anderen. Ein neues Modul ist nicht nötig. `Shared ← Levels ← Game` bleibt unverändert.
 
@@ -176,6 +177,17 @@ Regeln: Eine gedrückt gehaltene Taste zählt einmal (`event.repeat` wird ignori
 - **Tests:** keine (Dokument).
 - **Akzeptanz:** FR5. FR6 erfüllt sich erst durch den Probelauf selbst: M6 bleibt in `Projekt_Kontext.md` §7 bis dahin «in Arbeit».
 - **Abhängigkeiten:** alle.
+
+### S9: Installierbare PWA
+
+Ergänzung vom 2026-11-04 auf Wunsch der Projektverantwortlichen, nach den Review-Fixes.
+
+- **Ziel:** HeroPath lässt sich aus GitHub Pages installieren und läuft danach offline im eigenen Fenster.
+- **Dateien:** `HeroPath.Web.csproj` (`ServiceWorkerAssetsManifest`, `ServiceWorker`), `wwwroot/service-worker.js`, `wwwroot/service-worker.published.js`, `wwwroot/manifest.webmanifest`, eigene Icons 192 und 512 px aus `favicon.svg`, `wwwroot/index.html`, `.github/workflows/pages.yml`, `deploy/build-zip.ps1` oder Registrierung, Skill `release`, `docs/Probelauf.md`, `deploy/LIESMICH.txt`.
+- **Vorgehen:** Der Workflow ändert `index.html` nach dem Build. Deshalb muss er den Hash in `service-worker-assets.js` nachführen, sonst scheitert die Installation. Die Integritätsprüfung bleibt an. Der Service Worker registriert sich nur auf GitHub Pages, nicht im ZIP und nicht auf `localhost`, und eine CSP aus den Review-Fixes muss ihn erlauben. Abschaltbar durch einen Workflow-Parameter oder Entfernen der Registrierung, falls sie den Einsatz stört.
+- **Tests:** E2E gegen den veröffentlichten Build: Service Worker aktiv, Seite neu laden ohne Netz (Playwright `SetOfflineAsync`), Level spielen, Konsole ohne Fehler. Prüfschritt im Workflow, dass der Hash von `index.html` zum Manifest passt. Installation selbst ist manuell (Probelauf).
+- **Akzeptanz:** FR22 bis FR24.
+- **Abhängigkeiten:** S2, Review-Fixes.
 
 ## Befehle
 
