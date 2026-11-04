@@ -8,6 +8,12 @@ public sealed class AppFixture : IAsyncLifetime
     private const string LocalUrl = "http://127.0.0.1:5199";
     private static readonly TimeSpan _startupTimeout = TimeSpan.FromMinutes(3);
 
+#if DEBUG
+    private const string BuildConfiguration = "Debug";
+#else
+    private const string BuildConfiguration = "Release";
+#endif
+
     private Process? _host;
     private IPlaywright? _playwright;
 
@@ -76,7 +82,7 @@ public sealed class AppFixture : IAsyncLifetime
     private async Task StartHostAsync()
     {
         var project = Path.Combine(E2EEnvironment.RepositoryRoot, "src", "Hosts", "HeroPath.Web");
-        _host = Process.Start(new ProcessStartInfo("dotnet", ["run", "--project", project, "--no-launch-profile", "--urls", LocalUrl])
+        _host = Process.Start(new ProcessStartInfo("dotnet", ["run", "--project", project, "-c", BuildConfiguration, "--no-launch-profile", "--urls", LocalUrl])
         {
             UseShellExecute = false,
             RedirectStandardOutput = true,
