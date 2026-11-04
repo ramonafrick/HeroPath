@@ -70,13 +70,13 @@ public sealed class AppFixture : IAsyncLifetime
     }
 
     /// <summary>Desktop context matching the event setup (laptop with external screen), reduced motion for stable screenshots.</summary>
-    public Task<IBrowserContext> NewContextAsync(string locale = "de-CH", int width = 1920, int height = 1080) =>
+    public Task<IBrowserContext> NewContextAsync(string locale = "de-CH", int width = 1920, int height = 1080, bool reducedMotion = true) =>
         Browser.NewContextAsync(new()
         {
             BaseURL = BaseUrl,
             Locale = locale,
             ViewportSize = new() { Width = width, Height = height },
-            ReducedMotion = ReducedMotion.Reduce,
+            ReducedMotion = reducedMotion ? ReducedMotion.Reduce : ReducedMotion.NoPreference,
         });
 
     private async Task StartHostAsync()

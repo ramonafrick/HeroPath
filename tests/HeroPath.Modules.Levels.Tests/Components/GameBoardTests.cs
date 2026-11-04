@@ -294,6 +294,34 @@ public class GameBoardTests : CultureBunitContext
         Assert.Empty(cut.FindAll("button"));
     }
 
+    [Fact]
+    public void Render_Board_ShowsOverlayContentAfterTheHero()
+    {
+        var cut = RenderBoard(p => p.Add(b => b.OverlayContent, builder => builder.AddMarkupContent(0, "<i data-testid=overlay></i>")));
+
+        Assert.NotNull(cut.Find("[data-testid=game-board] > [data-testid=overlay]"));
+    }
+
+    [Fact]
+    public void Render_Preview_DoesNotShowOverlayContent()
+    {
+        var cut = RenderBoard(p => p
+            .Add(b => b.Preview, true)
+            .Add(b => b.OverlayContent, builder => builder.AddMarkupContent(0, "<i data-testid=overlay></i>")));
+
+        Assert.Empty(cut.FindAll("[data-testid=overlay]"));
+    }
+
+    [Fact]
+    public void Render_EditBoard_DoesNotShowOverlayContent()
+    {
+        var cut = RenderBoard(p => p
+            .Add(b => b.CellClicked, EventCallback.Factory.Create<Position>(this, _ => { }))
+            .Add(b => b.OverlayContent, builder => builder.AddMarkupContent(0, "<i data-testid=overlay></i>")));
+
+        Assert.Empty(cut.FindAll("[data-testid=overlay]"));
+    }
+
     private IRenderedComponent<GameBoard> RenderBoard(Action<ComponentParameterCollectionBuilder<GameBoard>>? configure = null) =>
         Render<GameBoard>(p =>
         {

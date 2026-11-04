@@ -24,6 +24,12 @@
                 <HeroContent>
                     <HeroFigure Avatar="Choice.Avatar" />
                 </HeroContent>
+                <OverlayContent>
+                    @if (Session.Status == RunStatus.Succeeded)
+                    {
+                        <SuccessConfetti data-testid="success-confetti" />
+                    }
+                </OverlayContent>
             </GameBoard>
         </section>
         <aside class="side-panel" data-testid="side-panel">

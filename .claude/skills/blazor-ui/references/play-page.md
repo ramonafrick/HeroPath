@@ -27,6 +27,7 @@ Contents: Drag & drop · Board and animation · Start page and routes · Level s
 - The hero is an absolutely positioned layer that moves with `transform: translate(...)` and `transition` (duration bound to the tempo). Don't re-render the hero inside different cells; that breaks the animation.
 - Highlight the current block via `ExecutionStep.CommandId`. On an error, mark both the block and the board cell.
 - Respect `@media (prefers-reduced-motion: reduce)` (no transitions or confetti).
+- Success animation (M6 S4): `GameBoard` has `OverlayContent` (`RenderFragment?`), rendered after the hero layer only on the normal play board (not `Preview`, not the edit board). `PlayPage` fills it with `<SuccessConfetti data-testid="success-confetti" />` exactly while `Session.Status == RunStatus.Succeeded` (Play and Debug), so Reset and a level switch remove it and a language switch keeps the same DOM node (the CSS animation does not restart). `SuccessConfetti` (Game.UI) is pure CSS: 28 deterministic pieces (palette variables, no random), about 2 s, `aria-hidden`, `pointer-events: none`, `overflow: hidden` on the board, `animation-fill-mode: both` so it ends invisible. No timer, no script, no text (the success message already announces it). Under `prefers-reduced-motion: reduce` the pieces are `display: none` and the overlay is a static golden inset frame (`--hp-goal`).
 
 ## Start page and routes
 

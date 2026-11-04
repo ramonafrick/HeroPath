@@ -49,6 +49,10 @@ public partial class GameBoard : LocalizedComponentBase
     [Parameter]
     public RenderFragment? HeroContent { get; set; }
 
+    /// <summary>Decorative content drawn over cells and hero. Only the normal play board renders it, never a preview or the edit board.</summary>
+    [Parameter]
+    public RenderFragment? OverlayContent { get; set; }
+
     [Inject]
     private IStringLocalizer<LevelsResources> Localizer { get; set; } = default!;
 
