@@ -73,7 +73,7 @@ public class PublishedSiteTests(AppFixture app)
         await page.AddInitScriptAsync(
             $"if (localStorage.getItem('heropath.levels') === null) localStorage.setItem('heropath.levels', {JsonSerializer.Serialize(StoredLevels)});");
 
-        await page.GotoAsync("/");
+        await page.GotoAsync("./");
         await page.WaitForRenderedAsync("[data-testid=start-page]", errors);
         var html = await page.ContentAsync();
         Assert.Contains("http-equiv=\"Content-Security-Policy\"", html);
@@ -96,7 +96,7 @@ public class PublishedSiteTests(AppFixture app)
         await Expect(page.GetByTestId("app-title")).ToHaveTextAsync("HeldenWeg");
         await Expect(page.Locator("html")).ToHaveAttributeAsync("lang", "de-CH");
 
-        await page.GotoAsync("/");
+        await page.GotoAsync("./");
         await page.WaitForRenderedAsync("[data-testid=start-page]", errors);
         await page.GetByTestId("start-build").ClickAsync();
         await page.WaitForRenderedAsync("[data-testid=editor-page]", errors);
@@ -118,7 +118,7 @@ public class PublishedSiteTests(AppFixture app)
         await using var context = await NewContextAsync();
         var page = await context.NewPageAsync();
         var errors = BrowserErrors.Track(page);
-        await page.GotoAsync("/");
+        await page.GotoAsync("./");
         await page.WaitForRenderedAsync("[data-testid=start-page]", errors);
 
         var result = await page.EvaluateAsync<JsonElement>("""
@@ -147,7 +147,7 @@ public class PublishedSiteTests(AppFixture app)
         var page = await context.NewPageAsync();
         var errors = BrowserErrors.Track(page);
         await page.AddInitScriptAsync(ReportViolationsScript);
-        await page.GotoAsync("/");
+        await page.GotoAsync("./");
         await page.WaitForRenderedAsync("[data-testid=start-page]", errors);
 
         var href = await page.Locator("link[rel=manifest]").GetAttributeAsync("href");
@@ -188,7 +188,7 @@ public class PublishedSiteTests(AppFixture app)
         var errors = BrowserErrors.Track(page);
         await page.AddInitScriptAsync(ReportViolationsScript);
 
-        await page.GotoAsync("/");
+        await page.GotoAsync("./");
         await page.WaitForRenderedAsync("[data-testid=start-page]", errors);
         await page.WaitForFunctionAsync(ActivatedScript, null, new() { Timeout = 120_000 });
 
@@ -211,7 +211,7 @@ public class PublishedSiteTests(AppFixture app)
         await Expect(page.GetByTestId("app-title")).ToHaveTextAsync("HeldenWeg");
         await Screenshots.CaptureAsync(page, "published-offline.start-page.laptop.de");
 
-        await page.GotoAsync("/editor");
+        await page.GotoAsync("./editor");
         await page.WaitForRenderedAsync("[data-testid=editor-page]", errors);
         await Expect(page.GetByTestId("edit-cell-0-0")).ToBeVisibleAsync();
         await Screenshots.CaptureAsync(page, "published-offline.editor-deep-link.laptop.de");

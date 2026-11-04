@@ -32,7 +32,7 @@ public static class PageExtensions
         string? hero = null,
         string? name = null)
     {
-        await page.GotoAsync("/");
+        await page.GotoAsync("./");
         await page.WaitForRenderedAsync("[data-testid=start-page]", errors);
         if (hero is not null)
         {
