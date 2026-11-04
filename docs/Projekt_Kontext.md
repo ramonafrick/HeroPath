@@ -149,7 +149,7 @@ M1 bis M5 sind umgesetzt. Abweichungen und offene Punkte aus M1: `requirements-M
 | Begriff | Bedeutung |
 |---|---|
 | Programm | Liste von Bausteinen, die nacheinander ausgeführt werden |
-| Baustein (Block) | Ein Befehl, z. B. «Rechts» oder «Wiederhole 3 mal» |
+| Baustein (Block) | Ein Befehl, z. B. «Rechts» oder «Wiederhole 3 Mal» |
 | Level | Ein Spielfeld mit Start, Ziel, Hindernissen und ggf. Items |
 | Eigenes Level | Ein vom Kind gebautes oder importiertes Level, im Browser gespeichert (localStorage), mit eigenem Namen |
 | Debug | Programm Schritt für Schritt ausführen, um Fehler zu finden |
