@@ -21,6 +21,7 @@ public class SuccessConfettiTests : CultureBunitContext
         Services.AddSharedUI();
         Services.AddGameModule();
         Services.AddSingleton<IAppStorage, InMemoryAppStorage>();
+        Services.AddSingleton<ISoundPlayer, FakeSoundPlayer>();
         Services.GetRequiredService<HeroChoice>().Choose(HeroAvatar.Max, null, "easy-2");
     }
 

@@ -14,7 +14,7 @@ Docs: `docs/Architektur C4.md` §4.1 (components), §4.3 (MAUI rules), §5 (Play
 3. Every drag & drop action has a **click alternative** (click on a palette block appends it; buttons to remove/move).
 4. Responsive layout: CSS Grid/Flexbox, relative units, container queries. No fixed pixel widths. Click/tap targets ≥ 44 px.
 5. Static assets from an RCL: `_content/<AssemblyName>/...` (e.g. `_content/HeroPath.Shared.UI/css/theme.css`).
-6. Interactive elements and state carriers get a `data-testid` (`palette-right`, `control-play`, `status` with `data-state`) for E2E tests. Shell ids: `app-title` (the single `<h1>` in `MainLayout`, which `FocusOnNavigate Selector="h1"` relies on, so pages must not add another h1), `language-de` / `language-en` (`aria-pressed` marks the active one).
+6. Interactive elements and state carriers get a `data-testid` (`palette-right`, `control-play`, `status` with `data-state`) for E2E tests. Shell ids: `app-title` (the single `<h1>` in `MainLayout`, which `FocusOnNavigate Selector="h1"` relies on, so pages must not add another h1), `language-de` / `language-en` (`aria-pressed` marks the active one), `sound-toggle` (`aria-pressed`, icons `sound-icon-on|off`).
 7. No CDN links. Fonts, icons and graphics are local.
 8. MAUI is **not** in scope. Don't create a MAUI project, but don't block one either.
 
@@ -41,6 +41,7 @@ The services are pure C# in the module's `Application` folder (no Blazor types),
 | `GameSession` (Game) | scoped (= one per tab in WASM) | current grid, hero (avatar + name, **memory only**), program, current `ExecutionStep`, status |
 | `ExecutionRunner` (Game) | scoped | Play loop / Debug step / Reset, owns the `Interpreter` and the `CancellationTokenSource` |
 | `LevelRepository` (Levels) | scoped | embedded standard levels + custom levels (loaded at startup through `ICustomLevelStore` over `IAppStorage`, see `game-rules`) |
+| `SoundSettings` (Shared) / `ISoundPlayer` (Shared contract, host `BrowserSoundPlayer`) / `RunSounds` (Game) | scoped | sound on/off (stored under `StorageKeys.Sound`, default off, loaded in `Program.cs` through `ApplyStoredSoundAsync` beside the culture); `SoundToggle` (Shared.UI, in `MainLayout` next to `LanguageSwitcher`) switches it; `RunSounds` plays the step sound, created by injecting it into `PlayPage` (see `game-rules`) |
 | `IAppStorage` (Shared contract) | scoped, host implementation | `GetAsync`/`SetAsync`/`RemoveAsync` for strings (JSON); writes return `ValueTask<bool>` (`false` = not stored) |
 
 - `GameSession` raises `event Action? Changed`. Components get the subscription from the base classes below.
@@ -73,6 +74,7 @@ builder.Services
 builder.Services.AddScoped<IAppStorage, LocalStorageAppStorage>();   // Hosts/HeroPath.Web/Services
 var host = builder.Build();
 await host.Services.ApplyStoredCultureAsync();        // see localization skill
+await host.Services.ApplyStoredSoundAsync();          // stored sound on/off (default off)
 await host.Services.LoadCustomLevelsAsync();          // custom levels known before the first render
 await host.RunAsync();
 ```
@@ -115,7 +117,7 @@ public class ControlBarTests : BunitContext
 ```
 
 - bUnit 2.x API: `BunitContext`, `Render<T>()`, `Find`, `FindAll`, `WaitForAssertion`.
-- Shared fakes live in `tests/HeroPath.Testing` (a plain class library without tests): `InMemoryAppStorage`, `ThrowingAppStorage`, `CultureScope`, `CultureBunitContext`. Don't copy them into a test project; the three test projects have `HeroPath.Testing` as a global using.
+- Shared fakes live in `tests/HeroPath.Testing` (a plain class library without tests): `InMemoryAppStorage`, `ThrowingAppStorage`, `FakeFileDownload`, `FakeSoundPlayer` (a test that renders `PlayPage` registers `ISoundPlayer` with it), `CultureScope`, `CultureBunitContext`. Don't copy them into a test project; the three test projects have `HeroPath.Testing` as a global using.
 - bUnit classes that assert localized text derive from `CultureBunitContext` (explicit culture, default `de-CH`, restored on dispose) and carry `[Collection("Culture")]`. `DisposeComponentsAsync()` simulates leaving a page.
 - Full user flows across components are E2E tests (`e2e-playwright` skill), not bUnit.
 - Priority per Architektur §8: `ProgramEditor` (add, remove, nest), `ControlBar`, `GameBoard` rendering, language switching.

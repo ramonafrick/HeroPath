@@ -18,6 +18,7 @@ public static class GameModuleExtensions
         services.AddScoped<LevelProgress>();
         services.AddScoped<GameSession>();
         services.AddScoped<ExecutionRunner>();
+        services.AddScoped<RunSounds>();
         services.AddScoped<ProgramDragState>();
         return services;
     }

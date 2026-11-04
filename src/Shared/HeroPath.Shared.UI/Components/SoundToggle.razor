@@ -1,0 +1,25 @@
+@inherits LocalizedComponentBase
+
+<button type="button"
+        class="sound-toggle"
+        data-testid="sound-toggle"
+        aria-label="@Localizer["Sound_Label"]"
+        title="@Localizer[Settings.Enabled ? "Sound_TurnOff" : "Sound_TurnOn"]"
+        aria-pressed="@Settings.Enabled.ToString().ToLowerInvariant()"
+        @onclick="ToggleAsync">
+    @if (Settings.Enabled)
+    {
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-testid="sound-icon-on">
+            <path class="speaker" d="M3 9h4l5-4v14l-5-4H3z" />
+            <path class="wave" d="M15.5 9a4.5 4.5 0 0 1 0 6" />
+            <path class="wave" d="M18 6.5a8 8 0 0 1 0 11" />
+        </svg>
+    }
+    else
+    {
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" data-testid="sound-icon-off">
+            <path class="speaker" d="M3 9h4l5-4v14l-5-4H3z" />
+            <path class="wave" d="M15 9.5l6 6M21 9.5l-6 6" />
+        </svg>
+    }
+</button>

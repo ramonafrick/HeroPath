@@ -21,6 +21,7 @@ public class StartPageTests : CultureBunitContext
         Services.AddSharedUI();
         Services.AddGameModule();
         Services.AddSingleton<IAppStorage, InMemoryAppStorage>();
+        Services.AddSingleton<ISoundPlayer, FakeSoundPlayer>();
     }
 
     private HeroChoice Choice => Services.GetRequiredService<HeroChoice>();

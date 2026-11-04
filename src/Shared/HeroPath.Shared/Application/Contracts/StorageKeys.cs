@@ -8,4 +8,7 @@ public static class StorageKeys
 
     /// <summary>JSON array of the child's custom levels.</summary>
     public const string CustomLevels = "heropath.levels";
+
+    /// <summary>Sound on or off (<c>on</c> or <c>off</c>). Nothing else about the child is stored.</summary>
+    public const string Sound = "heropath.sound";
 }

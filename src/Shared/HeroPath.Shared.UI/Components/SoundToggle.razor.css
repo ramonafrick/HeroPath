@@ -1,0 +1,37 @@
+.sound-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+    padding: 0.25rem;
+    border: 2px solid var(--hp-outline);
+    border-radius: 0.5rem;
+    background: var(--hp-surface);
+    color: var(--hp-text);
+    cursor: pointer;
+}
+
+.sound-toggle[aria-pressed="true"] {
+    background: var(--hp-accent);
+    color: var(--hp-on-accent);
+}
+
+.sound-toggle svg {
+    width: 1.75rem;
+    height: 1.75rem;
+}
+
+.sound-toggle .speaker {
+    fill: currentColor;
+    stroke: currentColor;
+    stroke-width: 1.5;
+    stroke-linejoin: round;
+}
+
+.sound-toggle .wave {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+}

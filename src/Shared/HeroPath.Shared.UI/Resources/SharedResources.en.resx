@@ -84,4 +84,16 @@
     <value>Cancel</value>
     <comment>Generic cancel button of the confirm dialog.</comment>
   </data>
+  <data name="Sound_Label" xml:space="preserve">
+    <value>Sound</value>
+    <comment>Accessible name of the sound switch in the header.</comment>
+  </data>
+  <data name="Sound_TurnOn" xml:space="preserve">
+    <value>Turn sound on</value>
+    <comment>Tooltip of the sound switch while sound is off.</comment>
+  </data>
+  <data name="Sound_TurnOff" xml:space="preserve">
+    <value>Turn sound off</value>
+    <comment>Tooltip of the sound switch while sound is on.</comment>
+  </data>
 </root>

@@ -22,6 +22,9 @@ public sealed class GameSession
     /// <summary>Raised after every change of the session.</summary>
     public event Action? Changed;
 
+    /// <summary>Raised when a step was applied, after the session state is updated and before <see cref="Changed"/>.</summary>
+    public event Action<ExecutionStep>? StepApplied;
+
     internal event Action? RunDiscarded;
 
     /// <summary>The loaded level, or <c>null</c> before <see cref="Load"/> was called.</summary>
@@ -239,6 +242,7 @@ public sealed class GameSession
         _runMessage = GameMessage.FromStep(step, _program, CollectedCount(ItemKind.Pizza));
         _hint = null;
         HintedId = null;
+        StepApplied?.Invoke(step);
         Changed?.Invoke();
     }
 

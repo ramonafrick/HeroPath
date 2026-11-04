@@ -16,6 +16,7 @@ public class PlayPageRedirectTests : CultureBunitContext
         Services.AddSharedUI();
         Services.AddGameModule();
         Services.AddSingleton<IAppStorage, InMemoryAppStorage>();
+        Services.AddSingleton<ISoundPlayer, FakeSoundPlayer>();
     }
 
     [Fact]

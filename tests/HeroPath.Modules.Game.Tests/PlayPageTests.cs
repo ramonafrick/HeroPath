@@ -25,6 +25,7 @@ public class PlayPageTests : CultureBunitContext
         Services.AddSharedUI();
         Services.AddGameModule();
         Services.AddSingleton<IAppStorage, InMemoryAppStorage>();
+        Services.AddSingleton<ISoundPlayer, FakeSoundPlayer>();
         Choice.Choose(HeroAvatar.Max, null, "easy-2");
     }
 

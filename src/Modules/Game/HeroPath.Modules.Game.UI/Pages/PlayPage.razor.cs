@@ -30,6 +30,10 @@ public partial class PlayPage : SessionComponentBase
     [Inject]
     private ProgramDragState Drag { get; set; } = default!;
 
+    // Injecting creates the scoped RunSounds, which subscribes to the session once for its lifetime.
+    [Inject]
+    protected RunSounds Sounds { get; set; } = default!;
+
     [Inject]
     private IStringLocalizer<SharedResources> SharedLocalizer { get; set; } = default!;
 

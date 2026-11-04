@@ -18,8 +18,10 @@ builder.Services
     .AddGameModule();
 builder.Services.AddScoped<IAppStorage, LocalStorageAppStorage>();
 builder.Services.AddScoped<IFileDownload, BrowserFileDownload>();
+builder.Services.AddScoped<ISoundPlayer, BrowserSoundPlayer>();
 
 var host = builder.Build();
 await host.Services.ApplyStoredCultureAsync();
+await host.Services.ApplyStoredSoundAsync();
 await host.Services.LoadCustomLevelsAsync();
 await host.RunAsync();

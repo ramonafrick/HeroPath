@@ -1,3 +1,4 @@
+using HeroPath.Shared.Application;
 using HeroPath.Shared.UI.Localization;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,6 +11,7 @@ public static class SharedUIExtensions
     {
         services.AddLocalization();
         services.AddScoped<LanguageService>();
+        services.AddScoped<SoundSettings>();
         return services;
     }
 }

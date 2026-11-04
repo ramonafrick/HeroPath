@@ -12,8 +12,8 @@ Docs: `docs/Architektur C4.md` (§3 containers, §4 components, §6 decisions, �
 ```
 src/
   Shared/
-    HeroPath.Shared/                 pure C#: cross-module contracts (IAppStorage, IFileDownload, …), TextCleaner
-    HeroPath.Shared.UI/              RCL: MainLayout, NotFound, theme, SVG graphics, localization, LanguageSwitcher, ConfirmDialog
+    HeroPath.Shared/                 pure C#: cross-module contracts (IAppStorage, IFileDownload, ISoundPlayer + SoundEffect, …), SoundSettings, TextCleaner
+    HeroPath.Shared.UI/              RCL: MainLayout, NotFound, theme, SVG graphics, localization, LanguageSwitcher, SoundToggle, ConfirmDialog
   Modules/
     Levels/
       HeroPath.Modules.Levels/       pure C#: Domain/ (Position, Grid, ObstacleKind, ItemKind, LevelDefinition, LevelLimits, LevelSolver, EditorTool, LevelEditing)
@@ -23,7 +23,7 @@ src/
     Game/
       HeroPath.Modules.Game/         pure C#: Domain/ (Direction, Person, MoveResult, commands, ProgramDefinition, BlockSlot, ProgramEditing,
                                                Interpreter, ExecutionStep, ProgramLimits)
-                                               Application/ (GameSession, ExecutionRunner, HeroChoice, LevelProgress)
+                                               Application/ (GameSession, ExecutionRunner, HeroChoice, LevelProgress, RunSounds)
       HeroPath.Modules.Game.UI/      RCL: StartPage, PlayPage, EditorPage (routes /editor and /editor/{LevelId}, hosts LevelEditor from Levels.UI, decision D3 of M5), HeroBadge, HeroFigure, BlockPalette, ProgramEditor, BlockList, ProgramBlock, DropZone, ControlBar, MessageBox, ItemCounter, SuccessConfetti, GameModuleExtensions, Services/ (ProgramDragState), Resources/
   Hosts/
     HeroPath.Web/                    Blazor WASM host: Program.cs, App.razor (router), index.html, web platform services
@@ -32,7 +32,7 @@ tests/
   HeroPath.Shared.Tests/             xUnit + bUnit for Shared and Shared.UI (LanguageService, LanguageSwitcher, ConfirmDialog)
   HeroPath.Modules.Levels.Tests/     xUnit + bUnit for Levels and Levels.UI
   HeroPath.Modules.Game.Tests/       xUnit + bUnit for Game and Game.UI
-  HeroPath.Testing/                  plain class library, no tests: shared fakes (InMemoryAppStorage, ThrowingAppStorage,
+  HeroPath.Testing/                  plain class library, no tests: shared fakes (InMemoryAppStorage, ThrowingAppStorage, FakeFileDownload, FakeSoundPlayer,
                                      CultureScope, CultureBunitContext), referenced by the three *.Tests projects
   HeroPath.ArchitectureTests/        dependency rules (metadata-based)
   HeroPath.E2E/                      Playwright, opt-in via HEROPATH_E2E=1 (see e2e-playwright skill)
@@ -67,9 +67,9 @@ When you add a project-level rule, add it to `DependencyRuleTests.Rules`.
 | Component base classes (language / session / drag subscription) | `Shared.UI/Components` (`LocalizedComponentBase`), `Modules.Game.UI/Components` (`SessionComponentBase`, `DragAwareComponentBase`) |
 | UI-only state shared by components (drag state) | `Modules.<X>.UI/Services` (`ProgramDragState`) |
 | Routable page that needs both modules (EditorPage hosts the Levels.UI `LevelEditor`; «Try it» needs `HeroChoice`) | `Modules.Game.UI/Pages`; the reusable component stays in `Modules.Levels.UI/Components` |
-| Layout, theme, SVG graphics, app title, LanguageSwitcher, ConfirmDialog | `Shared.UI` |
-| Platform contract (storage, file download: `IAppStorage`, `IFileDownload`; replaces the planned `ILevelFileService`) | `Shared/Application/Contracts` |
-| Platform implementation (localStorage via JS interop, `BrowserFileDownload` plus `wwwroot/js/file-download.js`) | `Hosts/HeroPath.Web/Services`, JS in the host `wwwroot/js` |
+| Layout, theme, SVG graphics, app title, LanguageSwitcher, SoundToggle, ConfirmDialog | `Shared.UI` |
+| Platform contract (storage, file download, sound: `IAppStorage`, `IFileDownload`, `ISoundPlayer`; replaces the planned `ILevelFileService`) | `Shared/Application/Contracts` |
+| Platform implementation (localStorage via JS interop, `BrowserFileDownload` plus `wwwroot/js/file-download.js`, `BrowserSoundPlayer` plus `wwwroot/js/sound.js`) | `Hosts/HeroPath.Web/Services`, JS in the host `wwwroot/js` |
 
 ## Module registration
 
