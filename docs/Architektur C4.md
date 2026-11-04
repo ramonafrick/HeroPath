@@ -776,7 +776,8 @@ HeroPath/
    ├─ Projektidee.md
    ├─ Architektur C4.md
    ├─ Projekt_Kontext.md
-   ├─ requirements.md, plan.md         Anforderung und Plan von M5 (aktueller Meilenstein)
+   ├─ requirements.md, plan.md         Anforderung und Plan von M6 (aktueller Meilenstein)
+   ├─ requirements-M5.md, plan-M5.md   Anforderung und Plan von M5
    ├─ requirements-M4.md, plan-M4.md   Anforderung und Plan von M4
    ├─ requirements-M3.md, plan-M3.md   Anforderung und Plan von M3
    ├─ requirements-M2.md, plan-M2.md   Anforderung und Plan von M2
