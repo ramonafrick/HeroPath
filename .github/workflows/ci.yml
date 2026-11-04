@@ -35,9 +35,20 @@ jobs:
         run: pwsh tests/HeroPath.E2E/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
 
       - name: E2E
-        run: dotnet test --project tests/HeroPath.E2E -c Release --no-build
+        shell: bash
+        run: |
+          set -o pipefail
+          dotnet test --project tests/HeroPath.E2E -c Release --no-build 2>&1 | tee e2e.log
         env:
           HEROPATH_E2E: "1"
+
+      # Job logs need a login, annotations are public: name the failed tests there.
+      - name: Report failed E2E tests
+        if: failure()
+        shell: bash
+        run: |
+          message=$(sed 's/\x1b\[[0-9;]*[A-Za-z]//g' e2e.log | grep -E -A8 '^\s*failed ' | head -200 | cut -c1-300 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+          echo "::error title=Failed E2E tests::${message:-see job log}"
 
       - uses: actions/upload-artifact@v7
         if: always()

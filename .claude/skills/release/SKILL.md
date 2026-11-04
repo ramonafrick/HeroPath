@@ -16,7 +16,7 @@ On `push` and `pull_request` to `main`, one job `build` on `ubuntu-latest`, `per
 3. `dotnet build HeroPath.slnx -c Release --no-restore`
 4. `dotnet test --solution HeroPath.slnx -c Release --no-build` (E2E skipped)
 5. `pwsh tests/HeroPath.E2E/bin/Release/net10.0/playwright.ps1 install --with-deps chromium` (Chromium plus Linux system libraries; the script is copied to the E2E output by the build)
-6. E2E: `dotnet test --project tests/HeroPath.E2E -c Release --no-build` with `HEROPATH_E2E: "1"`
+6. E2E: `dotnet test --project tests/HeroPath.E2E -c Release --no-build` with `HEROPATH_E2E: "1"`; the output also goes to `e2e.log`, and on failure a follow-up step publishes the failed tests as one error annotation (job logs need a login, annotations do not)
 7. `actions/upload-artifact` with `if: always()`, name `screenshots`, path `artifacts/screenshots`, `if-no-files-found: warn`
 
 `AppFixture` starts the web host with `dotnet run -c <Debug|Release>` matching the test build (`#if DEBUG`), so under `-c Release` the already built Release host is reused instead of a Debug build inside the 3-minute startup timeout. Check action versions again when you change the workflow.
