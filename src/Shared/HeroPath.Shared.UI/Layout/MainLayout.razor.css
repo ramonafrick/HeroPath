@@ -5,6 +5,8 @@
 }
 
 .app-header {
+    box-sizing: border-box;
+    height: var(--hp-header-height);
     display: flex;
     align-items: center;
     justify-content: space-between;

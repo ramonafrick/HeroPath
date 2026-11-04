@@ -39,18 +39,20 @@
                              IsSolved="Progress.IsSolved"
                              IsCustom="Repository.IsCustom"
                              SelectedIdChanged="SwitchLevel" />
-                @if (Repository.IsCustom(level.Id))
-                {
-                    <button type="button" class="play-edit" data-testid="play-edit" @onclick="() => Edit(level.Id)">@GameLocalizer["Play_Edit"]</button>
-                }
                 <BlockPalette />
                 <ControlBar />
                 <MessageBox />
-                <ShortcutHelp />
-                @if (Session.Status == RunStatus.Succeeded && Progress.NextAfter(level.Id) is { } next)
-                {
-                    <button type="button" class="next-level" data-testid="next-level" @onclick="() => LoadLevel(next)">@GameLocalizer["Level_Next"]</button>
-                }
+                <div class="side-actions">
+                    <ShortcutHelp @bind-Open="_helpOpen" />
+                    @if (Repository.IsCustom(level.Id))
+                    {
+                        <button type="button" class="play-edit" data-testid="play-edit" @onclick="() => Edit(level.Id)">@GameLocalizer["Play_Edit"]</button>
+                    }
+                    @if (Session.Status == RunStatus.Succeeded && Progress.NextAfter(level.Id) is { } next)
+                    {
+                        <button type="button" class="next-level" data-testid="next-level" @onclick="() => LoadLevel(next)">@GameLocalizer["Level_Next"]</button>
+                    }
+                </div>
             </div>
             <ProgramEditor />
         </aside>

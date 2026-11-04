@@ -15,15 +15,8 @@ public sealed class BrowserDocumentLanguage(IJSRuntime js) : IDocumentLanguage
         {
             await js.InvokeVoidAsync("document.documentElement.setAttribute", cancellationToken, "lang", cultureName);
         }
-        catch (Exception ex) when (IsUnavailable(ex, cancellationToken))
+        catch (Exception ex) when (JsInterop.IsUnavailable(ex, cancellationToken))
         {
         }
     }
-
-    private static bool IsUnavailable(Exception exception, CancellationToken cancellationToken) => exception switch
-    {
-        JSException or JSDisconnectedException or InvalidOperationException => true,
-        OperationCanceledException => !cancellationToken.IsCancellationRequested,
-        _ => false,
-    };
 }

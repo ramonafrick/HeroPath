@@ -14,7 +14,6 @@ public class GraphicsTests : BunitContext
     public GraphicsTests()
     {
         Services.AddSharedUI();
-        Services.AddFakeDocumentLanguage();
         Services.AddSingleton<IAppStorage, InMemoryAppStorage>();
     }
 

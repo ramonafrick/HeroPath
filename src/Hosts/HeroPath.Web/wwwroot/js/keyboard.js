@@ -1,13 +1,14 @@
-const arrows = new Set(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
 const typing = "input, textarea, select, [contenteditable], [role=dialog], dialog";
 const owners = "button, a[href], summary";
 
 let listener = null;
 
-export function start(callback) {
+// keys and shifts are parallel arrays from the app (ShortcutKeys.Handled): every key and Shift state that has an action.
+export function start(callback, keys, shifts) {
     stop();
+    const handled = new Set(keys.map((key, index) => chordId(key, shifts[index])));
     listener = event => {
-        if (!isShortcut(event)) {
+        if (!isShortcut(event, handled)) {
             return;
         }
 
@@ -24,8 +25,12 @@ export function stop() {
     }
 }
 
-function isShortcut(event) {
-    if (event.repeat || event.isComposing || event.ctrlKey || event.altKey || event.metaKey || !isHandled(event)) {
+function chordId(key, shift) {
+    return (shift ? "S+" : "-+") + key;
+}
+
+function isShortcut(event, handled) {
+    if (event.repeat || event.isComposing || event.ctrlKey || event.altKey || event.metaKey || !handled.has(chordId(event.key, event.shiftKey))) {
         return false;
     }
 
@@ -39,15 +44,4 @@ function isShortcut(event) {
     }
 
     return true;
-}
-
-// Keep in sync with ShortcutKeys.Resolve (HeroPath.Modules.Game).
-function isHandled(event) {
-    const key = event.key;
-    if (arrows.has(key)) {
-        return !event.shiftKey || key === "ArrowUp" || key === "ArrowDown";
-    }
-
-    return key === "Delete" || key === "Backspace" || key === "Escape" || key === " "
-        || key === "d" || key === "D" || key === "r" || key === "R";
 }

@@ -19,10 +19,40 @@ public class RunSoundsTests : IDisposable
         _session.Load(TestLevels.Demo);
         _runner = new ExecutionRunner(_session, TestLevels.NewProgress(), TimeProvider.System);
         _sounds = new RunSounds(_session, _player, _settings);
+        _sounds.Start();
         _settings.SetAsync(true, CancellationToken.None).GetAwaiter().GetResult();
     }
 
     public void Dispose() => _sounds.Dispose();
+
+    [Fact]
+    public void Start_CalledTwice_PlaysOnce()
+    {
+        _sounds.Start();
+
+        Debug(TestLevels.DemoSolution);
+
+        Assert.Equal([SoundEffect.Success], _player.Played);
+    }
+
+    [Fact]
+    public void NotStarted_IsSilent()
+    {
+        var session = new GameSession();
+        session.Load(TestLevels.Demo);
+        var player = new FakeSoundPlayer();
+        using var sounds = new RunSounds(session, player, _settings);
+        var runner = new ExecutionRunner(session, TestLevels.NewProgress(), TimeProvider.System);
+        TestLevels.Fill(session, TestLevels.DemoSolution);
+
+        for (var i = 0; i < TestLevels.DemoSolution.Length && session.Status is RunStatus.Ready or RunStatus.Paused; i++)
+        {
+            runner.StepOnce();
+        }
+
+        Assert.Equal(RunStatus.Succeeded, session.Status);
+        Assert.Empty(player.Played);
+    }
 
     private void Debug(params Direction[] directions)
     {

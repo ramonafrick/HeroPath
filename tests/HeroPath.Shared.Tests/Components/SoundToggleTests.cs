@@ -15,7 +15,6 @@ public class SoundToggleTests : CultureBunitContext
     public SoundToggleTests()
     {
         Services.AddSharedUI();
-        Services.AddFakeDocumentLanguage();
         Services.AddSingleton<IAppStorage>(_storage);
     }
 

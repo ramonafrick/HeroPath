@@ -22,6 +22,7 @@ public partial class PlayPage : SessionComponentBase
     private readonly CancellationTokenSource _shortcutsCancellation = new();
     private IAsyncDisposable? _subscription;
     private bool _shortcutsActive;
+    private bool _helpOpen;
 
     [Inject]
     private HeroChoice Choice { get; set; } = default!;
@@ -35,9 +36,8 @@ public partial class PlayPage : SessionComponentBase
     [Inject]
     private ProgramDragState Drag { get; set; } = default!;
 
-    // Injecting creates the scoped RunSounds, which subscribes to the session once for its lifetime.
     [Inject]
-    protected RunSounds Sounds { get; set; } = default!;
+    private RunSounds Sounds { get; set; } = default!;
 
     [Inject]
     private IKeyboardShortcuts Shortcuts { get; set; } = default!;
@@ -69,6 +69,7 @@ public partial class PlayPage : SessionComponentBase
         }
 
         base.OnInitialized();
+        Sounds.Start();
         Progress.Changed += HandleChanged;
     }
 
@@ -81,7 +82,7 @@ public partial class PlayPage : SessionComponentBase
 
         try
         {
-            var subscription = await Shortcuts.SubscribeAsync(HandleKeyAsync, _shortcutsCancellation.Token);
+            var subscription = await Shortcuts.SubscribeAsync(ShortcutKeys.Handled, HandleKeyAsync, _shortcutsCancellation.Token);
             if (_shortcutsCancellation.IsCancellationRequested)
             {
                 await subscription.DisposeAsync();
@@ -155,6 +156,10 @@ public partial class PlayPage : SessionComponentBase
                 break;
             case ShortcutAction.DeleteSelected when Session.SelectedId is { } id:
                 Session.Remove(id);
+                break;
+            case ShortcutAction.ClearSelection when _helpOpen:
+                _helpOpen = false;
+                StateHasChanged();
                 break;
             case ShortcutAction.ClearSelection:
                 Session.Select(null);

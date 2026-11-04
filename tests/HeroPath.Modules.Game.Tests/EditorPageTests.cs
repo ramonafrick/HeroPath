@@ -20,7 +20,6 @@ public class EditorPageTests : CultureBunitContext
     public EditorPageTests()
     {
         Services.AddSharedUI();
-        Services.AddFakeDocumentLanguage();
         Services.AddGameModule();
         Services.AddSingleton<IAppStorage>(_storage);
         Services.AddSingleton<ISoundPlayer, FakeSoundPlayer>();

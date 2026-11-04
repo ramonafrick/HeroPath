@@ -35,7 +35,6 @@ public class GameBoardTests : CultureBunitContext
     public GameBoardTests()
     {
         Services.AddSharedUI();
-        Services.AddFakeDocumentLanguage();
         Services.AddSingleton<IAppStorage, InMemoryAppStorage>();
     }
 

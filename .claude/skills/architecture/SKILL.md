@@ -12,7 +12,7 @@ Docs: `docs/Architektur C4.md` (§3 containers, §4 components, §6 decisions, �
 ```
 src/
   Shared/
-    HeroPath.Shared/                 pure C#: cross-module contracts (IAppStorage, IFileDownload, ISoundPlayer + SoundEffect, IKeyboardShortcuts, IDocumentLanguage, …), SoundSettings, TextCleaner
+    HeroPath.Shared/                 pure C#: cross-module contracts (IAppStorage, IFileDownload, ISoundPlayer + SoundEffect, IKeyboardShortcuts + KeyChord, IDocumentLanguage, …), SoundSettings, TextCleaner
     HeroPath.Shared.UI/              RCL: MainLayout, NotFound, theme, SVG graphics, localization, LanguageSwitcher, SoundToggle, ConfirmDialog
   Modules/
     Levels/
@@ -69,7 +69,8 @@ When you add a project-level rule, add it to `DependencyRuleTests.Rules`.
 | Routable page that needs both modules (EditorPage hosts the Levels.UI `LevelEditor`; «Try it» needs `HeroChoice`) | `Modules.Game.UI/Pages`; the reusable component stays in `Modules.Levels.UI/Components` |
 | Layout, theme, SVG graphics, app title, LanguageSwitcher, SoundToggle, ConfirmDialog | `Shared.UI` |
 | Platform contract (storage, file download, sound: `IAppStorage`, `IFileDownload`, `ISoundPlayer`, `IKeyboardShortcuts`, `IDocumentLanguage`; replaces the planned `ILevelFileService`) | `Shared/Application/Contracts` |
-| Platform implementation (localStorage via JS interop, `BrowserFileDownload` plus `wwwroot/js/file-download.js`, `BrowserSoundPlayer` plus `wwwroot/js/sound.js`, `BrowserKeyboardShortcuts` plus `wwwroot/js/keyboard.js`, `BrowserDocumentLanguage` sets the html `lang` via `document.documentElement.setAttribute`, no JS file) | `Hosts/HeroPath.Web/Services`, JS in the host `wwwroot/js` |
+| Platform implementation (localStorage via JS interop, `BrowserFileDownload` plus `wwwroot/js/file-download.js`, `BrowserSoundPlayer` plus `wwwroot/js/sound.js`, `BrowserKeyboardShortcuts` plus `wwwroot/js/keyboard.js`, `BrowserDocumentLanguage` sets the html `lang` via `document.documentElement.setAttribute`, no JS file; the one `JsInterop.IsUnavailable(exception, token)` of `Services/JsInterop.cs` decides in all of them what degrades silently) | `Hosts/HeroPath.Web/Services`, JS in the host `wwwroot/js` (`blazor-start.js` starts Blazor, see `localization`) |
+| Default for an optional platform contract | `Shared.UI` registers a silent default with `TryAdd` (`AddSharedUI`: `NullDocumentLanguage` for `IDocumentLanguage`); the host registers its own with `AddScoped` after `AddSharedUI()`, so the host wins |
 
 ## Module registration
 

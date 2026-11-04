@@ -6,6 +6,7 @@ using HeroPath.Modules.Game.UI.Services;
 using HeroPath.Modules.Levels.Application;
 using HeroPath.Modules.Levels.Domain;
 using HeroPath.Modules.Levels.Infrastructure;
+using HeroPath.Shared.Application;
 using HeroPath.Shared.Application.Contracts;
 using HeroPath.Shared.UI;
 using Microsoft.AspNetCore.Components;
@@ -23,7 +24,6 @@ public class PlayPageTests : CultureBunitContext
     {
         Services.AddSingleton<TimeProvider>(_time);
         Services.AddSharedUI();
-        Services.AddFakeDocumentLanguage();
         Services.AddGameModule();
         Services.AddSingleton<IAppStorage, InMemoryAppStorage>();
         Services.AddSingleton<ISoundPlayer, FakeSoundPlayer>();
@@ -44,6 +44,36 @@ public class PlayPageTests : CultureBunitContext
 
         Assert.NotNull(page.Find("main.play-page"));
         Assert.NotNull(page.Find("[data-testid=side-panel]"));
+    }
+
+    [Fact]
+    public async Task SolvedStep_WithSoundOn_PlaysSuccessThroughTheRenderedPage()
+    {
+        await Services.GetRequiredService<SoundSettings>().SetAsync(true, Xunit.TestContext.Current.CancellationToken);
+        Render<PlayPage>();
+        TestLevels.Fill(Session, TestLevels.DemoSolution);
+
+        for (var step = 0; step < TestLevels.DemoSolution.Length; step++)
+        {
+            Runner.StepOnce();
+        }
+
+        Assert.Equal(RunStatus.Succeeded, Session.Status);
+        Assert.Equal([SoundEffect.Success], ((FakeSoundPlayer)Services.GetRequiredService<ISoundPlayer>()).Played);
+    }
+
+    [Fact]
+    public void SolvedStep_WithSoundOff_PlaysNothing()
+    {
+        Render<PlayPage>();
+        TestLevels.Fill(Session, TestLevels.DemoSolution);
+
+        for (var step = 0; step < TestLevels.DemoSolution.Length; step++)
+        {
+            Runner.StepOnce();
+        }
+
+        Assert.Empty(((FakeSoundPlayer)Services.GetRequiredService<ISoundPlayer>()).Played);
     }
 
     [Fact]

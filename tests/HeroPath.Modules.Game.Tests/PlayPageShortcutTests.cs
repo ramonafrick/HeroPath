@@ -18,7 +18,6 @@ public class PlayPageShortcutTests : CultureBunitContext
     {
         Services.AddSingleton<TimeProvider>(new FakeTimeProvider());
         Services.AddSharedUI();
-        Services.AddFakeDocumentLanguage();
         Services.AddGameModule();
         Services.AddSingleton<IAppStorage, InMemoryAppStorage>();
         Services.AddSingleton<ISoundPlayer, FakeSoundPlayer>();
@@ -125,6 +124,33 @@ public class PlayPageShortcutTests : CultureBunitContext
 
         Assert.Null(Session.SelectedId);
         Assert.Single(Session.Program.Commands);
+    }
+
+    [Fact]
+    public async Task Escape_WithOpenHelp_ClosesTheHelpFirstAndKeepsTheSelection()
+    {
+        var page = RenderPage();
+        TestLevels.Fill(Session, Direction.Up);
+        Session.Select(Session.Program.Commands[0].Id);
+        page.Find("[data-testid=shortcut-help-toggle]").Click();
+        Assert.True(page.Find("[data-testid=shortcut-help]").HasAttribute("open"));
+
+        await _keys.PressAsync("Escape");
+
+        page.WaitForAssertion(() => Assert.False(page.Find("[data-testid=shortcut-help]").HasAttribute("open")));
+        Assert.NotNull(Session.SelectedId);
+
+        await _keys.PressAsync("Escape");
+
+        Assert.Null(Session.SelectedId);
+    }
+
+    [Fact]
+    public void Render_SubscribesWithTheHandledKeyTable()
+    {
+        RenderPage();
+
+        Assert.Same(ShortcutKeys.Handled, _keys.Handled);
     }
 
     [Fact]

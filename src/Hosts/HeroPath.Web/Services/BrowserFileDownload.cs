@@ -23,7 +23,7 @@ public sealed class BrowserFileDownload(IJSRuntime js) : IFileDownload, IAsyncDi
             await _module.InvokeVoidAsync("saveStream", cancellationToken, fileName, reference);
             return true;
         }
-        catch (Exception ex) when (IsUnavailable(ex, cancellationToken))
+        catch (Exception ex) when (JsInterop.IsUnavailable(ex, cancellationToken))
         {
             return false;
         }
@@ -45,11 +45,4 @@ public sealed class BrowserFileDownload(IJSRuntime js) : IFileDownload, IAsyncDi
         {
         }
     }
-
-    private static bool IsUnavailable(Exception exception, CancellationToken cancellationToken) => exception switch
-    {
-        JSException or JSDisconnectedException or InvalidOperationException => true,
-        OperationCanceledException => !cancellationToken.IsCancellationRequested,
-        _ => false,
-    };
 }

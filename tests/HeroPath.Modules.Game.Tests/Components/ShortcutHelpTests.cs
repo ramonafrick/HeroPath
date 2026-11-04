@@ -1,6 +1,7 @@
 using HeroPath.Modules.Game.UI.Components;
 using HeroPath.Shared.Application.Contracts;
 using HeroPath.Shared.UI;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace HeroPath.Modules.Game.Tests.Components;
@@ -11,7 +12,6 @@ public class ShortcutHelpTests : CultureBunitContext
     public ShortcutHelpTests()
     {
         Services.AddSharedUI();
-        Services.AddFakeDocumentLanguage();
         Services.AddSingleton<IAppStorage, InMemoryAppStorage>();
     }
 
@@ -50,5 +50,30 @@ public class ShortcutHelpTests : CultureBunitContext
         Assert.Contains(cut.FindAll("kbd"), k => k.TextContent == "Space");
         Assert.Contains("Clear the selection", cut.Markup);
         Assert.DoesNotContain("Tasten", cut.Markup);
+    }
+
+    [Fact]
+    public void SummaryClick_OpensAndClosesAndReportsTheState()
+    {
+        var reported = new List<bool>();
+        var cut = Render<ShortcutHelp>(p => p.Add(c => c.OpenChanged, EventCallback.Factory.Create<bool>(this, reported.Add)));
+
+        cut.Find("summary").Click();
+        Assert.True(cut.Find("[data-testid=shortcut-help]").HasAttribute("open"));
+
+        cut.Find("summary").Click();
+        Assert.False(cut.Find("[data-testid=shortcut-help]").HasAttribute("open"));
+        Assert.Equal([true, false], reported);
+    }
+
+    [Fact]
+    public void OpenParameter_ControlsTheOpenState()
+    {
+        var cut = Render<ShortcutHelp>(p => p.Add(c => c.Open, true));
+        Assert.True(cut.Find("[data-testid=shortcut-help]").HasAttribute("open"));
+
+        cut.Render(p => p.Add(c => c.Open, false));
+
+        Assert.False(cut.Find("[data-testid=shortcut-help]").HasAttribute("open"));
     }
 }

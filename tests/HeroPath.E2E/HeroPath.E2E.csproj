@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Modules\Levels\HeroPath.Modules.Levels\HeroPath.Modules.Levels.csproj" />
+    <ProjectReference Include="..\..\src\Modules\Game\HeroPath.Modules.Game\HeroPath.Modules.Game.csproj" />
   </ItemGroup>
 
   <ItemGroup>

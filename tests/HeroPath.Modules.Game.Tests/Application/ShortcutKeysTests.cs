@@ -1,5 +1,6 @@
 using HeroPath.Modules.Game.Application;
 using HeroPath.Modules.Game.Domain;
+using HeroPath.Shared.Application.Contracts;
 
 namespace HeroPath.Modules.Game.Tests.Application;
 
@@ -73,4 +74,30 @@ public class ShortcutKeysTests
     [InlineData(ShortcutAction.Debug)]
     [InlineData(ShortcutAction.Reset)]
     public void InsertDirection_OtherActions_GiveNull(ShortcutAction action) => Assert.Null(ShortcutKeys.InsertDirection(action));
+
+    [Fact]
+    public void Handled_EveryChord_ResolvesToAnAction() =>
+        Assert.All(ShortcutKeys.Handled, chord => Assert.NotNull(ShortcutKeys.Resolve(chord.Key, chord.Shift)));
+
+    [Fact]
+    public void Handled_HasNoDuplicates() => Assert.Equal(ShortcutKeys.Handled.Count, ShortcutKeys.Handled.Distinct().Count());
+
+    [Theory]
+    [InlineData("ArrowLeft", true)]
+    [InlineData("ArrowRight", true)]
+    [InlineData("Enter", false)]
+    [InlineData("a", false)]
+    public void Handled_KeyWithoutAction_IsNotListed(string key, bool shift) =>
+        Assert.DoesNotContain(new KeyChord(key, shift), ShortcutKeys.Handled);
+
+    [Fact]
+    public void Handled_ListsEveryChordThatResolves()
+    {
+        string[] candidates = ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Delete", "Backspace", "Escape", " ", "d", "D", "r", "R", "Enter", "Tab", "a"];
+        var resolving = candidates
+            .SelectMany(key => new[] { false, true }.Select(shift => new KeyChord(key, shift)))
+            .Where(chord => ShortcutKeys.Resolve(chord.Key, chord.Shift) is not null);
+
+        Assert.Equal(resolving.OrderBy(c => c.Key).ThenBy(c => c.Shift), ShortcutKeys.Handled.OrderBy(c => c.Key).ThenBy(c => c.Shift));
+    }
 }

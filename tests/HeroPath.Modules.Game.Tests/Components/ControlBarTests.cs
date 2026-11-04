@@ -22,7 +22,6 @@ public class ControlBarTests : CultureBunitContext
     {
         Services.AddSingleton<TimeProvider>(_time);
         Services.AddSharedUI();
-        Services.AddFakeDocumentLanguage();
         Services.AddGameModule();
         Services.AddSingleton<IAppStorage, InMemoryAppStorage>();
         _session = Services.GetRequiredService<GameSession>();

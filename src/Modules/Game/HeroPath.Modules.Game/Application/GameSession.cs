@@ -22,7 +22,10 @@ public sealed class GameSession
     /// <summary>Raised after every change of the session.</summary>
     public event Action? Changed;
 
-    /// <summary>Raised when a step was applied, after the session state is updated and before <see cref="Changed"/>.</summary>
+    /// <summary>
+    /// Raised when a step was applied, after the session state is updated and before <see cref="Changed"/>. Handlers run inside the
+    /// run loop and must not throw: an exception ends the run (<c>Paused</c>) and skips <see cref="Changed"/>.
+    /// </summary>
     public event Action<ExecutionStep>? StepApplied;
 
     internal event Action? RunDiscarded;

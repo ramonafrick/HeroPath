@@ -90,6 +90,9 @@ public static class LayoutAssertions
         var problems = await page.EvaluateAsync<string[]>(@"() => {
             const problems = [];
             const panel = document.querySelector('[data-testid=side-panel]');
+            if (!panel) {
+                return ['side panel (data-testid=side-panel) is missing'];
+            }
             const box = panel.getBoundingClientRect();
             if (panel.scrollHeight > panel.clientHeight + 1 || panel.scrollWidth > panel.clientWidth + 1) {
                 problems.push(`side panel overflows: ${panel.scrollWidth}x${panel.scrollHeight} > ${panel.clientWidth}x${panel.clientHeight}`);
@@ -105,20 +108,70 @@ public static class LayoutAssertions
         Assert.Empty(problems);
     }
 
-    /// <summary>The page itself must not scroll: board and panels fit the viewport.</summary>
+    /// <summary>
+    /// The open shortcut list lies fully inside the viewport and covers none of the level picker, palette, controls, status, message,
+    /// next-level button or program (it floats over the board area instead).
+    /// </summary>
+    public static async Task AssertShortcutHelpLeavesControlsFreeAsync(IPage page)
+    {
+        var problems = await page.EvaluateAsync<string[]>(@"() => {
+            const body = document.querySelector('[data-testid=shortcut-help-body]');
+            if (!body) {
+                return ['shortcut help body (data-testid=shortcut-help-body) is missing'];
+            }
+            const problems = [];
+            const r = body.getBoundingClientRect();
+            if (r.top < 0 || r.left < 0 || r.bottom > window.innerHeight || r.right > window.innerWidth) {
+                problems.push(`help ${Math.round(r.left)},${Math.round(r.top)}-${Math.round(r.right)},${Math.round(r.bottom)} leaves the ${window.innerWidth}x${window.innerHeight} viewport`);
+            }
+            if (body.scrollHeight > body.clientHeight + 1) {
+                problems.push(`help scrolls inside itself: ${body.scrollHeight} > ${body.clientHeight}`);
+            }
+            const ids = ['level-picker', 'palette', 'control-play', 'control-debug', 'control-reset', 'control-tempo', 'status', 'message', 'next-level', 'program', 'shortcut-help-toggle'];
+            for (const id of ids) {
+                const element = document.querySelector(`[data-testid=${id}]`);
+                if (!element) {
+                    continue;
+                }
+                const e = element.getBoundingClientRect();
+                if (e.width > 0 && e.height > 0 && e.left < r.right && e.right > r.left && e.top < r.bottom && e.bottom > r.top) {
+                    problems.push(`help covers ${id}`);
+                }
+            }
+            return problems;
+        }");
+        Assert.Empty(problems);
+    }
+
+    /// <summary>
+    /// The page itself must not scroll: board and panels fit the viewport. Measured after the fonts are loaded and two animation frames, and
+    /// polled for a few seconds, because a layout that is still settling (fonts, Blazor re-render) is not a finding. The diagnostic message
+    /// is built only after the timeout.
+    /// </summary>
     public static async Task AssertNoPageScrollAsync(IPage page)
     {
-        var problem = await page.EvaluateAsync<string?>(@"() => {
-            const root = document.documentElement;
-            if (root.scrollHeight <= window.innerHeight && root.scrollWidth <= window.innerWidth) {
-                return null;
-            }
-            const height = selector => document.querySelector(selector)?.getBoundingClientRect().height ?? 'none';
-            return `page ${root.scrollWidth}x${root.scrollHeight}, viewport ${window.innerWidth}x${window.innerHeight}, `
-                + `board head ${height('.board-head')}, header ${height('.app-header')}, `
-                + `font ${getComputedStyle(document.body).fontFamily.split(',')[0]} ${document.fonts.size}`;
+        await page.EvaluateAsync(@"async () => {
+            await document.fonts.ready;
+            await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
         }");
-        Assert.True(problem is null, $"The play page must fit the viewport without page scrolling: {problem}");
+        try
+        {
+            await page.WaitForFunctionAsync(
+                "() => { const root = document.documentElement; return root.scrollHeight <= window.innerHeight && root.scrollWidth <= window.innerWidth; }",
+                null,
+                new() { Timeout = 5000 });
+        }
+        catch (TimeoutException)
+        {
+            var problem = await page.EvaluateAsync<string>(@"() => {
+                const root = document.documentElement;
+                const height = selector => document.querySelector(selector)?.getBoundingClientRect().height ?? 'none';
+                return `page ${root.scrollWidth}x${root.scrollHeight}, viewport ${window.innerWidth}x${window.innerHeight}, `
+                    + `board head ${height('.board-head')}, header ${height('.app-header')}, `
+                    + `font ${getComputedStyle(document.body).fontFamily.split(',')[0]} ${document.fonts.size}`;
+            }");
+            Assert.Fail($"The play page must fit the viewport without page scrolling: {problem}");
+        }
     }
 
     /// <summary>Program rows keep at least 44 px height and do not touch each other, also while the list scrolls.</summary>

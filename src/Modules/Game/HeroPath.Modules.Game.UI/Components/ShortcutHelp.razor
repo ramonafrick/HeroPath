@@ -1,8 +1,8 @@
 @inherits LocalizedComponentBase
 @using HeroPath.Shared.UI.Components
 
-<details class="shortcut-help" data-testid="shortcut-help">
-    <summary class="shortcut-summary" data-testid="shortcut-help-toggle">@Localizer["Shortcuts_Title"]</summary>
+<details class="shortcut-help" data-testid="shortcut-help" open="@Open">
+    <summary class="shortcut-summary" data-testid="shortcut-help-toggle" @onclick="ToggleAsync" @onclick:preventDefault>@Localizer["Shortcuts_Title"]</summary>
     <div class="shortcut-body" data-testid="shortcut-help-body">
         <table class="shortcut-table">
             <tbody>

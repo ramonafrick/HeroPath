@@ -6,29 +6,42 @@ namespace HeroPath.Web.Services;
 /// <summary>
 /// <see cref="IKeyboardShortcuts"/> on a <c>keydown</c> listener on the document: the JS module <c>js/keyboard.js</c> (loaded on first use,
 /// relative to the base href) filters synchronously, because only there can <c>preventDefault</c> be decided per key. Unavailable interop
-/// gives a silent subscription; a cancellation requested by the caller is not swallowed.
+/// gives a silent subscription; a cancellation requested by the caller is not swallowed, but it first stops the listener it may have started.
 /// </summary>
 public sealed class BrowserKeyboardShortcuts(IJSRuntime js) : IKeyboardShortcuts, IAsyncDisposable
 {
     private IJSObjectReference? _module;
     private Subscription? _current;
 
-    public async ValueTask<IAsyncDisposable> SubscribeAsync(Func<string, bool, Task> onKey, CancellationToken cancellationToken)
+    public async ValueTask<IAsyncDisposable> SubscribeAsync(IReadOnlyCollection<KeyChord> handled, Func<string, bool, Task> onKey, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(handled);
         ArgumentNullException.ThrowIfNull(onKey);
+        Subscription? subscription = null;
         try
         {
             _module ??= await js.InvokeAsync<IJSObjectReference>("import", cancellationToken, "./js/keyboard.js");
-            var subscription = new Subscription(this, _module, onKey);
+            subscription = new Subscription(this, _module, onKey);
             var previous = _current;
             _current = subscription;
             previous?.Release();
-            await _module.InvokeVoidAsync("start", cancellationToken, subscription.Reference);
+            await _module.InvokeVoidAsync("start", cancellationToken, subscription.Reference, handled.Select(chord => chord.Key).ToArray(), handled.Select(chord => chord.Shift).ToArray());
             return subscription;
         }
-        catch (Exception ex) when (IsUnavailable(ex, cancellationToken))
+        catch (Exception ex)
         {
-            return new Silent();
+            // The call may have reached JS before it was cancelled or failed: stop the listener and free the reference, or it would stay orphaned.
+            if (subscription is not null)
+            {
+                await subscription.DisposeAsync();
+            }
+
+            if (JsInterop.IsUnavailable(ex, cancellationToken))
+            {
+                return new Silent();
+            }
+
+            throw;
         }
     }
 
@@ -62,13 +75,6 @@ public sealed class BrowserKeyboardShortcuts(IJSRuntime js) : IKeyboardShortcuts
         _current = null;
         return true;
     }
-
-    private static bool IsUnavailable(Exception exception, CancellationToken cancellationToken) => exception switch
-    {
-        JSException or JSDisconnectedException or InvalidOperationException => true,
-        OperationCanceledException => !cancellationToken.IsCancellationRequested,
-        _ => false,
-    };
 
     private sealed class Callback(Func<string, bool, Task> onKey)
     {

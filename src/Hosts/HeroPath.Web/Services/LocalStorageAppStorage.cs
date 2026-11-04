@@ -37,16 +37,9 @@ public sealed class LocalStorageAppStorage(IJSRuntime js) : IAppStorage
         {
             return await operation(js);
         }
-        catch (Exception ex) when (IsStorageUnavailable(ex, cancellationToken))
+        catch (Exception ex) when (JsInterop.IsUnavailable(ex, cancellationToken))
         {
             return default;
         }
     }
-
-    private static bool IsStorageUnavailable(Exception exception, CancellationToken cancellationToken) => exception switch
-    {
-        JSException or JSDisconnectedException or InvalidOperationException => true,
-        OperationCanceledException => !cancellationToken.IsCancellationRequested,
-        _ => false,
-    };
 }

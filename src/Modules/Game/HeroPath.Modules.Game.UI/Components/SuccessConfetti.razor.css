@@ -49,6 +49,8 @@
     }
 
     .confetti {
-        box-shadow: inset 0 0 0 0.4rem var(--hp-goal);
+        box-sizing: border-box;
+        border: 0.5rem dashed var(--hp-outline);
+        box-shadow: inset 0 0 0 0.5rem var(--hp-goal);
     }
 }

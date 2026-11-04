@@ -19,7 +19,7 @@ public sealed class BrowserSoundPlayer(IJSRuntime js) : ISoundPlayer, IAsyncDisp
             _module ??= await js.InvokeAsync<IJSObjectReference>("import", cancellationToken, "./js/sound.js");
             await _module.InvokeVoidAsync("play", cancellationToken, effect.ToString().ToLowerInvariant());
         }
-        catch (Exception ex) when (IsUnavailable(ex, cancellationToken))
+        catch (Exception ex) when (JsInterop.IsUnavailable(ex, cancellationToken))
         {
         }
     }
@@ -40,11 +40,4 @@ public sealed class BrowserSoundPlayer(IJSRuntime js) : ISoundPlayer, IAsyncDisp
         {
         }
     }
-
-    private static bool IsUnavailable(Exception exception, CancellationToken cancellationToken) => exception switch
-    {
-        JSException or JSDisconnectedException or InvalidOperationException => true,
-        OperationCanceledException => !cancellationToken.IsCancellationRequested,
-        _ => false,
-    };
 }

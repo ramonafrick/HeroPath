@@ -13,7 +13,6 @@ public class LocalizedComponentBaseTests : CultureBunitContext
     public LocalizedComponentBaseTests()
     {
         Services.AddSharedUI();
-        Services.AddFakeDocumentLanguage();
         Services.AddSingleton<IAppStorage, InMemoryAppStorage>();
     }
 

@@ -1,4 +1,5 @@
 using HeroPath.E2E.Infrastructure;
+using HeroPath.Modules.Game.Application;
 using static Microsoft.Playwright.Assertions;
 
 namespace HeroPath.E2E;
@@ -331,10 +332,13 @@ public class KeyboardTests(AppFixture app)
     }
 
     [Theory]
-    [InlineData("de", "language-de", 1366, 768, "laptop")]
-    [InlineData("en", "language-en", 1366, 768, "laptop")]
-    [InlineData("de", "language-de", 1920, 1080, "desktop")]
-    public async Task ShortcutHelp_IsCollapsedFitsTheScreenAndOpens(string lang, string languageButton, int width, int height, string viewport)
+    [InlineData("de", "language-de", 1366, 768, "laptop", true)]
+    [InlineData("en", "language-en", 1366, 768, "laptop", true)]
+    [InlineData("de", "language-de", 1920, 1080, "desktop", true)]
+    [InlineData("en", "language-en", 1920, 1080, "desktop", true)]
+    [InlineData("de", "language-de", 1366, 600, "short", false)]
+    [InlineData("en", "language-en", 1366, 600, "short", false)]
+    public async Task ShortcutHelp_IsCollapsedFitsTheScreenOpensOverTheBoardAndEscapeCloses(string lang, string languageButton, int width, int height, string viewport, bool fitsWithoutScroll)
     {
         Assert.SkipUnless(E2EEnvironment.Enabled, "Set HEROPATH_E2E=1 to run E2E tests.");
 
@@ -348,20 +352,85 @@ public class KeyboardTests(AppFixture app)
         await Expect(help).ToBeVisibleAsync();
         await Expect(help).Not.ToHaveAttributeAsync("open", "");
         await Screenshots.CaptureAsync(page, $"shortcut-help-closed.{viewport}.{lang}");
-        await LayoutAssertions.AssertNoPageScrollAsync(page);
-        await LayoutAssertions.AssertSidePanelFitsAsync(page);
+        if (fitsWithoutScroll)
+        {
+            await LayoutAssertions.AssertNoPageScrollAsync(page);
+            await LayoutAssertions.AssertSidePanelFitsAsync(page);
+        }
+        else
+        {
+            Directory.CreateDirectory(E2EEnvironment.ScreenshotDirectory);
+            var scrollHeight = await page.EvaluateAsync<int>("() => document.documentElement.scrollHeight");
+            await File.AppendAllTextAsync(Path.Combine(E2EEnvironment.ScreenshotDirectory, "play-layout.txt"), $"{viewport}.{lang}: page scroll height {scrollHeight} px in a {height} px viewport (empty program, no success){Environment.NewLine}", TestContext.Current.CancellationToken);
+        }
+
 
         await page.GetByTestId("shortcut-help-toggle").ClickAsync();
         await Expect(help).ToHaveAttributeAsync("open", "");
         await Expect(page.Locator("[data-testid=shortcut-help] kbd").First).ToBeVisibleAsync();
-        await LayoutAssertions.AssertInViewportAsync(page, "[data-testid=shortcut-help-body]");
+        await LayoutAssertions.AssertShortcutHelpLeavesControlsFreeAsync(page);
+        if (fitsWithoutScroll)
+        {
+            await LayoutAssertions.AssertNoPageScrollAsync(page);
+        }
+
         await Screenshots.CaptureAsync(page, $"shortcut-help.{viewport}.{lang}");
-        await LayoutAssertions.AssertNoPageScrollAsync(page);
 
         await page.Keyboard.PressAsync("ArrowUp");
         await ExpectDirectionsAsync(page, "up");
+        await Expect(help).ToHaveAttributeAsync("open", "");
+        await LayoutAssertions.AssertShortcutHelpLeavesControlsFreeAsync(page);
         await Screenshots.CaptureAsync(page, $"shortcut-help-with-block.{viewport}.{lang}");
+
+        await page.GetByTestId("program-select-1").ClickAsync();
+        await Expect(page.GetByTestId("program-select-1")).ToHaveAttributeAsync("aria-pressed", "true");
+        await page.Keyboard.PressAsync("Escape");
+        await Expect(help).Not.ToHaveAttributeAsync("open", "");
+        await Expect(page.GetByTestId("program-select-1")).ToHaveAttributeAsync("aria-pressed", "true");
+        await page.Keyboard.PressAsync("Escape");
+        await Expect(page.GetByTestId("program-select-1")).ToHaveAttributeAsync("aria-pressed", "false");
+
+        await page.GetByTestId("shortcut-help-toggle").ClickAsync();
+        await Expect(help).ToHaveAttributeAsync("open", "");
+        await page.GetByTestId("shortcut-help-toggle").ClickAsync();
+        await Expect(help).Not.ToHaveAttributeAsync("open", "");
+        if (fitsWithoutScroll)
+        {
+            await LayoutAssertions.AssertNoPageScrollAsync(page);
+        }
 
         Assert.Empty(errors.Errors);
     }
+
+    [Fact]
+    public async Task HandledKeys_ArePreventedAndOthersAreNot()
+    {
+        Assert.SkipUnless(E2EEnvironment.Enabled, "Set HEROPATH_E2E=1 to run E2E tests.");
+
+        await using var context = await app.NewContextAsync("de-CH", 1366, 768);
+        var page = await context.NewPageAsync();
+        var errors = BrowserErrors.Track(page);
+        await StartPlayAsync(page, errors);
+        await page.EvaluateAsync("document.activeElement.blur()");
+
+        var handled = ShortcutKeys.Handled.Select(chord => new { key = chord.Key, shift = chord.Shift }).ToArray();
+        var others = new[]
+        {
+            new { key = "ArrowLeft", shift = true }, new { key = "ArrowRight", shift = true }, new { key = "a", shift = false },
+            new { key = "x", shift = true }, new { key = "1", shift = false }, new { key = "Enter", shift = false },
+            new { key = "Tab", shift = false }, new { key = "Home", shift = false }, new { key = "Spacebar", shift = false },
+        };
+
+        var handledPrevented = await DispatchAsync(page, handled);
+        var othersPrevented = await DispatchAsync(page, others);
+
+        Assert.Equal(handled.Length, handledPrevented.Length);
+        Assert.All(handledPrevented.Zip(handled), pair => Assert.True(pair.First, $"{pair.Second.key} (shift {pair.Second.shift}) must be prevented"));
+        Assert.DoesNotContain(true, othersPrevented);
+        Assert.Empty(errors.Errors);
+    }
+
+    private static Task<bool[]> DispatchAsync<T>(IPage page, T[] chords) => page.EvaluateAsync<bool[]>(
+        "chords => chords.map(c => !document.body.dispatchEvent(new KeyboardEvent('keydown', { key: c.key, shiftKey: c.shift, bubbles: true, cancelable: true })))",
+        chords);
 }
