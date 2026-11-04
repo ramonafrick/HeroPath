@@ -87,9 +87,17 @@ public static class LayoutAssertions
     /// <summary>The page itself must not scroll: board and panels fit the viewport.</summary>
     public static async Task AssertNoPageScrollAsync(IPage page)
     {
-        var scrolls = await page.EvaluateAsync<bool>(
-            "document.documentElement.scrollHeight > window.innerHeight || document.documentElement.scrollWidth > window.innerWidth");
-        Assert.False(scrolls, "The play page must fit the viewport without page scrolling.");
+        var problem = await page.EvaluateAsync<string?>(@"() => {
+            const root = document.documentElement;
+            if (root.scrollHeight <= window.innerHeight && root.scrollWidth <= window.innerWidth) {
+                return null;
+            }
+            const height = selector => document.querySelector(selector)?.getBoundingClientRect().height ?? 'none';
+            return `page ${root.scrollWidth}x${root.scrollHeight}, viewport ${window.innerWidth}x${window.innerHeight}, `
+                + `board head ${height('.board-head')}, header ${height('.app-header')}, `
+                + `font ${getComputedStyle(document.body).fontFamily.split(',')[0]} ${document.fonts.size}`;
+        }");
+        Assert.True(problem is null, $"The play page must fit the viewport without page scrolling: {problem}");
     }
 
     /// <summary>Program rows keep at least 44 px height and do not touch each other, also while the list scrolls.</summary>
