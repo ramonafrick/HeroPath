@@ -6,15 +6,17 @@ on:
     tags: ["v*"]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  zip:
+  build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
-      - uses: actions/setup-dotnet@v6
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6
         with:
           global-json-file: global.json
 
@@ -29,22 +31,54 @@ jobs:
           Expand-Archive -LiteralPath artifacts/HeroPath.zip -DestinationPath artifacts/unpacked
           ./deploy/smoke-test.ps1 -Folder artifacts/unpacked/HeroPath
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: HeroPath-zip
           path: artifacts/HeroPath.zip
           if-no-files-found: error
 
-      - name: Attach the ZIP to the release
-        if: startsWith(github.ref, 'refs/tags/v')
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.ref_name }}
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: ${{ github.ref_name }}
+      SHA: ${{ github.sha }}
+      REPO: ${{ github.repository }}
+    steps:
+      # Only a commit on main with a green CI run may be published.
+      - name: Check that the tag is on main and CI is green
         run: |
-          gh release view "$env:TAG" *> $null
-          if ($LASTEXITCODE -eq 0) {
-            gh release upload "$env:TAG" artifacts/HeroPath.zip --clobber
-          } else {
-            gh release create "$env:TAG" artifacts/HeroPath.zip --title "$env:TAG" --generate-notes
-          }
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          status=$(gh api "repos/$REPO/compare/main...$SHA" --jq .status)
+          if [ "$status" != "behind" ] && [ "$status" != "identical" ]; then
+            echo "::error::Commit $SHA is not on main (compare status: $status)"
+            exit 1
+          fi
+          green=$(gh api "repos/$REPO/actions/workflows/ci.yml/runs?head_sha=$SHA&event=push&branch=main&status=completed" \
+            --jq '[.workflow_runs[] | select(.conclusion == "success")] | length')
+          if [ "$green" -lt 1 ]; then
+            echo "::error::No successful CI run on main for commit $SHA"
+            exit 1
+          fi
+
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: HeroPath-zip
+          path: dist
+
+      - name: Attach the ZIP to the release
+        run: |
+          hash=$(sha256sum dist/HeroPath.zip | cut -d' ' -f1)
+          line="SHA-256 of HeroPath.zip: $hash"
+          echo "$line" >> "$GITHUB_STEP_SUMMARY"
+          if gh release view "$TAG" --repo "$REPO" > /dev/null 2>&1; then
+            gh release upload "$TAG" dist/HeroPath.zip --clobber --repo "$REPO"
+            body=$(gh release view "$TAG" --repo "$REPO" --json body --jq .body | grep -v '^SHA-256 of HeroPath.zip' || true)
+            gh release edit "$TAG" --repo "$REPO" --notes "$body"$'\n\n'"$line"
+          else
+            gh release create "$TAG" dist/HeroPath.zip --repo "$REPO" --title "$TAG" --generate-notes --notes "$line"
+          fi

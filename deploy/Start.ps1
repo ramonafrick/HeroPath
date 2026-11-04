@@ -102,7 +102,10 @@ try {
     while ($listener.IsListening) {
         $pending = $listener.GetContextAsync()
         while (-not $pending.Wait(250)) { }
-        if ($pending.IsFaulted -or $pending.IsCanceled) { break }
+        if ($pending.IsFaulted -or $pending.IsCanceled) {
+            Start-Sleep -Milliseconds 50
+            continue
+        }
         $context = $pending.Result
         try {
             $request = $context.Request
@@ -110,7 +113,7 @@ try {
             $response.Headers.Add('Cache-Control', 'no-cache')
             $response.Headers.Add('X-Content-Type-Options', 'nosniff')
             $remote = $request.RemoteEndPoint
-            if ($null -eq $remote -or -not [System.Net.IPAddress]::IsLoopback($remote.Address)) {
+            if ($null -eq $remote -or -not [System.Net.IPAddress]::IsLoopback($remote.Address) -or $null -eq $request.Url -or $request.Url.Host -ne 'localhost') {
                 Send-Text $response 403 'Forbidden'
             } elseif ($request.HttpMethod -ne 'GET' -and $request.HttpMethod -ne 'HEAD') {
                 $response.Headers.Add('Allow', 'GET, HEAD')

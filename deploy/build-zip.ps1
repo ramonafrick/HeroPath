@@ -10,12 +10,13 @@ $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 $deployDir = $PSScriptRoot
-$site = Join-Path (Resolve-Path -LiteralPath $PublishDir).Path 'wwwroot'
+$publishFull = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($PublishDir)
+$site = Join-Path $publishFull 'wwwroot'
 if (-not (Test-Path -LiteralPath (Join-Path $site 'index.html'))) {
     throw "No index.html in $site. Run dotnet publish first."
 }
 
-$outputFull = [System.IO.Path]::GetFullPath($Output)
+$outputFull = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Output)
 New-Item -ItemType Directory -Force -Path (Split-Path -Parent $outputFull) | Out-Null
 $staging = Join-Path ([System.IO.Path]::GetTempPath()) ('heropath-zip-' + [guid]::NewGuid().ToString('N'))
 $package = Join-Path $staging 'HeroPath'
@@ -26,7 +27,10 @@ try {
 
     # Compressed copies are dropped: the local server sends the plain files.
     & robocopy $site $target /E /XF '*.br' '*.gz' /NFL /NDL /NJH /NJS /NP | Out-Null
-    if ($LASTEXITCODE -ge 8) { throw "robocopy failed with exit code $LASTEXITCODE" }
+    # robocopy exits 0 to 7 on success (1 = files copied). The CI wrapper ends with exit $LASTEXITCODE.
+    $copyCode = $LASTEXITCODE
+    if ($copyCode -ge 8) { throw "robocopy failed with exit code $copyCode" }
+    $global:LASTEXITCODE = 0
 
     # Text files are normalised here because .gitattributes forces LF in the repository.
     # Start.bat and Start.ps1: CRLF, ASCII. LIESMICH.txt: CRLF, UTF-8 with BOM (umlauts).

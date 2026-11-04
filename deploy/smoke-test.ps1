@@ -11,6 +11,8 @@ $ErrorActionPreference = 'Stop'
 $folder = (Resolve-Path -LiteralPath $Folder).Path
 $script:failures = New-Object System.Collections.Generic.List[string]
 $script:process = $null
+$stdoutFile = Join-Path ([System.IO.Path]::GetTempPath()) ("heropath-smoke-" + [guid]::NewGuid().ToString("N") + ".out.txt")
+$stderrFile = Join-Path ([System.IO.Path]::GetTempPath()) ("heropath-smoke-" + [guid]::NewGuid().ToString("N") + ".err.txt")
 
 function Check([string]$name, [bool]$ok, [string]$detail = '') {
     if ($ok) {
@@ -27,6 +29,18 @@ function Get-FreePort {
     $p = $l.LocalEndpoint.Port
     $l.Stop()
     return $p
+}
+
+function Test-PortInUse([int]$port) {
+    $probe = New-Object System.Net.Sockets.TcpClient
+    try {
+        $probe.Connect("127.0.0.1", $port)
+        return $true
+    } catch {
+        return $false
+    } finally {
+        $probe.Close()
+    }
 }
 
 function Send-Raw([int]$port, [string]$requestLine, [string]$address = '127.0.0.1', [string]$extraHeaders = '') {
@@ -62,9 +76,10 @@ function Get-Header($response, [string]$name) {
 
 try {
     if ($Port -le 0) { $Port = Get-FreePort }
+    if (Test-PortInUse $Port) { throw "Port $Port is already in use, refusing to test a foreign server." }
     $startScript = Join-Path $folder 'Start.ps1'
     $arguments = '-NoProfile -ExecutionPolicy Bypass -File "' + $startScript + '" -NoBrowser -Port ' + $Port
-    $script:process = Start-Process -FilePath 'powershell.exe' -ArgumentList $arguments -PassThru -WindowStyle Hidden
+    $script:process = Start-Process -FilePath 'powershell.exe' -ArgumentList $arguments -PassThru -WindowStyle Hidden -RedirectStandardOutput $stdoutFile -RedirectStandardError $stderrFile
 
     $ready = $false
     for ($i = 0; $i -lt 100 -and -not $ready; $i++) {
@@ -81,6 +96,7 @@ try {
     Check 'server starts' $ready ('(exited: ' + $script:process.HasExited + ')')
     if (-not $ready) { throw 'Server did not start.' }
 
+    Check 'server process is still running' (-not $script:process.HasExited) '(a foreign server may answer)'
     $r = Send-Raw $Port 'GET / HTTP/1.1'
     Check 'GET / is 200 text/html' ($r.Status -eq 200 -and (Get-Header $r 'Content-Type') -like 'text/html*') "($($r.Status) $(Get-Header $r 'Content-Type'))"
     Check 'Cache-Control is no-cache' ((Get-Header $r 'Cache-Control') -eq 'no-cache')
@@ -115,6 +131,7 @@ try {
     $after = Send-Raw $Port 'GET / HTTP/1.1'
     Check 'server still answers after the bad requests' ($after.Status -eq 200)
 
+    if ($wasm) {
     $abort = New-Object System.Net.Sockets.TcpClient
     $abort.Connect('127.0.0.1', $Port)
     $abortStream = $abort.GetStream()
@@ -125,6 +142,8 @@ try {
     Start-Sleep -Milliseconds 300
     $after = Send-Raw $Port 'GET / HTTP/1.1'
     Check 'server survives a client that aborts mid-download' ($after.Status -eq 200)
+    }
+    Check 'server process is still running at the end' (-not $script:process.HasExited) '(exited early)'
 
     Write-Host 'INFO  http.sys opens the port on all interfaces; the script itself only answers loopback clients.'
 
@@ -156,14 +175,22 @@ try {
         $probe.Close()
         $stillUp = $true
     } catch { }
-    Check 'server is stopped at the end' (-not $stillUp)
+    if ($script:process) { Check 'server is stopped at the end' (-not $stillUp) }
 }
 
 if ($script:failures.Count -gt 0) {
+    foreach ($log in @(@{ Name = 'server stdout'; Path = $stdoutFile }, @{ Name = 'server stderr'; Path = $stderrFile })) {
+        if ((Test-Path -LiteralPath $log.Path) -and (Get-Item -LiteralPath $log.Path).Length -gt 0) {
+            Write-Host ('---- ' + $log.Name + ' ----')
+            Get-Content -LiteralPath $log.Path | Write-Host
+        }
+    }
+    Remove-Item -LiteralPath $stdoutFile, $stderrFile -Force -ErrorAction SilentlyContinue
     Write-Host ''
     Write-Host ('SMOKE TEST FAILED: ' + $script:failures.Count + ' problem(s)')
     exit 1
 }
+Remove-Item -LiteralPath $stdoutFile, $stderrFile -Force -ErrorAction SilentlyContinue
 Write-Host ''
 Write-Host 'SMOKE TEST PASSED'
 exit 0
