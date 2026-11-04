@@ -136,6 +136,8 @@ Den Rest bitte auf dem Weg ausführen, der am Zukunftstag gilt.
 
 - Eigene Levels liegen im Browser pro Adresse. Wählt der lokale Server einen anderen Anschluss, weil 5080 belegt ist, sind sie dort nicht sichtbar. Online und offline sind ebenfalls getrennt.
 - Alle Projekte unter `ramonafrick.github.io` teilen sich denselben Ursprung und damit `localStorage`, den Cache-Speicher und Ähnliches. Das Löschen der Websitedaten für diese Adresse betrifft alle diese Projekte, und ein anderes Projekt kann die Schlüssel `heropath.language`, `heropath.sound` und `heropath.levels` lesen oder überschreiben. Der Name des Helden ist nicht betroffen, er wird nie gespeichert. Gespeicherte Level-Daten werden beim Laden geprüft (`StorageCustomLevelStore.Parse`: `LevelJson.Read`, `LevelCheck`, Obergrenzen), Fremdes oder Kaputtes wird übersprungen, und `LanguageService.Normalize` macht aus jedem unbekannten Sprachwert Deutsch. Bekannte Einschränkung, keine Codeänderung.
+- Bei wenig Höhe (etwa 1366×600, also ein 768-Pixel-Laptop bei 125 %) scrollt die Seite. Bitte in 7.2 notieren, ob das am Zukunftstag stört.
+- Bei sehr schmalen eigenen Levels wie 3×20 liegt «Held wechseln» teilweise unter der Level-Wahl. Die sieben Standard-Level sind nicht betroffen.
 - Die Schwelle von 15 Sekunden in 1.2 ist ein Vorschlag und wird nach der ersten Messung bestätigt oder angepasst.
 
 ## Funde

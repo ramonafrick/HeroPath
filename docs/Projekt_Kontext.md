@@ -57,8 +57,8 @@ Browser-Lern-App «HeroPath» (HeldenWeg / Hero's Path) für den Zukunftstag: Ki
 ### Could
 - JSON-Export und -Import von Levels
 - Weitere Hindernisse und Themenwelten (z. B. Fussballplatz)
-- Sound
-- Tastaturkürzel
+- Sound (seit M6 umgesetzt)
+- Tastaturkürzel (seit M6 umgesetzt)
 
 ### Won't (vorerst)
 - Backend, Benutzerkonten, Bestenlisten
@@ -87,7 +87,10 @@ Browser-Lern-App «HeroPath» (HeldenWeg / Hero's Path) für den Zukunftstag: Ki
 - **Rendering:** CSS Grid für das Raster, SVG für Figuren, Hindernisse und Items. Bewegung mit CSS-Transitions.
 - **Drag & Drop (seit M3):** Native HTML5-Ereignisse über Blazor (`ProgramEditor` mit `BlockList`, `ProgramBlock`, `DropZone`, dazu `BlockPalette`), kein eigenes JavaScript. Immer mit Alternative per Klick (Auswählen, Einfügeziel, ▲▼🗑). Die Technik bleibt austauschbar. Ob Firefox den Drag ohne `dataTransfer.setData` startet, ist unverifiziert (siehe §8). Entscheid: `Architektur C4.md` §6, Nr. 20. Im Level-Editor gibt es kein Drag & Drop, nur Klick.
 - **Lokalisierung:** `IStringLocalizer` mit resx-Dateien (`de`, `en`), Sprache im localStorage. Auch der Anzeigename der App wird lokalisiert (HeldenWeg / Hero's Path). Die Sprache wird ohne Neuladen umgeschaltet. Damit die `en`-Texte dann vorhanden sind, lädt `index.html` beim Start alle Satellite-Assemblies (`Blazor.start` mit `loadAllSatelliteResources`), siehe `Architektur C4.md` §6, Nr. 11.
-- **Keine externen Ressourcen:** Keine CDNs, Schriften und Grafiken liegen lokal im Projekt. Das JS-Modul für den Export-Download (`wwwroot/js/file-download.js`) ist eine eigene Datei im Host.
+- **Sound (seit M6):** Beim ersten Start aus, die Wahl liegt unter `heropath.sound` in `localStorage`. Töne gibt es nur bei Erfolg, Fehler und beim Einsammeln eines Items, erzeugt mit Web-Audio-Oszillatoren (`wwwroot/js/sound.js`), ohne Audiodateien. `RunSounds` (Game) hört auf `GameSession`, der Host implementiert `ISoundPlayer`.
+- **Tastatur (seit M6):** Nur auf der Spielseite. Pfeile fügen Bausteine ein, Umschalt+↑/↓ verschiebt, Entf oder Rücktaste löscht, Esc hebt die Auswahl auf, Leertaste startet Play, D macht einen Debug-Schritt, R setzt zurück. Eine gehaltene Taste zählt einmal, Ctrl, Alt und Meta bleiben dem Browser. Die Tabelle steht einmal in `ShortcutKeys` (Game), der Listener auf `document` liegt hinter `IKeyboardShortcuts` im Host. Der Knopf «Tasten» öffnet die Liste (`ShortcutHelp`), während eines Laufs bleibt sie zu.
+- **Erfolgsanimation (seit M6):** Nur CSS (`SuccessConfetti`), etwa 2 Sekunden, auf das Spielfeld begrenzt. Bei `prefers-reduced-motion` erscheint nur ein ruhiger goldener Rahmen.
+- **Keine externen Ressourcen:** Keine CDNs, Schriften und Grafiken liegen lokal im Projekt. Die JS-Module (`wwwroot/js/`) und der Service Worker sind eigene Dateien im Host.
 
 ## 5. Konventionen
 
@@ -104,9 +107,12 @@ Browser-Lern-App «HeroPath» (HeldenWeg / Hero's Path) für den Zukunftstag: Ki
 ## 6. Bereitstellung
 
 1. Quellcode auf GitHub (MIT-Lizenz).
-2. `dotnet publish -c Release` erzeugt die statischen Dateien.
-3. Auf den Laptops entweder die GitHub-Pages-URL öffnen oder das ZIP aus dem Workflow `Package` entpacken und `Start.bat` doppelklicken (PowerShell-Skript als lokaler Server, kein .NET nötig). `index.html` per Doppelklick funktioniert bei Blazor WebAssembly nicht.
-4. Vor dem Einsatz auf den Firmenlaptops mit der IT oder Security klären, ob die Installation und das Ausführen erlaubt sind.
+2. `dotnet publish -c Release` erzeugt die statischen Dateien. Danach ändert nur `deploy/finish-site.ps1` die `index.html` (Base-Href, Content-Security-Policy, PWA-Kennzeichen, Hash im Manifest des Service Workers).
+3. Auf den Laptops gibt es drei Wege:
+   - **Online:** `https://ramonafrick.github.io/HeroPath/` öffnen. Der Workflow `Pages` veröffentlicht nach jeder grünen CI auf `main`.
+   - **Installierte App:** Die Pages-Version in Edge oder Chrome als App installieren. Nach einem ersten Besuch mit Internet läuft sie offline. Eine neue Version wird erst wirksam, wenn alle Fenster der App geschlossen waren.
+   - **ZIP:** Das ZIP aus dem Workflow `Package` entpacken und `Start.bat` doppelklicken (PowerShell-Skript als lokaler Server auf `localhost`, kein .NET nötig, ohne Service Worker). `index.html` per Doppelklick funktioniert bei Blazor WebAssembly nicht. Unter einer strengen Richtlinie (AppLocker, App Control) kann der Server nicht starten, dann bleibt die Online-Version.
+4. Vor dem Einsatz auf den Firmenlaptops mit der IT oder Security klären, ob die Wege erlaubt sind (`Probelauf.md`, «Klärung mit der IT»).
 
 ## 7. Meilensteine (Vorschlag)
 
@@ -117,10 +123,10 @@ Browser-Lern-App «HeroPath» (HeldenWeg / Hero's Path) für den Zukunftstag: Ki
 | M3 | Drag & Drop, Wiederhole-Block, Block-Hervorhebung, Fehlermeldungen | ✅ erledigt |
 | M4 | Level-Vorlagen, Start-Dialog, Items | ✅ erledigt |
 | M5 | Level-Editor und Speicherung | ✅ erledigt |
-| M6 | Deutsch und Englisch, Feinschliff, Probelauf auf dem Ziel-Laptop | offen |
+| M6 | Deutsch und Englisch, Feinschliff, Probelauf auf dem Ziel-Laptop | in Arbeit: umgesetzt, Probelauf (`Probelauf.md`) steht aus |
 | M7 | (später, nach dem Zukunftstag) `Hosts/HeroPath.Maui` als Host, responsives Layout und Touch-Bedienung | offen |
 
-M1 bis M5 sind umgesetzt. Abweichungen und offene Punkte aus M1: `requirements-M1.md`, Abschnitt «Umsetzungsstand und bekannte Einschränkungen». Aus M2: `requirements-M2.md`, Abschnitt «Umsetzungsstand und bekannte Einschränkungen». Aus M3: `requirements-M3.md`, Abschnitt «Umsetzungsstand und bekannte Einschränkungen». Aus M4: `requirements-M4.md`, Abschnitt «Umsetzungsstand und bekannte Einschränkungen». Aus M5: `requirements-M5.md`, Abschnitt «Umsetzungsstand und bekannte Einschränkungen».
+M1 bis M5 sind umgesetzt. Abweichungen und offene Punkte aus M1: `requirements-M1.md`, Abschnitt «Umsetzungsstand und bekannte Einschränkungen». Aus M2: `requirements-M2.md`, Abschnitt «Umsetzungsstand und bekannte Einschränkungen». Aus M3: `requirements-M3.md`, Abschnitt «Umsetzungsstand und bekannte Einschränkungen». Aus M4: `requirements-M4.md`, Abschnitt «Umsetzungsstand und bekannte Einschränkungen». Aus M5: `requirements-M5.md`, Abschnitt «Umsetzungsstand und bekannte Einschränkungen». Stand von M6: `requirements.md`, gleichnamiger Abschnitt.
 
 ## 8. Offene Punkte
 
@@ -130,6 +136,9 @@ M1 bis M5 sind umgesetzt. Abweichungen und offene Punkte aus M1: `requirements-M
 - [ ] Ablauf des Halbtags (App als Einstieg, danach weitere Aufgaben?)
 - [x] Soll jedes Kind seine Levels am Ende mitnehmen können (Export)? Beantwortet durch M5: Eigene Levels lassen sich als `.heropath.json`-Datei herunterladen und wieder importieren. Ob die Downloads auf den Firmenlaptops erlaubt sind, ist nicht geprüft (bei der IT-Freigabe mitklären)
 - [ ] Zielplattformen für Mobile (Android, iOS)? Der iOS-Build braucht einen Mac
+- [ ] Probelauf auf dem Ziel-Laptop ausführen (`Probelauf.md`), Funde beheben oder als Einschränkung festhalten. Erst danach ist M6 abgeschlossen
+- [ ] Workflow `Package` nach den Korrekturen erneut starten und das ZIP prüfen. Der letzte Lauf auf GitHub schlug fehl, die Korrektur lief bisher nur lokal
+- [ ] Layout für kleine Höhen und sehr schmale Spielfelder (`requirements.md`, «Bekannte Einschränkungen»)
 - [ ] Rückgängig/Wiederherstellen (Undo/Redo) im Programm-Editor: nach dem Probelauf (M6) entscheiden
 - [ ] Tipps oder Auflösung beim Spielen, z. B. Weg als gestrichelte Linie nach N Fehlversuchen. Der Löser in `Levels/Domain` ist vorhanden (M5). Nach dem Probelauf (M6) entscheiden
 - [ ] Drag & Drop im Firefox auf dem Firmenbrowser prüfen: Blazor kann `dataTransfer.setData` nicht aufrufen, ob Firefox den Drag dann startet, ist unverifiziert (`Architektur C4.md` §6, Nr. 20). Die Klick-Alternative funktioniert in jedem Fall

@@ -133,3 +133,29 @@ Bleibt M6 aus, lässt sich HeroPath am Zukunftstag nicht verlässlich einsetzen:
 - Annahme NFR7: Vorschlag ist eine Schwelle von 15 Sekunden beim Kaltstart. Sie wird nach der ersten Messung bestätigt oder angepasst.
 - Bekannte Einschränkung (kein Codeeingriff): Alle Projekte unter `ramonafrick.github.io` teilen sich denselben Ursprung, also `localStorage`, Cache Storage und Ähnliches. Löscht jemand die Websitedaten dieser Adresse, verschwinden auch die eigenen Levels von HeroPath, und andere Projekte könnten die Schlüssel `heropath.*` sehen oder überschreiben. Der Name des Helden ist nicht betroffen (wird nie gespeichert). Gespeicherte Level-Daten gelten als nicht vertrauenswürdig und werden beim Laden geprüft: `StorageCustomLevelStore.Parse` liest jedes Element mit `LevelJson.Read` und `LevelCheck.Evaluate`, überspringt Ungültiges, Doppelte und alles über `LevelLimits.MaxCustomLevels`, `LevelRepository.LoadAsync` lädt nur über diesen Store und verwirft Ids, die einem Standardlevel gehören. Eine eigene Domain würde das lösen und ist nicht geplant.
 - Annahme FR15: «Fehler» umfasst alle Lauf-Fehler, nicht aber Hinweise vor dem Start wie ein leeres Programm oder einen leeren Wiederhole-Block.
+
+## Umsetzungsstand und bekannte Einschränkungen
+
+Stand nach zwei Review-Runden (Code in `src/` und `tests/`, Commit `b336422`). Die Abschnitte oben beschreiben die Anforderung, dieser Abschnitt den tatsächlichen Stand. Die Entscheide mit Alternativen stehen in `Architektur C4.md` §6, Nr. 41 bis 46. M6 ist erst nach dem Probelauf abgeschlossen (FR6).
+
+### Abweichungen und Ergänzungen, im Verlauf entschieden
+
+- **Pages (FR2):** `base href` und alle weiteren Änderungen an `index.html` laufen über `deploy/finish-site.ps1`, nicht wie in `plan.md` (E6) über `sed`, weil der Manifest-Hash an den exakten Bytes hängt.
+- **Sicherheit (ergänzt):** Die veröffentlichte Seite hat eine Content-Security-Policy mit Hash der Import Map. Das war in der Anforderung nicht verlangt.
+- **E2E in der CI (FR1):** Die E2E-Tests laufen auf Windows, die übrigen auf Ubuntu. Dazu kommt der Job `published`, der die fertige Seite prüft.
+- **Tastenliste (FR20):** Der Knopf «Tasten» öffnet eine zweispaltige Liste unten neben der Seitenleiste. Während Play und Debug bleibt sie geschlossen und lässt sich erst nach Reset, Erfolg oder Fehler wieder öffnen. Sie kann die unteren Reihen des Spielfelds und das Startfeld überdecken, das Ziel blieb in den gemessenen Fällen frei (`easy-2`, `long-road`, eigenes 3×20-Level). Andere Level sind nicht gemessen.
+- **Texte (FR8):** Felsen wurde zu Stein, «Vor der Burg» zu «Auf der Burg», Pizzastücke zu Pizza-Stücke.
+
+### Bekannte Einschränkungen
+
+- **Niedrige Fenster:** Bei 1366×600 scrollt die Seite. Das betrifft einen 768-Pixel-Laptop bei Skalierung 125 %. Eine Lösung braucht ein neues Layout (`Probelauf.md`, 7.2).
+- **Sehr schmale Spielfelder:** Bei einem eigenen Level wie 3×20 läuft der Kopf des Spielfelds (Level-Name, Held, «Held wechseln») aus seiner Spalte und liegt teilweise unter der Level-Wahl. Bei 1366×768 scrollt die Seite dann leicht. Die sieben Standard-Level sind nicht betroffen. Der Fehler bestand schon vor M6 und ist nicht behoben.
+- **Eigene Levels im ZIP:** Sie gelten pro Anschluss. Ist 5080 belegt, sind sie auf dem anderen Anschluss nicht sichtbar.
+- **Gemeinsamer Ursprung:** siehe «Open Questions».
+- **Lokaler Server:** `http.sys` öffnet den Anschluss auf allen Schnittstellen. `Start.ps1` weist Zugriffe von aussen und fremde Host-Kopfzeilen ab.
+
+### Nicht geprüft
+
+- Die Workflows `Pages` und `Package` mit dem Stand dieses Commits, solange die Läufe auf GitHub ausstehen. Der letzte Lauf von `Package` schlug fehl, die Korrektur in `build-zip.ps1` ist nur lokal bestätigt. Der Release-Job braucht einen echten Tag.
+- Der Exit-Code von `Start.bat` bei Ctrl+C oder beim Schliessen des Fensters. Ist er nicht 0, erscheint der Hinweis auch dort.
+- Echte Installation der App, Wiederherstellung einer hängenden App, Firmenrichtlinien, die Ziel-Laptops und das Hören der Töne. All das gehört in den Probelauf.
