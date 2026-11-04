@@ -16,6 +16,7 @@ public class BlockPaletteTests : CultureBunitContext
     public BlockPaletteTests()
     {
         Services.AddSharedUI();
+        Services.AddFakeDocumentLanguage();
         Services.AddGameModule();
         Services.AddSingleton<IAppStorage, InMemoryAppStorage>();
         _session = Services.GetRequiredService<GameSession>();

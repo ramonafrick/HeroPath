@@ -16,6 +16,7 @@ public class ProgramEditorTests : CultureBunitContext
     public ProgramEditorTests()
     {
         Services.AddSharedUI();
+        Services.AddFakeDocumentLanguage();
         Services.AddGameModule();
         Services.AddSingleton<IAppStorage, InMemoryAppStorage>();
         _session = Services.GetRequiredService<GameSession>();

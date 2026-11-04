@@ -17,6 +17,7 @@ public class ProgramRepeatProgressTests : CultureBunitContext
     public ProgramRepeatProgressTests()
     {
         Services.AddSharedUI();
+        Services.AddFakeDocumentLanguage();
         Services.AddGameModule();
         Services.AddSingleton<IAppStorage, InMemoryAppStorage>();
         _session = Services.GetRequiredService<GameSession>();

@@ -15,6 +15,7 @@ public class ConfirmDialogTests : CultureBunitContext
     public ConfirmDialogTests()
     {
         Services.AddSharedUI();
+        Services.AddFakeDocumentLanguage();
         Services.AddSingleton<IAppStorage, InMemoryAppStorage>();
     }
 

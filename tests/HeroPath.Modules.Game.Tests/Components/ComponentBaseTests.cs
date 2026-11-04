@@ -16,6 +16,7 @@ public class ComponentBaseTests : CultureBunitContext
     public ComponentBaseTests()
     {
         Services.AddSharedUI();
+        Services.AddFakeDocumentLanguage();
         Services.AddGameModule();
         Services.AddSingleton<IAppStorage, InMemoryAppStorage>();
     }

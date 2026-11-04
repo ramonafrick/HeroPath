@@ -17,6 +17,7 @@ public class EditorPageShortcutTests : CultureBunitContext
         var keys = new FakeKeyboardShortcuts();
         Services.AddSingleton<TimeProvider>(new FakeTimeProvider());
         Services.AddSharedUI();
+        Services.AddFakeDocumentLanguage();
         Services.AddGameModule();
         Services.AddSingleton<IAppStorage, InMemoryAppStorage>();
         Services.AddSingleton<ISoundPlayer, FakeSoundPlayer>();

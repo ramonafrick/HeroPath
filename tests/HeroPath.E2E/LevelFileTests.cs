@@ -87,7 +87,7 @@ public class LevelFileTests(AppFixture app)
             await Expect(page.GetByTestId("editor-export-hint")).ToHaveTextAsync("Der Name deines Levels steht in der Datei. Verwende nicht deinen echten Namen.");
             await Screenshots.CaptureAsync(page, "editor-import-ok.laptop.de");
             await SwitchLanguageAsync(page, "en");
-            await Expect(message).ToHaveTextAsync("«Käse-Weg (2)» is now in your list.");
+            await Expect(message).ToHaveTextAsync("“Käse-Weg (2)” is now in your list.");
             await Screenshots.CaptureAsync(page, "editor-import-ok.laptop.en");
             await SwitchLanguageAsync(page, "de");
 

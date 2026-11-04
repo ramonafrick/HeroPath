@@ -121,7 +121,7 @@
     <comment>Palette button that adds a repeat block.</comment>
   </data>
   <data name="Block_Repeat" xml:space="preserve">
-    <value>Wiederhole {0} mal</value>
+    <value>Wiederhole {0} Mal</value>
     <comment>Accessible name of a repeat block. {0} = repeat count.</comment>
   </data>
   <data name="Repeat_Before" xml:space="preserve">
@@ -129,7 +129,7 @@
     <comment>Text before the count controls in the header of a repeat block.</comment>
   </data>
   <data name="Repeat_After" xml:space="preserve">
-    <value>mal</value>
+    <value>Mal</value>
     <comment>Text after the count controls in the header of a repeat block.</comment>
   </data>
   <data name="Repeat_Decrease" xml:space="preserve">

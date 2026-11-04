@@ -22,6 +22,7 @@ public class MessageBoxTests : CultureBunitContext
     {
         Services.AddSingleton<TimeProvider>(new FakeTimeProvider());
         Services.AddSharedUI();
+        Services.AddFakeDocumentLanguage();
         Services.AddGameModule();
         Services.AddSingleton<IAppStorage, InMemoryAppStorage>();
         _session = Services.GetRequiredService<GameSession>();

@@ -14,6 +14,7 @@ public class LevelPickerTests : CultureBunitContext
     public LevelPickerTests()
     {
         Services.AddSharedUI();
+        Services.AddFakeDocumentLanguage();
         Services.AddSingleton<IAppStorage, InMemoryAppStorage>();
     }
 

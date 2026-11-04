@@ -53,7 +53,7 @@
     <comment>Accessible name of the tree obstacle.</comment>
   </data>
   <data name="Graphic_ObstacleRock" xml:space="preserve">
-    <value>Felsen</value>
+    <value>Stein</value>
     <comment>Accessible name of the rock obstacle.</comment>
   </data>
   <data name="Graphic_ObstaclePond" xml:space="preserve">

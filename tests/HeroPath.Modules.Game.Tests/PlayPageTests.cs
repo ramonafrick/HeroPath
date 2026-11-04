@@ -23,6 +23,7 @@ public class PlayPageTests : CultureBunitContext
     {
         Services.AddSingleton<TimeProvider>(_time);
         Services.AddSharedUI();
+        Services.AddFakeDocumentLanguage();
         Services.AddGameModule();
         Services.AddSingleton<IAppStorage, InMemoryAppStorage>();
         Services.AddSingleton<ISoundPlayer, FakeSoundPlayer>();

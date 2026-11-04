@@ -11,6 +11,7 @@ public class ShortcutHelpTests : CultureBunitContext
     public ShortcutHelpTests()
     {
         Services.AddSharedUI();
+        Services.AddFakeDocumentLanguage();
         Services.AddSingleton<IAppStorage, InMemoryAppStorage>();
     }
 

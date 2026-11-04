@@ -20,6 +20,7 @@ public class LevelEditorTests : CultureBunitContext
     public LevelEditorTests()
     {
         Services.AddSharedUI();
+        Services.AddFakeDocumentLanguage();
         Services.AddSingleton<IAppStorage>(_storage);
         Services.AddSingleton<IFileDownload>(_download);
         Services.AddLevelsModule();

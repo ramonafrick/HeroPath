@@ -209,7 +209,7 @@
     <comment>Click refused: obstacle on the start.</comment>
   </data>
   <data name="Editor_Hint_ObstacleOnGoal" xml:space="preserve">
-    <value>Vor der Burg darf nichts im Weg stehen.</value>
+    <value>Auf der Burg darf nichts im Weg stehen.</value>
     <comment>Click refused: obstacle on the goal.</comment>
   </data>
   <data name="Editor_Hint_ItemOnStart" xml:space="preserve">
@@ -341,7 +341,7 @@
     <comment>Title of the clear confirmation.</comment>
   </data>
   <data name="Confirm_Clear_Message" xml:space="preserve">
-    <value>Alle Hindernisse, Erdbeeren und Pizzastücke werden entfernt. Start, Ziel und Grösse bleiben.</value>
+    <value>Alle Hindernisse, Erdbeeren und Pizza-Stücke werden entfernt. Start, Ziel und Grösse bleiben.</value>
     <comment>Message of the clear confirmation.</comment>
   </data>
   <data name="Confirm_Clear_Yes" xml:space="preserve">

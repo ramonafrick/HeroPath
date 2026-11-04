@@ -18,6 +18,7 @@ public class PlayPageShortcutTests : CultureBunitContext
     {
         Services.AddSingleton<TimeProvider>(new FakeTimeProvider());
         Services.AddSharedUI();
+        Services.AddFakeDocumentLanguage();
         Services.AddGameModule();
         Services.AddSingleton<IAppStorage, InMemoryAppStorage>();
         Services.AddSingleton<ISoundPlayer, FakeSoundPlayer>();

@@ -14,6 +14,7 @@ public class GraphicsTests : BunitContext
     public GraphicsTests()
     {
         Services.AddSharedUI();
+        Services.AddFakeDocumentLanguage();
         Services.AddSingleton<IAppStorage, InMemoryAppStorage>();
     }
 
@@ -24,7 +25,7 @@ public class GraphicsTests : BunitContext
         { typeof(StartField), "Startfeld", "Start field" },
         { typeof(GoalCastle), "Burg, das Ziel", "Castle, the goal" },
         { typeof(ObstacleTree), "Baum", "Tree" },
-        { typeof(ObstacleRock), "Felsen", "Rock" },
+        { typeof(ObstacleRock), "Stein", "Rock" },
         { typeof(ObstaclePond), "Teich", "Pond" },
         { typeof(ItemStrawberry), "Erdbeere", "Strawberry" },
         { typeof(ItemPizza), "Pizza-Stück", "Pizza slice" },

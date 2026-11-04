@@ -6,9 +6,9 @@ namespace HeroPath.Shared.UI.Localization;
 /// <summary>
 /// Holds the UI language and switches it at runtime without a reload, so hero, program and level survive.
 /// Only <c>de-CH</c> and <c>en</c> are supported; anything else falls back to <c>de-CH</c>.
-/// A failing storage never breaks the language switch.
+/// A failing storage or document never breaks the language switch.
 /// </summary>
-public sealed class LanguageService(IAppStorage storage)
+public sealed class LanguageService(IAppStorage storage, IDocumentLanguage documentLanguage)
 {
     /// <summary>Culture name of German (Switzerland), the default language.</summary>
     public const string German = "de-CH";
@@ -38,7 +38,9 @@ public sealed class LanguageService(IAppStorage storage)
             // Storage is optional: without it the default language is used.
         }
 
-        Apply(Normalize(stored));
+        var culture = Normalize(stored);
+        Apply(culture);
+        await ApplyDocumentLanguageAsync(culture, cancellationToken);
     }
 
     /// <summary>Switches the culture of the process, remembers it in storage (best effort) and raises <see cref="Changed"/>.</summary>
@@ -46,6 +48,7 @@ public sealed class LanguageService(IAppStorage storage)
     {
         var culture = Normalize(cultureName);
         Apply(culture);
+        await ApplyDocumentLanguageAsync(culture, cancellationToken);
 
         try
         {
@@ -57,6 +60,18 @@ public sealed class LanguageService(IAppStorage storage)
         }
 
         Changed?.Invoke();
+    }
+
+    private async Task ApplyDocumentLanguageAsync(string cultureName, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await documentLanguage.SetAsync(cultureName, cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // The html lang attribute only helps screen readers: the switch stays valid without it.
+        }
     }
 
     private void Apply(string cultureName)

@@ -43,7 +43,7 @@ Modules/Levels/HeroPath.Modules.Levels.UI/Resources/LevelsResources.cs (+ …) l
 |---|---|---|
 | `App_Title` | HeldenWeg | Hero's Path |
 | `Block_Up` | Hoch | Up |
-| `Block_Repeat` | Wiederhole {0} mal | Repeat {0} times |
+| `Block_Repeat` | Wiederhole {0} Mal | Repeat {0} times |
 | `Message_Obstacle_Tree` | Autsch! Da steht ein Baum im Weg. Schau dir Baustein {0} noch einmal an. | Ouch! There's a tree in the way. Take another look at block {0}. |
 | `Message_OutOfBounds` | Hoppla! Hier ist die Welt zu Ende. Baustein {0} führt aus dem Spielfeld. | Oops! The world ends here. Block {0} leads off the board. |
 | `Message_EmptyRepeat` | Leg zuerst Bausteine in den Wiederhole-Block. | Put some blocks into the repeat block first. |
@@ -86,6 +86,7 @@ public sealed class LanguageService(IAppStorage storage)
 ```
 
 - Real API (`HeroPath.Shared.UI.Localization`): `LanguageService` (scoped; `Current`, `ApplyStoredAsync`, `SetAsync`, `Changed`, `Normalize`); storage key `StorageKeys.Language`. Unsupported values are normalized to `de-CH`; a throwing `IAppStorage` is swallowed and the switch still happens.
+- `LanguageService(IAppStorage, IDocumentLanguage)`: after the culture is applied (`ApplyStoredAsync` at startup and every `SetAsync`) it calls `IDocumentLanguage.SetAsync(culture)` (`HeroPath.Shared`, host `BrowserDocumentLanguage` sets the `lang` attribute of the html element, no JS file). A throwing or unavailable document never breaks the switch. `index.html` starts with `lang="de-CH"`. The `LanguageSwitcher` buttons keep their own `lang` (`de`, `en`) so each name is read in its language. Tests that use `AddSharedUI()` register `Services.AddFakeDocumentLanguage()`.
 - Components with texts derive from `LocalizedComponentBase` (or `SessionComponentBase` in Game.UI), which subscribes to `Changed` in `OnInitialized`, unsubscribes in `Dispose` and re-renders via `InvokeAsync(StateHasChanged)`. A page with `<PageTitle>` does the same (see `PlayPage`).
 - At startup (`Program.cs`, after `Build()`, before `RunAsync()`) call `await host.Services.ApplyStoredCultureAsync()`. Default is `de-CH`.
 - Tests that switch culture change process-wide state: put them in `[Collection("Culture")]` and restore the cultures afterwards (`CultureScope`, or `CultureBunitContext` for bUnit, both in `tests/HeroPath.Testing`; pass the culture explicitly: `new CultureScope("de-CH")`).

@@ -14,6 +14,7 @@ public class LanguageSwitcherTests : BunitContext
     public LanguageSwitcherTests()
     {
         Services.AddSharedUI();
+        Services.AddFakeDocumentLanguage();
         Services.AddSingleton<IAppStorage>(_storage);
     }
 

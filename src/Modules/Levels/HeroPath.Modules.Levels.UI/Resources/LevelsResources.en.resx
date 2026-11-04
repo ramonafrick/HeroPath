@@ -157,7 +157,7 @@
     <comment>Status: no path from start to goal.</comment>
   </data>
   <data name="Editor_Status_StrawberriesUnreachable" xml:space="preserve">
-    <value>The hero cannot reach all strawberries. Clear a path or switch off «All strawberries needed».</value>
+    <value>The hero cannot reach all strawberries. Clear a path or switch off “All strawberries needed”.</value>
     <comment>Status: some strawberry cannot be collected.</comment>
   </data>
   <data name="Editor_Status_TooManySteps" xml:space="preserve">
@@ -181,7 +181,7 @@
     <comment>Reason next to the disabled save button.</comment>
   </data>
   <data name="Editor_Save_Saved" xml:space="preserve">
-    <value>Saved! You can find your level under «My levels».</value>
+    <value>Saved! You can find your level under “My levels”.</value>
     <comment>Message after a successful save.</comment>
   </data>
   <data name="Editor_Save_LimitReached" xml:space="preserve">
@@ -329,7 +329,7 @@
     <comment>Title of the delete confirmation.</comment>
   </data>
   <data name="Confirm_Delete_Message" xml:space="preserve">
-    <value>Really delete the level “{0}”? You can't undo this.</value>
+    <value>Really delete the level “{0}”? You cannot undo this.</value>
     <comment>{0} = level name (user text).</comment>
   </data>
   <data name="Confirm_Delete_Yes" xml:space="preserve">
@@ -405,7 +405,7 @@
     <comment>Hint under the import button.</comment>
   </data>
   <data name="Editor_Import_Ok" xml:space="preserve">
-    <value>«{0}» is now in your list.</value>
+    <value>“{0}” is now in your list.</value>
     <comment>Import worked. {0} = level name (user text).</comment>
   </data>
   <data name="Editor_Import_Invalid" xml:space="preserve">
