@@ -12,3 +12,6 @@
 *.exe  binary
 *.woff binary
 *.woff2 binary
+
+# Batch files need CRLF on Windows.
+*.bat text eol=crlf

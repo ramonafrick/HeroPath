@@ -55,10 +55,25 @@ Locally, `<base href="/" />` stays. Rewrite it only in the workflow.
 `index.html` by double-click (`file://`) **does not work**. Options in order of preference:
 
 1. **GitHub Pages URL**, if the corporate network allows it.
-2. **Release ZIP** with the `wwwroot` publish folder and a small server:
-   - Optional `src/HeroPath.Host` (ASP.NET Core, self-contained `win-x64` EXE) with `UseDefaultFiles()` + `UseStaticFiles()` with a `FileExtensionContentTypeProvider` that knows `.wasm` (`application/wasm`), `.dat`, `.blat` and `.json`, plus a fallback to `index.html`. `Start.bat` starts the EXE and opens `http://localhost:5000`.
-   - Alternatively `python -m http.server 8080` in the `wwwroot` folder (only if Python is installed).
-3. Before the event: test on **one** target laptop with the corporate browser.
+2. **Release ZIP** (`.github/workflows/package.yml`, on `workflow_dispatch` and tags `v*`, `windows-latest`, `contents: write`): `dotnet publish`, `deploy/build-zip.ps1`, `deploy/smoke-test.ps1` on the unpacked ZIP, `upload-artifact` (`HeroPath-zip`), and on a tag `gh release create` (or `gh release upload --clobber` if it exists; the tag comes in through `env: TAG`, never inlined into the script). Contents: `HeroPath/Start.bat`, `Start.ps1`, `LIESMICH.txt`, `wwwroot/` (publish output without `*.br`/`*.gz`, base href stays `/`). About 3.3 MB zipped, 8.7 MB unpacked. No EXE (decision E1, option A): a PowerShell script is readable by the IT and needs nothing installed.
+3. Before the event: test on **one** target laptop with the corporate browser (checklist in `docs/Probelauf.md`).
+
+`deploy/` files:
+
+- `Start.ps1`: `HttpListener` on `http://localhost:<port>/`, first free port from 5080 (5080 to 5099), parameters `-Port` and `-NoBrowser`. Serial request loop with try/catch per request (a client abort must not stop the server). Refuses with `ConstrainedLanguage` (exit 2), missing `wwwroot` (3) and no free port (4). GET and HEAD only (405 otherwise), `Cache-Control: no-cache`, MIME table incl. `.wasm`, `.dat`, `.blat`, `.json`. Path: raw URL, strip the query, unescape, reject NUL and `:`, `GetFullPath` under `wwwroot\`, must start with the root plus separator (ordinal, ignore case), else 403. An existing file is served, an extension-less path (`/editor`, `/play`, a directory) gets `index.html`, a path with an unknown file extension gets 404. No directory listing. Ends with Ctrl+C or by closing the window (`finally` stops the listener).
+- `Start.bat`: calls `powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0Start.ps1"`; on exit code 1 or more it prints a German hint with the Pages URL and pauses.
+- `LIESMICH.txt`: German mentor guide (unpack, start, end, blocked file, Pages URL).
+- `build-zip.ps1 -PublishDir -Output`: stages the folder, copies `wwwroot` with `robocopy /XF *.br *.gz`, normalises the three text files and zips with `System.IO.Compression`.
+- `smoke-test.ps1 -Folder <unpacked HeroPath folder>`: starts `Start.ps1` with Windows PowerShell 5.1 on a free port, raw `TcpClient` requests (HttpClient would normalise `..`): `/` html, a `_framework/*.wasm` with `application/wasm` and full length, HEAD, `/editor` and `/play` fallback, unknown `.wasm` 404, POST 405, traversal variants (`..%2f`, `%2e%2e`, `..\`, `%252e`, `C:`, `:x`) must not return `Start.ps1` (marker `HEROPATH-START-SCRIPT`), the server survives an aborted download, a request over a non-loopback address is not served, the server is stopped at the end (also on failure). Exit code 1 on failure.
+
+Pitfalls (Windows PowerShell 5.1, the shell on the laptops):
+
+- A script **without BOM is read as ANSI**, so `Start.ps1`, `Start.bat`, `build-zip.ps1` and `smoke-test.ps1` stay **ASCII only** (German console texts without umlauts: «laeuft», «oeffnen»). `LIESMICH.txt` is text for Notepad and needs umlauts: it is **UTF-8 with BOM and CRLF in the ZIP**. In the repository it is UTF-8 without BOM and LF (`.gitattributes` forces `eol=lf`), and `build-zip.ps1` converts it (BOM, CRLF). `Start.bat` has `eol=crlf` in `.gitattributes`, and the build converts again.
+- `HttpListener` is not available under `ConstrainedLanguage` (AppLocker, App Control for Business): `Start.ps1` checks `$ExecutionContext.SessionState.LanguageMode` first and exits with a clear message. Then only the Pages route is left.
+- `http://localhost:<port>/` needs no admin rights, but http.sys opens the port on **all** interfaces and only filters on the `Host` header, so `netstat` shows `0.0.0.0:<port>`. `Start.ps1` therefore answers only requests from a loopback `RemoteEndPoint` (403 otherwise). A request with `Host: 127.0.0.1` gets 400 from http.sys: always use `localhost` (also for `HEROPATH_BASE_URL`).
+- `Compress-Archive` of PS 5.1 can write backslashes into entry names. `build-zip.ps1` uses `ZipFile.CreateFromDirectory` (.NET 4.6.1 and later write forward slashes).
+- The ZIP downloaded from GitHub carries the mark of the web, so Windows may show SmartScreen for `Start.bat` (documented in `LIESMICH.txt`). `-ExecutionPolicy Bypass` covers the `.ps1`.
+- Not proven for the target laptops: a strict policy blocks A and B alike (plan E1), only the Pages URL remains.
 
 ## Release checklist
 

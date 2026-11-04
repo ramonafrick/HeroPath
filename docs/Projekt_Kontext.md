@@ -105,7 +105,7 @@ Browser-Lern-App «HeroPath» (HeldenWeg / Hero's Path) für den Zukunftstag: Ki
 
 1. Quellcode auf GitHub (MIT-Lizenz).
 2. `dotnet publish -c Release` erzeugt die statischen Dateien.
-3. Auf den Laptops entweder die GitHub-Pages-URL öffnen oder den publish-Ordner mit einem lokalen Mini-Server ausliefern. `index.html` per Doppelklick funktioniert bei Blazor WebAssembly nicht.
+3. Auf den Laptops entweder die GitHub-Pages-URL öffnen oder das ZIP aus dem Workflow `Package` entpacken und `Start.bat` doppelklicken (PowerShell-Skript als lokaler Server, kein .NET nötig). `index.html` per Doppelklick funktioniert bei Blazor WebAssembly nicht.
 4. Vor dem Einsatz auf den Firmenlaptops mit der IT oder Security klären, ob die Installation und das Ausführen erlaubt sind.
 
 ## 7. Meilensteine (Vorschlag)

@@ -1,0 +1,41 @@
+HeroPath (HeldenWeg) - Anleitung für Betreuende
+================================================
+
+HeroPath läuft ohne Internet und ohne Installation. Ein kleines Programm
+auf dem Laptop zeigt das Spiel im Browser an.
+
+1. Auspacken
+   Das ZIP mit Rechtsklick > «Alle extrahieren» in einen Ordner entpacken,
+   zum Beispiel auf den Desktop. Bitte nicht direkt aus dem ZIP starten.
+
+2. Starten
+   Im Ordner «HeroPath» auf «Start.bat» doppelklicken. Es öffnet sich ein
+   schwarzes Fenster und danach der Browser mit dem Spiel. Das schwarze
+   Fenster muss offen bleiben, solange gespielt wird.
+
+3. Beenden
+   Das schwarze Fenster schliessen (oder Strg+C drücken). Danach ist das
+   Spiel nicht mehr erreichbar. Gespeicherte eigene Levels bleiben im
+   Browser erhalten.
+
+Windows warnt oder blockiert die Datei
+--------------------------------------
+- «Der Computer wurde durch Windows geschützt»: auf «Weitere Informationen»
+  und dann auf «Trotzdem ausführen» klicken.
+- Die Datei kommt aus dem Internet und ist gesperrt: Rechtsklick auf das ZIP
+  > Eigenschaften > «Zulassen» ankreuzen > OK, dann neu entpacken.
+- Das Fenster meldet einen Fehler oder schliesst sich sofort: Auf manchen
+  Firmenlaptops verbietet eine Sicherheitsrichtlinie solche Programme.
+  Dann hilft die Online-Version, sie braucht nur einen Browser (Edge oder
+  Chrome) und Internet:
+
+      https://ramonafrick.github.io/HeroPath/
+
+- Funktioniert auch das nicht, bitte die Projektverantwortliche und die IT
+  informieren.
+
+Hinweise
+--------
+- Läuft schon etwas auf dem Anschluss 5080, wählt HeroPath automatisch den
+  nächsten freien. Die Adresse steht im schwarzen Fenster.
+- Der Name des Helden wird nirgends gespeichert.

@@ -763,8 +763,8 @@ HeroPath/
 │  │     └─ HeroPath.Modules.Game.UI/    Startseite (StartPage), Spielseite (PlayPage), Editor-Seite (EditorPage), HeroBadge, HeroFigure, ItemCounter, Palette, Programm-Editor (BlockList, ProgramBlock, DropZone), Meldungsfeld, Steuerung, Services (ProgramDragState), Texte
 │  └─ Hosts/
 │     ├─ HeroPath.Web/                 Blazor WebAssembly Host (Program.cs, App.razor, index.html, Services/LocalStorageAppStorage und BrowserFileDownload, wwwroot/js/file-download.js)
-│     ├─ HeroPath.Maui/                (später) MAUI Blazor Hybrid Host
-│     └─ HeroPath.Host/                (optional) Mini-Webserver für den lokalen Einsatz
+│     └─ HeroPath.Maui/                (später) MAUI Blazor Hybrid Host
+├─ deploy/                    ZIP für die Laptops: Start.bat, Start.ps1 (lokaler Server mit HttpListener), LIESMICH.txt, build-zip.ps1, smoke-test.ps1
 ├─ tests/
 │  ├─ HeroPath.Shared.Tests/           xUnit + bUnit (Sprache, LanguageSwitcher, ConfirmDialog, TextCleaner, Grafiken)
 │  ├─ HeroPath.Modules.Levels.Tests/   xUnit + bUnit
