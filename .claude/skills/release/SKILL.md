@@ -39,13 +39,14 @@ dotnet publish src/Hosts/HeroPath.Web -c Release -o artifacts/publish
 
 ## GitHub Pages — `.github/workflows/pages.yml`
 
-Repo `ramonafrick/HeroPath` → the app runs under `/HeroPath/`.
+Repo `ramonafrick/HeroPath` (public) → the app runs under `/HeroPath/`. Runs after a green `CI` on a push to `main` (`workflow_run`) and by hand (`workflow_dispatch`). Enabling it once is a repository setting: Settings > Pages > Source: GitHub Actions. Until then the `deploy` job fails, which is expected.
 
 1. Publish as above.
-2. `sed -i 's|<base href="/" />|<base href="/HeroPath/" />|' wwwroot/index.html`
-3. `cp wwwroot/index.html wwwroot/404.html` (deep links)
-4. `touch wwwroot/.nojekyll` (otherwise `_framework`/`_content` are ignored)
-5. `actions/upload-pages-artifact` with `path: artifacts/publish/wwwroot`, then `actions/deploy-pages` (permissions `pages: write`, `id-token: write`).
+2. Rewrite `<base href="/" />` to `/HeroPath/` in `index.html`, and delete all `*.br` and `*.gz` (Pages compresses itself, and `index.html.br/.gz` would keep the old base href).
+3. `cp index.html 404.html` (deep links).
+4. `touch .nojekyll`. `upload-pages-artifact@v5` drops dotfiles by default, so `include-hidden-files: true` is needed.
+5. Check that `js/file-download.js` exists and that HTML and CSS have no external URLs. Runtime JS in `_framework` contains URLs in metadata and is not checked.
+6. `actions/upload-pages-artifact@v5`, then `actions/deploy-pages@v5` (job permissions `pages: write`, `id-token: write`).
 
 Locally, `<base href="/" />` stays. Rewrite it only in the workflow.
 
