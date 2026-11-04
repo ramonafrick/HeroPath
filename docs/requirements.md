@@ -156,6 +156,6 @@ Stand nach zwei Review-Runden (Code in `src/` und `tests/`, Commit `b336422`). D
 
 ### Nicht geprüft
 
-- Die Workflows `Pages` und `Package` mit dem Stand dieses Commits, solange die Läufe auf GitHub ausstehen. Der letzte Lauf von `Package` schlug fehl, die Korrektur in `build-zip.ps1` ist nur lokal bestätigt. Der Release-Job braucht einen echten Tag.
+- Der Workflow `Package` mit dem Stand dieses Commits: Der letzte erfolgreiche Lauf auf GitHub ist auf `fc5ccef`, danach änderten sich `Start.bat` und `LIESMICH.txt`, das ZIP ist seither nur lokal gebaut. Der Release-Job braucht einen echten Tag und lief noch nie.
 - Der Exit-Code von `Start.bat` bei Ctrl+C oder beim Schliessen des Fensters. Ist er nicht 0, erscheint der Hinweis auch dort.
 - Echte Installation der App, Wiederherstellung einer hängenden App, Firmenrichtlinien, die Ziel-Laptops und das Hören der Töne. All das gehört in den Probelauf.

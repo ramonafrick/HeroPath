@@ -137,7 +137,7 @@ M1 bis M5 sind umgesetzt. Abweichungen und offene Punkte aus M1: `requirements-M
 - [x] Soll jedes Kind seine Levels am Ende mitnehmen können (Export)? Beantwortet durch M5: Eigene Levels lassen sich als `.heropath.json`-Datei herunterladen und wieder importieren. Ob die Downloads auf den Firmenlaptops erlaubt sind, ist nicht geprüft (bei der IT-Freigabe mitklären)
 - [ ] Zielplattformen für Mobile (Android, iOS)? Der iOS-Build braucht einen Mac
 - [ ] Probelauf auf dem Ziel-Laptop ausführen (`Probelauf.md`), Funde beheben oder als Einschränkung festhalten. Erst danach ist M6 abgeschlossen
-- [ ] Workflow `Package` nach den Korrekturen erneut starten und das ZIP prüfen. Der letzte Lauf auf GitHub schlug fehl, die Korrektur lief bisher nur lokal
+- [ ] Workflow `Package` vor dem Probelauf neu starten. Der letzte erfolgreiche Lauf ist auf `fc5ccef`, danach änderten sich `Start.bat` und `LIESMICH.txt`
 - [ ] Layout für kleine Höhen und sehr schmale Spielfelder (`requirements.md`, «Bekannte Einschränkungen»)
 - [ ] Rückgängig/Wiederherstellen (Undo/Redo) im Programm-Editor: nach dem Probelauf (M6) entscheiden
 - [ ] Tipps oder Auflösung beim Spielen, z. B. Weg als gestrichelte Linie nach N Fehlversuchen. Der Löser in `Levels/Domain` ist vorhanden (M5). Nach dem Probelauf (M6) entscheiden
