@@ -3,9 +3,13 @@
     grid-template-columns: auto minmax(0, 46rem);
     align-items: start;
     justify-content: center;
-    gap: 1.5rem;
+    gap: 0 1.5rem;
     box-sizing: border-box;
     padding: 0.5rem 1rem 1rem;
+}
+
+.editor-header {
+    grid-column: 1 / -1;
 }
 
 .editor-board {

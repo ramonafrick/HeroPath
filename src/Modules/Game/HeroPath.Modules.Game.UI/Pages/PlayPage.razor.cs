@@ -57,6 +57,8 @@ public partial class PlayPage : SessionComponentBase
     [Inject]
     private IStringLocalizer<GameResources> GameLocalizer { get; set; } = default!;
 
+    private bool RunInProgress => Session.Status is RunStatus.Running or RunStatus.Paused;
+
     protected override void OnInitialized()
     {
         if (Choice.IsChosen && Choice.LevelId is { } id && Progress.Find(id) is { } chosen)
@@ -68,6 +70,7 @@ public partial class PlayPage : SessionComponentBase
             Navigation.NavigateTo(string.Empty, replace: true);
         }
 
+        Session.Changed += CloseHelpWhenRunStarts;
         base.OnInitialized();
         Sounds.Start();
         Progress.Changed += HandleChanged;
@@ -103,6 +106,7 @@ public partial class PlayPage : SessionComponentBase
         if (disposing)
         {
             Progress.Changed -= HandleChanged;
+            Session.Changed -= CloseHelpWhenRunStarts;
         }
 
         base.Dispose(disposing);
@@ -118,6 +122,16 @@ public partial class PlayPage : SessionComponentBase
 
             Runner.Stop();
             Drag.End();
+        }
+    }
+
+    private void SetHelpOpen(bool open) => _helpOpen = open;
+
+    private void CloseHelpWhenRunStarts()
+    {
+        if (RunInProgress)
+        {
+            _helpOpen = false;
         }
     }
 

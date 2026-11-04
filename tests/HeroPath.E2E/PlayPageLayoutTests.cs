@@ -62,8 +62,8 @@ public class PlayPageLayoutTests(AppFixture app)
         await LayoutAssertions.AssertSidePanelFitsAsync(page);
         Directory.CreateDirectory(E2EEnvironment.ScreenshotDirectory);
         var spare = await SpareRoomAsync(page);
-        await File.AppendAllTextAsync(
-            Path.Combine(E2EEnvironment.ScreenshotDirectory, "play-layout.txt"),
+        await File.WriteAllTextAsync(
+            Path.Combine(E2EEnvironment.ScreenshotDirectory, $"play-layout.message-long.{viewport}.{lang}.txt"),
             $"{viewport}.{lang}: {spare}{Environment.NewLine}",
             TestContext.Current.CancellationToken);
         var clipped = await page.EvaluateAsync<bool>("() => { const live = document.querySelector('.message-live'); return live.scrollHeight > live.clientHeight + 1; }");
@@ -83,7 +83,7 @@ public class PlayPageLayoutTests(AppFixture app)
     {
         var values = await page.EvaluateAsync<double[]>(@"() => {
             const rect = selector => document.querySelector(selector).getBoundingClientRect();
-            return [rect('.app-header').height, rect('[data-testid=side-panel]').bottom, rect('.side-actions').bottom,
+            return [rect('.app-header').height, rect('[data-testid=side-panel]').bottom, rect('[data-testid=side-actions]').bottom,
                 rect('[data-testid=next-level]').bottom, rect('[data-testid=message]').height, window.innerHeight];
         }");
         return new SpareRoom(values[0], values[1], values[2], values[3], values[4], values[5]);

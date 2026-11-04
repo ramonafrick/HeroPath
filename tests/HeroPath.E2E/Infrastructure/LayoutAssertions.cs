@@ -144,6 +144,39 @@ public static class LayoutAssertions
     }
 
     /// <summary>
+    /// The open shortcut list leaves the top of the board area readable: the level name, the hero badge, the item counter and every
+    /// goal cell (the castle) are not covered, and with <paramref name="heroMustBeFree"/> neither is the hero (at the goal after a success).
+    /// The start cell can be partly covered: the list sits at the bottom of the board area, where the start often is.
+    /// </summary>
+    public static async Task AssertShortcutHelpLeavesBoardFreeAsync(IPage page, bool heroMustBeFree = false)
+    {
+        var problems = await page.EvaluateAsync<string[]>(@"heroMustBeFree => {
+            const body = document.querySelector('[data-testid=shortcut-help-body]');
+            if (!body) {
+                return ['shortcut help body (data-testid=shortcut-help-body) is missing'];
+            }
+            const r = body.getBoundingClientRect();
+            const overlap = e => Math.max(0, Math.min(e.right, r.right) - Math.max(e.left, r.left)) * Math.max(0, Math.min(e.bottom, r.bottom) - Math.max(e.top, r.top));
+            const targets = [['level-name', '[data-testid=level-name]'], ['hero-badge', '[data-testid=hero-badge]'],
+                ['item counter', '[data-testid^=item-counter-]'], ['goal cell', '[data-testid=game-board] [data-kind=goal]']];
+            if (heroMustBeFree) {
+                targets.push(['hero', '[data-testid=hero]']);
+            }
+            const problems = [];
+            for (const [name, selector] of targets) {
+                for (const element of document.querySelectorAll(selector)) {
+                    const e = element.getBoundingClientRect();
+                    if (e.width > 0 && e.height > 0 && overlap(e) > 0) {
+                        problems.push(`help covers ${name} (${Math.round(100 * overlap(e) / (e.width * e.height))} percent)`);
+                    }
+                }
+            }
+            return problems;
+        }", heroMustBeFree);
+        Assert.Empty(problems);
+    }
+
+    /// <summary>
     /// The page itself must not scroll: board and panels fit the viewport. Measured after the fonts are loaded and two animation frames, and
     /// polled for a few seconds, because a layout that is still settling (fonts, Blazor re-render) is not a finding. The diagnostic message
     /// is built only after the timeout.

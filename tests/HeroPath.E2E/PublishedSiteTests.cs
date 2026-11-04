@@ -49,6 +49,44 @@ public class PublishedSiteTests(AppFixture app)
             ReducedMotion = ReducedMotion.Reduce,
         });
 
+    private static readonly string _cr = ((char)13).ToString();
+    private static readonly string _lf = ((char)10).ToString();
+
+    // Every directive, one by one: nothing may be added, loosened or missing. The script hash is the SHA-256 of the import map text
+    // (line breaks normalised to LF, as the browser does before it hashes inline script text).
+    private static void AssertPolicy(string policy, string importMapText)
+    {
+        var normalized = importMapText.Replace(_cr + _lf, _lf, StringComparison.Ordinal).Replace(_cr, _lf);
+        var scriptHash = Convert.ToBase64String(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(normalized)));
+        var expected = new Dictionary<string, string>
+        {
+            ["default-src"] = "'self'",
+            ["script-src"] = $"'self' 'wasm-unsafe-eval' 'sha256-{scriptHash}'",
+            ["style-src-elem"] = "'self'",
+            ["style-src-attr"] = "'unsafe-inline'",
+            ["img-src"] = "'self' data:",
+            ["connect-src"] = "'self'",
+            ["worker-src"] = "'self'",
+            ["manifest-src"] = "'self'",
+            ["font-src"] = "'self'",
+            ["object-src"] = "'none'",
+            ["base-uri"] = "'self'",
+            ["form-action"] = "'none'",
+        };
+        var actual = new Dictionary<string, string>();
+        foreach (var directive in policy.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var parts = directive.Split(' ', 2, StringSplitOptions.TrimEntries);
+            Assert.True(actual.TryAdd(parts[0], parts.Length > 1 ? parts[1] : string.Empty), $"Directive {parts[0]} appears twice.");
+        }
+
+        Assert.Equal(expected.Keys.Order(), actual.Keys.Order());
+        foreach (var (name, value) in expected)
+        {
+            Assert.Equal(value, actual[name]);
+        }
+    }
+
     private static async Task SolveAsync(IPage page)
     {
         foreach (var direction in _easy2Solution)
@@ -79,9 +117,8 @@ public class PublishedSiteTests(AppFixture app)
         Assert.Contains("http-equiv=\"Content-Security-Policy\"", html);
         Assert.Contains("name=\"heropath-pwa\"", html);
         var policy = await page.EvaluateAsync<string>("() => document.querySelector('meta[http-equiv=\"Content-Security-Policy\"]').content");
-        var scriptSrc = policy.Split(';').Select(directive => directive.Trim()).Single(directive => directive.StartsWith("script-src ", StringComparison.Ordinal));
-        Assert.DoesNotContain("unsafe-inline", scriptSrc);
-        Assert.DoesNotContain("unsafe-eval", scriptSrc.Replace("wasm-unsafe-eval", string.Empty));
+        var importMap = await page.EvaluateAsync<string>("() => document.querySelector('script[type=importmap]').textContent");
+        AssertPolicy(policy, importMap);
 
         await page.GetByTestId("sound-toggle").ClickAsync();
         await Expect(page.GetByTestId("sound-toggle")).ToHaveAttributeAsync("aria-pressed", "true");
@@ -133,7 +170,6 @@ public class PublishedSiteTests(AppFixture app)
         Assert.True(result.GetProperty("blocked").GetBoolean(), "The inline script was not reported as blocked.");
         Assert.StartsWith("script-src", result.GetProperty("directive").GetString());
         Assert.False(await page.EvaluateAsync<bool>("() => window.__injected === true"), "The injected inline script ran.");
-
 
         await Expect(page.GetByTestId("start-page")).ToBeVisibleAsync();
     }

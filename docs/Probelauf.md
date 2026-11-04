@@ -60,6 +60,7 @@ Hinweise:
 - Eine neue Version wird im Hintergrund geladen, solange die App offen ist, und erst wirksam, wenn **alle** Fenster der App geschlossen waren. Wer nach einer Änderung nichts Neues sieht, schliesst die App ganz (auch alle Tabs von HeroPath im Browser) und öffnet sie neu.
 - Eine Firmenrichtlinie kann die Installation von Web-Apps oder Service Worker (den Offline-Speicher der Seite) sperren. Dann bleibt die Seite im Browser wie bei Weg 1, und das ZIP bleibt der zweite Weg.
 - Das Deinstallieren der App (Einstellungen > Apps oder Menü der App) löscht die Daten der Seite nicht zwingend. Eigene Levels liegen im Browser pro Adresse.
+- Wenn die App hängt oder eine alte Version zeigt: Zuerst alle Fenster der App und alle Tabs von HeroPath schliessen und die App neu öffnen. Bleibt es hängen, die App entfernen und im Browser die Websitedaten für `ramonafrick.github.io` löschen (das löscht auch selbst gebaute Levels), danach die Seite mit Internet neu öffnen.
 
 ## Spiel
 
@@ -134,6 +135,7 @@ Den Rest bitte auf dem Weg ausführen, der am Zukunftstag gilt.
 ## Bekannte Punkte
 
 - Eigene Levels liegen im Browser pro Adresse. Wählt der lokale Server einen anderen Anschluss, weil 5080 belegt ist, sind sie dort nicht sichtbar. Online und offline sind ebenfalls getrennt.
+- Alle Projekte unter `ramonafrick.github.io` teilen sich denselben Ursprung und damit `localStorage`, den Cache-Speicher und Ähnliches. Das Löschen der Websitedaten für diese Adresse betrifft alle diese Projekte, und ein anderes Projekt kann die Schlüssel `heropath.language`, `heropath.sound` und `heropath.levels` lesen oder überschreiben. Der Name des Helden ist nicht betroffen, er wird nie gespeichert. Gespeicherte Level-Daten werden beim Laden geprüft (`StorageCustomLevelStore.Parse`: `LevelJson.Read`, `LevelCheck`, Obergrenzen), Fremdes oder Kaputtes wird übersprungen, und `LanguageService.Normalize` macht aus jedem unbekannten Sprachwert Deutsch. Bekannte Einschränkung, keine Codeänderung.
 - Die Schwelle von 15 Sekunden in 1.2 ist ein Vorschlag und wird nach der ersten Messung bestätigt oder angepasst.
 
 ## Funde

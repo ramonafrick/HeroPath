@@ -169,6 +169,39 @@ public class PlayPageShortcutTests : CultureBunitContext
     }
 
     [Fact]
+    public async Task OpenHelp_ClosesWhenDebugStartsByKey_AndStaysClosedWhileTheRunLasts()
+    {
+        var page = RenderPage();
+        TestLevels.Fill(Session, TestLevels.DemoSolution);
+        page.Find("[data-testid=shortcut-help-toggle]").Click();
+        Assert.True(page.Find("[data-testid=shortcut-help]").HasAttribute("open"));
+
+        await _keys.PressAsync("d");
+
+        page.WaitForAssertion(() => Assert.False(page.Find("[data-testid=shortcut-help]").HasAttribute("open")));
+        page.Find("[data-testid=shortcut-help-toggle]").Click();
+        Assert.False(page.Find("[data-testid=shortcut-help]").HasAttribute("open"));
+
+        await _keys.PressAsync("r");
+        page.Find("[data-testid=shortcut-help-toggle]").Click();
+        Assert.True(page.Find("[data-testid=shortcut-help]").HasAttribute("open"));
+    }
+
+    [Fact]
+    public async Task OpenHelp_ClosesWhenPlayStartsByButton()
+    {
+        var page = RenderPage();
+        TestLevels.Fill(Session, TestLevels.DemoSolution);
+        page.Find("[data-testid=shortcut-help-toggle]").Click();
+        Assert.True(page.Find("[data-testid=shortcut-help]").HasAttribute("open"));
+
+        page.Find("[data-testid=control-play]").Click();
+
+        page.WaitForAssertion(() => Assert.False(page.Find("[data-testid=shortcut-help]").HasAttribute("open")));
+        await _keys.PressAsync("r");
+    }
+
+    [Fact]
     public async Task Space_PlaysAndResetWorksDuringTheRun()
     {
         var page = RenderPage();

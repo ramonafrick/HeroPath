@@ -31,8 +31,8 @@ public class ShortcutHelpTests : CultureBunitContext
     {
         var cut = Render<ShortcutHelp>();
 
-        Assert.Equal(7, cut.FindAll("tr").Count);
-        Assert.All(cut.FindAll("tr"), row => Assert.NotEmpty(row.QuerySelectorAll("th kbd")));
+        Assert.Equal(7, cut.FindAll("li").Count);
+        Assert.All(cut.FindAll("li"), row => Assert.NotEmpty(row.QuerySelectorAll(".keys kbd")));
         Assert.Contains(cut.FindAll("kbd"), k => k.TextContent == "D");
         Assert.Contains(cut.FindAll("kbd"), k => k.TextContent == "R");
         Assert.Contains(cut.FindAll("kbd"), k => k.TextContent == "Leertaste");
@@ -75,5 +75,34 @@ public class ShortcutHelpTests : CultureBunitContext
         cut.Render(p => p.Add(c => c.Open, false));
 
         Assert.False(cut.Find("[data-testid=shortcut-help]").HasAttribute("open"));
+    }
+
+    [Fact]
+    public void SummaryClick_WhileDisabled_DoesNotOpen()
+    {
+        var reported = new List<bool>();
+        var cut = Render<ShortcutHelp>(p => p
+            .Add(c => c.Disabled, true)
+            .Add(c => c.OpenChanged, EventCallback.Factory.Create<bool>(this, reported.Add)));
+
+        cut.Find("summary").Click();
+
+        Assert.False(cut.Find("[data-testid=shortcut-help]").HasAttribute("open"));
+        Assert.Empty(reported);
+        Assert.Equal("true", cut.Find("summary").GetAttribute("aria-disabled"));
+    }
+
+    [Fact]
+    public void SummaryClick_WhileDisabledAndOpen_StillCloses()
+    {
+        var reported = new List<bool>();
+        var cut = Render<ShortcutHelp>(p => p
+            .Add(c => c.Open, true)
+            .Add(c => c.Disabled, true)
+            .Add(c => c.OpenChanged, EventCallback.Factory.Create<bool>(this, reported.Add)));
+
+        cut.Find("summary").Click();
+
+        Assert.Equal([false], reported);
     }
 }

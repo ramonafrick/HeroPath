@@ -31,9 +31,16 @@ public sealed class BrowserKeyboardShortcuts(IJSRuntime js) : IKeyboardShortcuts
         catch (Exception ex)
         {
             // The call may have reached JS before it was cancelled or failed: stop the listener and free the reference, or it would stay orphaned.
+            // A failing cleanup must not replace the exception that brought us here.
             if (subscription is not null)
             {
-                await subscription.DisposeAsync();
+                try
+                {
+                    await subscription.DisposeAsync();
+                }
+                catch (Exception cleanup) when (cleanup is not OutOfMemoryException)
+                {
+                }
             }
 
             if (JsInterop.IsUnavailable(ex, cancellationToken))

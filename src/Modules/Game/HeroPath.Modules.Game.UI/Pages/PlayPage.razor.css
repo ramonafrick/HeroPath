@@ -1,5 +1,7 @@
 .play-page {
     --hp-page-chrome: calc(var(--hp-header-height) + 2rem);
+    --hp-panel-w: 26rem;
+    --hp-help-width: 30rem;
     display: grid;
     grid-template-columns: auto minmax(18rem, 26rem);
     justify-content: center;
@@ -8,6 +10,12 @@
     max-width: 88rem;
     margin-inline: auto;
     padding: 1rem;
+}
+
+/* A narrow board leaves little room left of the side panel: the list then takes what is certainly free (half of the window
+   minus the panel, centred layout) instead of its usual width, so it never leaves the window. */
+.play-page[data-narrow="true"] {
+    --hp-help-width: min(30rem, calc((100vw - var(--hp-panel-w)) / 2 - 2rem));
 }
 
 .board-area {
@@ -55,6 +63,7 @@
     .play-page {
         --hp-page-chrome: calc(var(--hp-header-height) + 1.5rem);
         padding-bottom: 0.5rem;
+        --hp-panel-w: 42rem;
         grid-template-columns: auto minmax(18rem, 42rem);
         max-width: none;
     }
@@ -75,6 +84,7 @@
     }
 
     .play-page[data-wide="true"] {
+        --hp-panel-w: 36rem;
         grid-template-columns: auto minmax(18rem, 36rem);
     }
 

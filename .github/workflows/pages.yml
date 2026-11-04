@@ -53,6 +53,24 @@ jobs:
           foreach ($expected in '<base href="/HeroPath/" />', 'http-equiv="Content-Security-Policy"', '<meta name="heropath-pwa" content="on" />') {
             if (-not $html.Contains($expected)) { throw "index.html lacks $expected" }
           }
+          # The policy itself: the script hash must be the one of the import map in this file, and scripts get no 'unsafe-inline'.
+          $csp = [regex]::Match($html, 'http-equiv="Content-Security-Policy" content="([^"]*)"')
+          if (-not $csp.Success) { throw 'index.html has no Content-Security-Policy content.' }
+          $directives = @{}
+          foreach ($directive in $csp.Groups[1].Value.Split(';')) {
+            $parts = $directive.Trim() -split '\s+', 2
+            if ($parts[0]) { $directives[$parts[0]] = $parts[1] }
+          }
+          $importMap = [regex]::Match($html, '<script type="importmap">(.*?)</script>', 'Singleline')
+          if (-not $importMap.Success) { throw 'index.html has no import map.' }
+          $normalized = $importMap.Groups[1].Value -replace "`r`n", "`n" -replace "`r", "`n"
+          $scriptHash = [Convert]::ToBase64String($sha.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($normalized)))
+          $expectedScriptSrc = "'self' 'wasm-unsafe-eval' 'sha256-$scriptHash'"
+          if ($directives['script-src'] -ne $expectedScriptSrc) { throw "script-src is '$($directives['script-src'])', expected '$expectedScriptSrc'." }
+          if ($directives['style-src-attr'] -ne "'unsafe-inline'" -or $directives['style-src-elem'] -ne "'self'") { throw 'style-src-elem or style-src-attr differs from the expected policy.' }
+          foreach ($name in $directives.Keys) {
+            if ($name -ne 'style-src-attr' -and $directives[$name] -match 'unsafe-inline') { throw "$name must not allow 'unsafe-inline'." }
+          }
           if (-not (Test-Path (Join-Path $root '404.html')) -or -not (Test-Path (Join-Path $root '.nojekyll'))) { throw '404.html or .nojekyll is missing.' }
           if (@(Get-ChildItem $root -Recurse -File | Where-Object { $_.Extension -in '.br', '.gz' }).Count -gt 0) { throw 'Compressed files are left.' }
           Write-Host "index.html hash matches the manifest: $actual"

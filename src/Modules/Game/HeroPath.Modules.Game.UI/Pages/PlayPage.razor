@@ -9,7 +9,7 @@
 
 @if (Choice.IsChosen && Session.Grid is { } grid && Session.Level is { } level)
 {
-    <main class="play-page" data-wide="@(grid.Width >= 2 * grid.Height ? "true" : null)" data-shortcuts="@(_shortcutsActive ? "active" : null)">
+    <main class="play-page" data-wide="@(grid.Width >= 2 * grid.Height ? "true" : null)" data-narrow="@(5 * grid.Width < 4 * grid.Height ? "true" : null)" data-shortcuts="@(_shortcutsActive ? "active" : null)">
         <section class="board-area" data-has-items="@(grid.Items.Count > 0 ? "true" : null)" style="--board-cols: @grid.Width; --board-rows: @grid.Height;">
             <div class="board-head">
                 <h2 class="level-name" data-testid="level-name">@LevelsLocalizer.NameOf(level)</h2>
@@ -42,8 +42,8 @@
                 <BlockPalette />
                 <ControlBar />
                 <MessageBox />
-                <div class="side-actions">
-                    <ShortcutHelp @bind-Open="_helpOpen" />
+                <div class="side-actions" data-testid="side-actions">
+                    <ShortcutHelp Open="_helpOpen && !RunInProgress" OpenChanged="SetHelpOpen" Disabled="RunInProgress" />
                     @if (Repository.IsCustom(level.Id))
                     {
                         <button type="button" class="play-edit" data-testid="play-edit" @onclick="() => Edit(level.Id)">@GameLocalizer["Play_Edit"]</button>

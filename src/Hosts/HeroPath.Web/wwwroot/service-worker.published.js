@@ -10,6 +10,10 @@ importScripts('./service-worker-assets.js');
 const cachePrefix = 'heropath-cache-';
 // The SDK computes the version before finish-site.ps1 changes index.html, so its final hash is part of the name.
 const indexAsset = self.assetsManifest.assets.find(asset => asset.url === 'index.html');
+if (!indexAsset || !indexAsset.hash) {
+    throw new Error('HeroPath service worker: index.html is missing from service-worker-assets.js, so the offline cache cannot be named or filled. Publish the site again.');
+}
+
 const cacheName = cachePrefix + self.assetsManifest.version + '-' + indexAsset.hash;
 const scope = self.registration.scope;
 
@@ -23,11 +27,17 @@ function urlOf(path) {
 async function install() {
     const cache = await caches.open(cacheName);
     await Promise.all(assets.map(async asset => {
-        const response = await fetch(new Request(urlOf(asset.url), { integrity: asset.hash, cache: 'no-cache' }));
-        if (!response.ok) {
-            throw new Error('Could not fetch ' + asset.url + ': ' + response.status);
+        try {
+            const response = await fetch(new Request(urlOf(asset.url), { integrity: asset.hash, cache: 'no-cache' }));
+            if (!response.ok) {
+                throw new Error('Could not fetch ' + asset.url + ': ' + response.status);
+            }
+            await cache.put(urlOf(asset.url), response);
+        } catch (error) {
+            // Not swallowed: the install fails (the old version keeps running) and the console names the file.
+            console.error('HeroPath service worker: offline install failed at ' + asset.url, error);
+            throw error;
         }
-        await cache.put(urlOf(asset.url), response);
     }));
 }
 

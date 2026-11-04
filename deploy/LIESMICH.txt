@@ -44,3 +44,11 @@ Hinweise
   eigenen Fenster auch ohne Internet. Eine neue Version erscheint erst,
   wenn die App ganz geschlossen und neu geöffnet wurde. Dieses ZIP braucht
   keine Installation und speichert nichts für den Offline-Betrieb.
+
+Die installierte App hängt oder zeigt eine alte Version
+--------------------------------------------------------
+- Zuerst alle Fenster der App und alle Tabs von HeroPath schliessen und die
+  App danach neu öffnen.
+- Bleibt es hängen: die App entfernen und im Browser die Websitedaten für
+  «ramonafrick.github.io» löschen. Das löscht auch selbst gebaute Levels.
+  Danach die Seite mit Internet neu öffnen.

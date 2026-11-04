@@ -1,7 +1,7 @@
 .editor-page {
     display: block;
     box-sizing: border-box;
-    padding: 0.5rem 1rem 0;
+    padding: 0;
 }
 
 .editor-head {
@@ -10,9 +10,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 0.25rem 1rem;
-    max-width: 80rem;
-    margin-inline: auto;
-    padding-inline: 1rem;
+    margin-bottom: 0.5rem;
 }
 
 .editor-title {

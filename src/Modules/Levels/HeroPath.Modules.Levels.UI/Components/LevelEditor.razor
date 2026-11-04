@@ -13,6 +13,10 @@
                OnCancel="CancelPending" />
 
 <div class="editor" data-testid="level-editor">
+    @if (Header is not null)
+    {
+        <div class="editor-header">@Header</div>
+    }
     <section class="editor-board" aria-labelledby="editor-intro" style="--board-cols: @State.Draft.Width; --board-rows: @State.Draft.Height;">
         <p id="editor-intro" class="editor-intro">@Localizer["Editor_Intro"]</p>
         <GameBoard Grid="BoardGrid" CellClicked="CellClicked" CellLabel="CellLabel" />

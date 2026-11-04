@@ -39,10 +39,10 @@ function Write-Text([string]$path, [string]$text) {
     [System.IO.File]::WriteAllBytes($path, $utf8.GetBytes($text))
 }
 
-function Get-Sha256Base64([string]$text) {
+function Get-Sha256Base64([byte[]]$bytes) {
     $sha = [System.Security.Cryptography.SHA256]::Create()
     try {
-        return [Convert]::ToBase64String($sha.ComputeHash($utf8.GetBytes($text)))
+        return [Convert]::ToBase64String($sha.ComputeHash($bytes))
     } finally {
         $sha.Dispose()
     }
@@ -76,22 +76,33 @@ Write-Host ("Deleted {0} compressed file(s)." -f $compressed.Count)
 
 # 3. Content-Security-Policy. The hash covers the text inside <script type="importmap"> (written by the SDK at
 # publish time). The browser normalises CRLF and CR to LF before it hashes inline script text, so the same is done here.
-# Any other inline script (a <script> without src) would be blocked, so it is an error here, not a surprise later.
+# Any other inline script would be blocked, so it is an error here, not a surprise later: every <script> must be the import
+# map, or have a real src attribute (not data-src) and an empty body.
 $importMap = Find-One $html '<script type="importmap">(.*?)</script>' '<script type="importmap">'
 $importMapText = $importMap.Groups[1].Value
 if ($importMapText.TrimStart().IndexOf('{') -ne 0 -or $importMapText.IndexOf('"imports"') -lt 0) {
     throw 'The import map in index.html is empty or not a JSON import map. Was the site published?'
 }
-foreach ($tag in [regex]::Matches($html, '<script\b[^>]*>')) {
-    if ($tag.Value -notmatch '\bsrc\s*=' -and $tag.Value -notmatch 'type="importmap"') {
-        throw "Unexpected inline script in index.html: $($tag.Value)"
+$scriptStarts = [regex]::Matches($html, '<script\b', 'IgnoreCase').Count
+$scripts = [regex]::Matches($html, '<script\b([^>]*)>(.*?)</script\s*>', 'IgnoreCase, Singleline')
+if ($scripts.Count -ne $scriptStarts) {
+    throw "index.html has $scriptStarts <script> start tag(s) but $($scripts.Count) complete <script> element(s)."
+}
+foreach ($element in $scripts) {
+    $attributes = $element.Groups[1].Value
+    if ($attributes -match '^\s*type\s*=\s*"importmap"\s*$') { continue }
+    $hasSrc = $attributes -match '(^|\s)src\s*=\s*("[^"]+"|''[^'']+'')'
+    if (-not $hasSrc -or $element.Groups[2].Value.Trim().Length -gt 0) {
+        throw "Unexpected inline script in index.html: <script$attributes>"
     }
 }
-$importMapHash = Get-Sha256Base64 ($importMapText -replace "`r`n", "`n" -replace "`r", "`n")
+$importMapNormalized = $importMapText -replace "`r`n", "`n" -replace "`r", "`n"
+$importMapHash = Get-Sha256Base64 ($utf8.GetBytes($importMapNormalized))
 
-# style-src needs 'unsafe-inline' because Blazor components and the game board set inline style attributes
-# (style="..." for cell sizes, colours, animation). Scripts get no 'unsafe-inline'.
-$policy = "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'sha256-$importMapHash'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'"
+# Style elements and stylesheets only from the site itself (style-src-elem). Only style attributes may be inline
+# (style-src-attr 'unsafe-inline'), because Blazor components and the game board set style="..." for cell sizes, colours and
+# animation. Scripts get no 'unsafe-inline'.
+$policy = "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'sha256-$importMapHash'; style-src-elem 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'"
 if ($html.Contains('Content-Security-Policy')) {
     throw 'index.html already has a Content-Security-Policy. Run finish-site.ps1 once on a fresh publish.'
 }
@@ -127,12 +138,7 @@ if ($Pwa) {
     if (-not $hashField.Success) { throw 'The index.html entry in service-worker-assets.js has no sha256 hash.' }
 
     # The hash is over the bytes of the file as written, no normalisation (the service worker checks the download).
-    $sha = [System.Security.Cryptography.SHA256]::Create()
-    try {
-        $indexHash = [Convert]::ToBase64String($sha.ComputeHash([System.IO.File]::ReadAllBytes($indexPath)))
-    } finally {
-        $sha.Dispose()
-    }
+    $indexHash = Get-Sha256Base64 ([System.IO.File]::ReadAllBytes($indexPath))
     $newEntry = $entry.Value.Substring(0, $hashField.Index) + '"hash": "sha256-' + $indexHash + '"' + $entry.Value.Substring($hashField.Index + $hashField.Length)
     $assets = $assets.Substring(0, $entry.Index) + $newEntry + $assets.Substring($entry.Index + $entry.Length)
     Write-Text $assetsPath $assets

@@ -361,14 +361,14 @@ public class KeyboardTests(AppFixture app)
         {
             Directory.CreateDirectory(E2EEnvironment.ScreenshotDirectory);
             var scrollHeight = await page.EvaluateAsync<int>("() => document.documentElement.scrollHeight");
-            await File.AppendAllTextAsync(Path.Combine(E2EEnvironment.ScreenshotDirectory, "play-layout.txt"), $"{viewport}.{lang}: page scroll height {scrollHeight} px in a {height} px viewport (empty program, no success){Environment.NewLine}", TestContext.Current.CancellationToken);
+            await File.WriteAllTextAsync(Path.Combine(E2EEnvironment.ScreenshotDirectory, $"play-layout.shortcut-help.{viewport}.{lang}.txt"), $"{viewport}.{lang}: page scroll height {scrollHeight} px in a {height} px viewport (empty program, no success){Environment.NewLine}", TestContext.Current.CancellationToken);
         }
-
 
         await page.GetByTestId("shortcut-help-toggle").ClickAsync();
         await Expect(help).ToHaveAttributeAsync("open", "");
         await Expect(page.Locator("[data-testid=shortcut-help] kbd").First).ToBeVisibleAsync();
         await LayoutAssertions.AssertShortcutHelpLeavesControlsFreeAsync(page);
+        await LayoutAssertions.AssertShortcutHelpLeavesBoardFreeAsync(page);
         if (fitsWithoutScroll)
         {
             await LayoutAssertions.AssertNoPageScrollAsync(page);
@@ -398,6 +398,142 @@ public class KeyboardTests(AppFixture app)
         {
             await LayoutAssertions.AssertNoPageScrollAsync(page);
         }
+
+        Assert.Empty(errors.Errors);
+    }
+
+    private const string NarrowLevel = """
+        [
+          {"schemaVersion":1,"id":"custom-narrow1","name":"Turm","width":3,"height":20,
+           "start":{"x":1,"y":19},"goal":{"x":1,"y":0},"requireAllItems":false,"obstacles":[],"items":[]}
+        ]
+        """;
+
+    [Theory]
+    [InlineData("de", "language-de", 1366, 768, "laptop")]
+    [InlineData("en", "language-en", 1366, 768, "laptop")]
+    [InlineData("de", "language-de", 1920, 1080, "desktop")]
+    [InlineData("de", "language-de", 1366, 600, "short")]
+    public async Task ShortcutHelp_OnTheWideBoardOfLongRoad_StaysInsideTheViewportAndCoversNoControl(string lang, string languageButton, int width, int height, string viewport)
+    {
+        Assert.SkipUnless(E2EEnvironment.Enabled, "Set HEROPATH_E2E=1 to run E2E tests.");
+
+        await using var context = await app.NewContextAsync("de-CH", width, height);
+        var page = await context.NewPageAsync();
+        var errors = BrowserErrors.Track(page);
+        await page.StartGameAsync(errors, "long-road");
+        await WaitForShortcutsAsync(page);
+        await page.GetByTestId(languageButton).ClickAsync();
+
+        await page.GetByTestId("shortcut-help-toggle").ClickAsync();
+        await Expect(page.GetByTestId("shortcut-help")).ToHaveAttributeAsync("open", "");
+        await LayoutAssertions.AssertShortcutHelpLeavesControlsFreeAsync(page);
+        await LayoutAssertions.AssertShortcutHelpLeavesBoardFreeAsync(page);
+        await Screenshots.CaptureAsync(page, $"shortcut-help-wide.{viewport}.{lang}");
+
+        Assert.Empty(errors.Errors);
+    }
+
+    [Theory]
+    [InlineData(1366, 768, "laptop")]
+    [InlineData(1920, 1080, "desktop")]
+    [InlineData(1366, 600, "short")]
+    public async Task ShortcutHelp_OnANarrowCustomBoard_StaysInsideTheViewportAndCoversNoControl(int width, int height, string viewport)
+    {
+        Assert.SkipUnless(E2EEnvironment.Enabled, "Set HEROPATH_E2E=1 to run E2E tests.");
+
+        await using var context = await app.NewContextAsync("de-CH", width, height);
+        var page = await context.NewPageAsync();
+        var errors = BrowserErrors.Track(page);
+        await page.AddInitScriptAsync(
+            $"if (localStorage.getItem('heropath.levels') === null) localStorage.setItem('heropath.levels', {System.Text.Json.JsonSerializer.Serialize(NarrowLevel)});");
+        await page.StartGameAsync(errors, "custom-narrow1");
+        await WaitForShortcutsAsync(page);
+
+        await page.GetByTestId("shortcut-help-toggle").ClickAsync();
+        await Expect(page.GetByTestId("shortcut-help")).ToHaveAttributeAsync("open", "");
+        await LayoutAssertions.AssertShortcutHelpLeavesControlsFreeAsync(page);
+        await LayoutAssertions.AssertShortcutHelpLeavesBoardFreeAsync(page);
+        await Screenshots.CaptureAsync(page, $"shortcut-help-narrow.{viewport}.de");
+
+        Assert.Empty(errors.Errors);
+    }
+
+    [Fact]
+    public async Task ShortcutHelp_AfterASuccess_LeavesTheHeroAtTheGoalVisibleOnTheDesktop()
+    {
+        Assert.SkipUnless(E2EEnvironment.Enabled, "Set HEROPATH_E2E=1 to run E2E tests.");
+
+        await using var context = await app.NewContextAsync("de-CH", 1920, 1080);
+        var page = await context.NewPageAsync();
+        var errors = BrowserErrors.Track(page);
+        await StartPlayAsync(page, errors);
+        await PressAllAsync(page, "ArrowUp", "ArrowUp", "ArrowRight", "ArrowRight", "ArrowRight", "ArrowRight", "ArrowRight", "ArrowUp");
+        await page.GetByTestId("control-tempo").FillAsync("2");
+        await page.GetByTestId("control-play").ClickAsync();
+        await Expect(Status(page)).ToHaveAttributeAsync("data-state", "succeeded", _slow);
+
+        await page.GetByTestId("shortcut-help-toggle").ClickAsync();
+        await Expect(page.GetByTestId("shortcut-help")).ToHaveAttributeAsync("open", "");
+        await LayoutAssertions.AssertShortcutHelpLeavesControlsFreeAsync(page);
+        await LayoutAssertions.AssertShortcutHelpLeavesBoardFreeAsync(page, heroMustBeFree: true);
+        await Screenshots.CaptureAsync(page, "shortcut-help-success.desktop.de");
+
+        Assert.Empty(errors.Errors);
+    }
+
+    [Theory]
+    [InlineData("button")]
+    [InlineData("key")]
+    public async Task ShortcutHelp_ClosesWhenPlayOrDebugStarts_AndStaysClosedForTheRun(string how)
+    {
+        Assert.SkipUnless(E2EEnvironment.Enabled, "Set HEROPATH_E2E=1 to run E2E tests.");
+
+        await using var context = await app.NewContextAsync("de-CH", 1366, 768);
+        var page = await context.NewPageAsync();
+        var errors = BrowserErrors.Track(page);
+        await StartPlayAsync(page, errors);
+        await PressAllAsync(page, "ArrowUp", "ArrowUp", "ArrowRight", "ArrowRight", "ArrowRight", "ArrowRight", "ArrowRight", "ArrowUp");
+        var help = page.GetByTestId("shortcut-help");
+        var toggle = page.GetByTestId("shortcut-help-toggle");
+
+        await toggle.ClickAsync();
+        await Expect(help).ToHaveAttributeAsync("open", "");
+        if (how == "button")
+        {
+            await page.GetByTestId("control-debug").ClickAsync();
+        }
+        else
+        {
+            await page.EvaluateAsync("document.activeElement.blur()");
+            await page.Keyboard.PressAsync("d");
+        }
+
+        await Expect(Status(page)).ToHaveAttributeAsync("data-state", "paused");
+        await Expect(help).Not.ToHaveAttributeAsync("open", "");
+        await toggle.ClickAsync();
+        await Expect(help).Not.ToHaveAttributeAsync("open", "");
+        await Expect(toggle).ToHaveAttributeAsync("aria-disabled", "true");
+
+        await page.GetByTestId("control-reset").ClickAsync();
+        await Expect(Status(page)).ToHaveAttributeAsync("data-state", "ready");
+        await Expect(help).Not.ToHaveAttributeAsync("open", "");
+        await toggle.ClickAsync();
+        await Expect(help).ToHaveAttributeAsync("open", "");
+
+        await page.GetByTestId("control-tempo").FillAsync("2");
+        if (how == "button")
+        {
+            await page.GetByTestId("control-play").ClickAsync();
+        }
+        else
+        {
+            await page.EvaluateAsync("document.activeElement.blur()");
+            await page.Keyboard.PressAsync("Space");
+        }
+
+        await Expect(Status(page)).ToHaveAttributeAsync("data-state", "succeeded", _slow);
+        await Expect(help).Not.ToHaveAttributeAsync("open", "");
 
         Assert.Empty(errors.Errors);
     }

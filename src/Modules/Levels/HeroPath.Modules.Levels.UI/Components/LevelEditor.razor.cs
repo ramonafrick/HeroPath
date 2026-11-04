@@ -45,6 +45,10 @@ public partial class LevelEditor : LocalizedComponentBase
     [Parameter]
     public string? LevelId { get; set; }
 
+    /// <summary>Optional heading row (title, back link) that spans the whole editor, so it lines up with the board and the panel.</summary>
+    [Parameter]
+    public RenderFragment? Header { get; set; }
+
     /// <summary>Raised with the id of the level after «Try it» saved it. Without a handler the button is not shown.</summary>
     [Parameter]
     public EventCallback<string> OnTryOut { get; set; }
