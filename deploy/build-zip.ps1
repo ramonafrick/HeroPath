@@ -1,4 +1,5 @@
 # Builds the release ZIP: HeroPath/{Start.bat, Start.ps1, LIESMICH.txt, wwwroot/...}
+# The site is finished by finish-site.ps1 (CSP, no PWA).
 # Usage: ./deploy/build-zip.ps1 -PublishDir artifacts/publish -Output artifacts/HeroPath.zip
 # ASCII only (Windows PowerShell 5.1 reads files without BOM as ANSI).
 param(
@@ -31,6 +32,9 @@ try {
     $copyCode = $LASTEXITCODE
     if ($copyCode -ge 8) { throw "robocopy failed with exit code $copyCode" }
     $global:LASTEXITCODE = 0
+
+    # Base href "/", CSP on, no service worker registration (FR24). Runs on the staged copy, the publish folder stays untouched.
+    & (Join-Path $deployDir 'finish-site.ps1') -Root $target -BaseHref '/'
 
     # Text files are normalised here because .gitattributes forces LF in the repository.
     # Start.bat and Start.ps1: CRLF, ASCII. LIESMICH.txt: CRLF, UTF-8 with BOM (umlauts).

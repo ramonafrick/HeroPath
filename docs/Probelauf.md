@@ -40,6 +40,27 @@ Prüfliste für M6. Die Liste ist für einen Durchgang von etwa 45 Minuten auf *
 | 2.6 | Schwarzes Fenster schliessen, im Browser neu laden | Spiel ist nicht mehr erreichbar | |
 | 2.7 | Nochmals starten | Gleicher Anschluss, eigene Levels noch da. Bei einem anderen Anschluss sind sie nicht sichtbar, siehe unten | |
 
+## Weg 3: Installierte App
+
+Nur für die Online-Version (GitHub Pages). Das ZIP und `localhost` bleiben ohne Installation und ohne Offline-Speicher. Die Nummern beginnen bei 9, damit die Nummern der übrigen Abschnitte gleich bleiben.
+
+| Nr. | Schritt | Erwartet | Ergebnis |
+|---|---|---|---|
+| 9.1 | In Edge oder Chrome `https://ramonafrick.github.io/HeroPath/` öffnen und warten, bis die Startseite erscheint. Danach mindestens 30 Sekunden mit Netz offen lassen | Das Spiel lädt einmal vollständig. Im Hintergrund füllt sich der Speicher für den Offline-Betrieb | |
+| 9.2 | Installieren: in Edge Menü «…» > «Apps» > «Diese Website als App installieren», in Chrome das Installationssymbol in der Adressleiste oder Menü > «Speichern und teilen» > «Seite als App installieren» (die Menütexte hängen von der Version ab) | Der Browser fragt nach der Installation. Name «HeldenWeg». Die Frage bestätigen | |
+| 9.3 | Symbol prüfen: Startmenü und Desktop oder Taskleiste | Das Symbol zeigt die Burg mit Max und Lisa | |
+| 9.4 | Die App über das Symbol starten | Eigenes Fenster ohne Adressleiste. Die Startseite erscheint | |
+| 9.5 | App ganz schliessen, WLAN und Kabel trennen, App über das Symbol neu starten | Die Startseite erscheint ohne Netz | |
+| 9.6 | Ohne Netz ein Level lösen, Sprache wechseln, den Editor öffnen und ein Level speichern | Alles funktioniert wie online. Eigene Levels bleiben erhalten | |
+| 9.7 | Netz wieder verbinden, App ganz schliessen und neu öffnen | Funktioniert weiter. Nach einer neuen Version von HeroPath erscheint diese erst nach diesem Schliessen und Neuöffnen, nicht schon beim ersten Neuladen | |
+| 9.8 | Falls die IT die Installation blockiert: Meldung notieren | Hinweis auf Weg 1 oder Weg 2 | |
+
+Hinweise:
+
+- Eine neue Version wird im Hintergrund geladen, solange die App offen ist, und erst wirksam, wenn **alle** Fenster der App geschlossen waren. Wer nach einer Änderung nichts Neues sieht, schliesst die App ganz (auch alle Tabs von HeroPath im Browser) und öffnet sie neu.
+- Eine Firmenrichtlinie kann die Installation von Web-Apps oder Service Worker (den Offline-Speicher der Seite) sperren. Dann bleibt die Seite im Browser wie bei Weg 1, und das ZIP bleibt der zweite Weg.
+- Das Deinstallieren der App (Einstellungen > Apps oder Menü der App) löscht die Daten der Seite nicht zwingend. Eigene Levels liegen im Browser pro Adresse.
+
 ## Spiel
 
 Den Rest bitte auf dem Weg ausführen, der am Zukunftstag gilt.
@@ -108,6 +129,7 @@ Den Rest bitte auf dem Weg ausführen, der am Zukunftstag gilt.
 | Darf `Start.bat` laufen (PowerShell mit lokalem Server auf `localhost`)? | |
 | Ist `ramonafrick.github.io` aus dem Firmennetz erreichbar? | |
 | Sind Downloads für den Export erlaubt? | |
+| Dürfen Web-Apps installiert werden und darf die Seite einen Service Worker (Offline-Speicher) nutzen (Weg 3)? | |
 
 ## Bekannte Punkte
 

@@ -71,3 +71,74 @@ jobs:
           name: screenshots
           path: artifacts/screenshots
           if-no-files-found: warn
+
+  # The published site as a visitor gets it: Content-Security-Policy on, service worker on, served over
+  # http://localhost (service workers need a secure context). Only PublishedSiteTests run here, the normal
+  # suite (also in the e2e job) skips them because HEROPATH_PUBLISHED_URL is not set there.
+  published:
+    needs: e2e
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6
+        with:
+          global-json-file: global.json
+
+      - name: Build the E2E tests
+        run: dotnet build tests/HeroPath.E2E -c Release
+
+      - name: Publish
+        run: dotnet publish src/Hosts/HeroPath.Web -c Release -o artifacts/publish
+
+      - name: Finish the site (base /, CSP, PWA)
+        shell: pwsh
+        run: ./deploy/finish-site.ps1 -Root artifacts/publish/wwwroot -BaseHref / -Pwa
+
+      # Server and tests share one step: a process started in an earlier step is not guaranteed to survive it.
+      - name: Serve the site and run PublishedSiteTests
+        shell: pwsh
+        run: |
+          $port = 5301
+          $url = "http://localhost:$port/"
+          Copy-Item deploy/Start.ps1 artifacts/publish/Start.ps1
+          $server = Start-Process -FilePath powershell.exe -PassThru -WindowStyle Hidden `
+            -RedirectStandardOutput server.out.txt -RedirectStandardError server.err.txt `
+            -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Resolve-Path artifacts/publish/Start.ps1).Path, '-NoBrowser', '-Port', $port
+          $code = 1
+          try {
+            $ready = $false
+            for ($i = 0; $i -lt 60 -and -not $ready; $i++) {
+              if ($server.HasExited) { break }
+              try { $ready = (Invoke-WebRequest -Uri $url -UseBasicParsing).StatusCode -eq 200 } catch { Start-Sleep -Seconds 1 }
+            }
+            if (-not $ready) {
+              Get-Content server.out.txt, server.err.txt -ErrorAction SilentlyContinue | Write-Host
+              throw "The site did not answer on $url (server exited: $($server.HasExited))."
+            }
+            $env:HEROPATH_E2E = '1'
+            $env:HEROPATH_BASE_URL = $url
+            $env:HEROPATH_PUBLISHED_URL = $url
+            dotnet test --project tests/HeroPath.E2E -c Release --no-build --filter-class HeroPath.E2E.PublishedSiteTests 2>&1 | Tee-Object -FilePath published.log
+            $code = $LASTEXITCODE
+          } finally {
+            if (-not $server.HasExited) { Stop-Process -Id $server.Id -Force }
+          }
+          exit $code
+
+      # Job logs need a login, annotations are public: name the failed tests there.
+      - name: Report failed published-site tests
+        if: failure()
+        shell: bash
+        run: |
+          message=$(sed 's/\x1b\[[0-9;]*[A-Za-z]//g' published.log | grep -E -A8 '^\s*failed ' | head -200 | cut -c1-300 | sed 's/%/%25/g; s/\r/%0D/g' | awk '{printf "%s%%0A", $0}')
+          echo "::error title=Failed published-site tests::${message:-see job log}"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        if: always()
+        with:
+          name: screenshots-published
+          path: artifacts/screenshots
+          if-no-files-found: warn

@@ -32,6 +32,7 @@ HEROPATH_E2E=1 dotnet test --project tests/HeroPath.E2E    # Playwright E2E + sc
 dotnet format HeroPath.slnx --verify-no-changes
 dotnet watch --project src/Hosts/HeroPath.Web
 dotnet publish src/Hosts/HeroPath.Web -c Release
+./deploy/finish-site.ps1 -Root artifacts/publish/wwwroot -BaseHref / -Pwa   # after a publish with -o artifacts/publish: CSP, base href, PWA flag (release skill)
 ```
 
 ## Key rules
@@ -58,6 +59,7 @@ dotnet publish src/Hosts/HeroPath.Web -c Release
 - A test project without tests makes `dotnet test` fail (MTP exit code 8).
 - Unnecessary `using`s are build errors (IDE0005).
 - Blazor WebAssembly only loads the satellite assemblies of the startup culture, so a runtime language switch needs `loadAllSatelliteResources` in `index.html` (see `localization` skill). bUnit cannot catch this, `LanguageTests` (E2E) does.
+- Every change to the published `index.html` (base href, meta tags) goes through `deploy/finish-site.ps1`, never `sed`: the Content-Security-Policy hash and the `index.html` hash in `service-worker-assets.js` depend on its exact bytes, and a wrong manifest hash makes the service worker install fail. `PublishedSiteTests` (E2E, opt-in) guards it.
 - Writing C# with the Write tool can turn `\uXXXX` escapes in string literals into the real (often invisible) characters. In tests for control, format or bidi characters use `(char)0x202E`-style constants and check the file for stray characters.
 
 ## Skills

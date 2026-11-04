@@ -31,15 +31,31 @@ jobs:
       - name: Publish
         run: dotnet publish src/Hosts/HeroPath.Web -c Release -o artifacts/publish
 
-      # Compressed copies are dropped: Pages compresses itself, and index.html.br/.gz would keep the old base href.
-      - name: Prepare for the /HeroPath/ path
-        working-directory: artifacts/publish/wwwroot
+      # One script for every change to index.html after the publish: base href, Content-Security-Policy, PWA flag,
+      # the index.html hash in service-worker-assets.js, 404.html and .nojekyll (see deploy/finish-site.ps1).
+      - name: Finish the site for the /HeroPath/ path
+        shell: pwsh
+        run: ./deploy/finish-site.ps1 -Root artifacts/publish/wwwroot -BaseHref /HeroPath/ -Pwa -Pages
+
+      # Second, independent check: the service worker rejects a file whose hash differs from the manifest, and then
+      # the installation fails on the visitor's machine.
+      - name: Check the index.html hash in the service worker manifest
+        shell: pwsh
         run: |
-          grep -q '<base href="/" />' index.html
-          sed -i 's|<base href="/" />|<base href="/HeroPath/" />|' index.html
-          find . -type f \( -name '*.br' -o -name '*.gz' \) -delete
-          cp index.html 404.html
-          touch .nojekyll
+          $root = (Resolve-Path artifacts/publish/wwwroot).Path
+          $sha = [System.Security.Cryptography.SHA256]::Create()
+          $actual = 'sha256-' + [Convert]::ToBase64String($sha.ComputeHash([System.IO.File]::ReadAllBytes((Join-Path $root 'index.html'))))
+          $assets = [System.IO.File]::ReadAllText((Join-Path $root 'service-worker-assets.js'))
+          $entry = [regex]::Match($assets, '"hash":\s*"(sha256-[^"]+)",\s*"url":\s*"index\.html"')
+          if (-not $entry.Success) { throw 'service-worker-assets.js has no index.html entry.' }
+          if ($entry.Groups[1].Value -ne $actual) { throw "Manifest hash $($entry.Groups[1].Value) does not match index.html ($actual)." }
+          $html = [System.IO.File]::ReadAllText((Join-Path $root 'index.html'))
+          foreach ($expected in '<base href="/HeroPath/" />', 'http-equiv="Content-Security-Policy"', '<meta name="heropath-pwa" content="on" />') {
+            if (-not $html.Contains($expected)) { throw "index.html lacks $expected" }
+          }
+          if (-not (Test-Path (Join-Path $root '404.html')) -or -not (Test-Path (Join-Path $root '.nojekyll'))) { throw '404.html or .nojekyll is missing.' }
+          if (@(Get-ChildItem $root -Recurse -File | Where-Object { $_.Extension -in '.br', '.gz' }).Count -gt 0) { throw 'Compressed files are left.' }
+          Write-Host "index.html hash matches the manifest: $actual"
 
       - name: Check the published site
         working-directory: artifacts/publish/wwwroot

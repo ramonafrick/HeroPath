@@ -8,6 +8,9 @@ public static class E2EEnvironment
     /// <summary>Optional: test an already running app (e.g. GitHub Pages) instead of starting one.</summary>
     public static string? BaseUrl => Environment.GetEnvironmentVariable("HEROPATH_BASE_URL");
 
+    /// <summary>Opt-in for <c>PublishedSiteTests</c>: URL of a site produced by <c>deploy/finish-site.ps1 -BaseHref / -Pwa</c> and served on <c>http://localhost:port/</c>.</summary>
+    public static string? PublishedUrl => Environment.GetEnvironmentVariable("HEROPATH_PUBLISHED_URL");
+
     public static string RepositoryRoot { get; } = FindRepositoryRoot();
 
     public static string ScreenshotDirectory => Path.Combine(RepositoryRoot, "artifacts", "screenshots");

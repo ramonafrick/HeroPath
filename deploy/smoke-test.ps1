@@ -100,7 +100,12 @@ try {
     $r = Send-Raw $Port 'GET / HTTP/1.1'
     Check 'GET / is 200 text/html' ($r.Status -eq 200 -and (Get-Header $r 'Content-Type') -like 'text/html*') "($($r.Status) $(Get-Header $r 'Content-Type'))"
     Check 'Cache-Control is no-cache' ((Get-Header $r 'Cache-Control') -eq 'no-cache')
+    Check 'index.html has the Content-Security-Policy meta' ($r.Body.Contains('http-equiv="Content-Security-Policy"'))
+    Check 'index.html has no unsafe-inline in script-src' ($r.Body -match "script-src [^;]*'sha256-" -and $r.Body -notmatch "script-src [^;]*'unsafe-inline'")
+    Check 'index.html has no heropath-pwa meta (no service worker in the ZIP)' (-not $r.Body.Contains('heropath-pwa'))
     $indexLength = $r.Body.Length
+    $r = Send-Raw $Port 'GET /manifest.webmanifest HTTP/1.1'
+    Check 'manifest is served as application/manifest+json' ($r.Status -eq 200 -and (Get-Header $r 'Content-Type') -eq 'application/manifest+json') "($($r.Status) $(Get-Header $r 'Content-Type'))"
 
     $wasm = Get-ChildItem -LiteralPath (Join-Path $folder 'wwwroot\_framework') -Filter '*.wasm' | Select-Object -First 1
     Check 'a _framework wasm file exists' ($null -ne $wasm)

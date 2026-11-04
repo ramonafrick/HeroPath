@@ -39,3 +39,8 @@ Hinweise
 - Läuft schon etwas auf dem Anschluss 5080, wählt HeroPath automatisch den
   nächsten freien. Die Adresse steht im schwarzen Fenster.
 - Der Name des Helden wird nirgends gespeichert.
+- Die Online-Version (Adresse oben) lässt sich in Edge oder Chrome als App
+  installieren (Symbol in der Adressleiste). Sie läuft danach in einem
+  eigenen Fenster auch ohne Internet. Eine neue Version erscheint erst,
+  wenn die App ganz geschlossen und neu geöffnet wurde. Dieses ZIP braucht
+  keine Installation und speichert nichts für den Offline-Betrieb.

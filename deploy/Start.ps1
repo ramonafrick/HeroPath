@@ -31,6 +31,7 @@ $mime = @{
     '.css'  = 'text/css; charset=utf-8'
     '.svg'  = 'image/svg+xml'
     '.json' = 'application/json; charset=utf-8'
+    '.webmanifest' = 'application/manifest+json'
     '.wasm' = 'application/wasm'
     '.dat'  = 'application/octet-stream'
     '.blat' = 'application/octet-stream'
