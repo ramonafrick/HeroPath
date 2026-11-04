@@ -23,6 +23,7 @@ public class EditorPageTests : CultureBunitContext
         Services.AddGameModule();
         Services.AddSingleton<IAppStorage>(_storage);
         Services.AddSingleton<ISoundPlayer, FakeSoundPlayer>();
+        Services.AddSingleton<IKeyboardShortcuts, FakeKeyboardShortcuts>();
         Services.AddSingleton<IFileDownload>(_download);
     }
 

@@ -306,4 +306,60 @@
     <value>Bearbeiten</value>
     <comment>Button on the play page that opens the current custom level in the editor.</comment>
   </data>
+  <data name="Shortcuts_Title" xml:space="preserve">
+    <value>Tasten</value>
+    <comment>Summary of the collapsible list of keyboard shortcuts on the play page.</comment>
+  </data>
+  <data name="Shortcuts_Insert" xml:space="preserve">
+    <value>Baustein einfügen</value>
+    <comment>Action of the four arrow keys.</comment>
+  </data>
+  <data name="Shortcuts_Move" xml:space="preserve">
+    <value>Gewählten Baustein verschieben</value>
+    <comment>Action of Shift with the up or down arrow.</comment>
+  </data>
+  <data name="Shortcuts_Delete" xml:space="preserve">
+    <value>Gewählten Baustein löschen</value>
+    <comment>Action of the Delete and Backspace keys.</comment>
+  </data>
+  <data name="Shortcuts_Deselect" xml:space="preserve">
+    <value>Auswahl aufheben</value>
+    <comment>Action of the Escape key.</comment>
+  </data>
+  <data name="Shortcuts_Play" xml:space="preserve">
+    <value>Play starten</value>
+    <comment>Action of the space bar.</comment>
+  </data>
+  <data name="Shortcuts_Debug" xml:space="preserve">
+    <value>Einen Debug-Schritt machen</value>
+    <comment>Action of the D key.</comment>
+  </data>
+  <data name="Shortcuts_Reset" xml:space="preserve">
+    <value>Zurücksetzen</value>
+    <comment>Action of the R key.</comment>
+  </data>
+  <data name="Shortcuts_Key_Arrows" xml:space="preserve">
+    <value>Pfeiltasten</value>
+    <comment>Accessible name of the group of the four arrow keys.</comment>
+  </data>
+  <data name="Shortcuts_Key_Shift" xml:space="preserve">
+    <value>Umschalt</value>
+    <comment>Name of the Shift key.</comment>
+  </data>
+  <data name="Shortcuts_Key_Delete" xml:space="preserve">
+    <value>Entf</value>
+    <comment>Name of the Delete key.</comment>
+  </data>
+  <data name="Shortcuts_Key_Backspace" xml:space="preserve">
+    <value>Rücktaste</value>
+    <comment>Name of the Backspace key.</comment>
+  </data>
+  <data name="Shortcuts_Key_Escape" xml:space="preserve">
+    <value>Esc</value>
+    <comment>Name of the Escape key.</comment>
+  </data>
+  <data name="Shortcuts_Key_Space" xml:space="preserve">
+    <value>Leertaste</value>
+    <comment>Name of the space bar.</comment>
+  </data>
 </root>

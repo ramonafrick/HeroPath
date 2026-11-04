@@ -99,3 +99,7 @@ public sealed class LanguageService(IAppStorage storage)
 4. Used via `Localizer["Key"]` / `Localizer["Key", arg]`, no fallback string in code.
 5. Keys built from enum values (`Status_{RunStatus}`, `Tempo_{Tempo}`) get a completeness test per culture (`GameResourcesTests`). Use `ResourceManager.GetResourceSet(culture, createIfNotExists: true, tryParents: false)`: `GetString` for `en` silently falls back to German and hides a missing key.
 
+
+## M6 S6 keys (Game)
+
+`Shortcuts_Title` («Tasten» / «Keys», the summary), one action per full phrase `Shortcuts_Insert|Move|Delete|Deselect|Play|Debug|Reset`, key names `Shortcuts_Key_Arrows` (accessible name of the arrow group), `Shortcuts_Key_Shift|Delete|Backspace|Escape|Space` (DE «Umschalt», «Entf», «Rücktaste», «Esc», «Leertaste»). The letter keys D and R and the arrow glyphs are not translated. `GameResourcesTests` checks that all of them exist in both cultures.

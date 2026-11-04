@@ -20,7 +20,7 @@ public class GameResourcesTests
                 data.Add($"Tempo_{tempo}");
             }
 
-            foreach (var key in new[] { "Start_Title", "Start_Intro", "Start_HeroGroup", "Start_NameLabel", "Start_NameHint", "Start_LevelsTitle", "Start_Go", "Hero_Change", "Hero_BadgeLabel" })
+            foreach (var key in new[] { "Start_Title", "Start_Intro", "Start_HeroGroup", "Start_NameLabel", "Start_NameHint", "Start_LevelsTitle", "Start_Go", "Hero_Change", "Hero_BadgeLabel", "Shortcuts_Title", "Shortcuts_Insert", "Shortcuts_Move", "Shortcuts_Delete", "Shortcuts_Deselect", "Shortcuts_Play", "Shortcuts_Debug", "Shortcuts_Reset", "Shortcuts_Key_Arrows", "Shortcuts_Key_Shift", "Shortcuts_Key_Delete", "Shortcuts_Key_Backspace", "Shortcuts_Key_Escape", "Shortcuts_Key_Space" })
             {
                 data.Add(key);
             }

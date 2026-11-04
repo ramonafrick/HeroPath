@@ -19,6 +19,7 @@ builder.Services
 builder.Services.AddScoped<IAppStorage, LocalStorageAppStorage>();
 builder.Services.AddScoped<IFileDownload, BrowserFileDownload>();
 builder.Services.AddScoped<ISoundPlayer, BrowserSoundPlayer>();
+builder.Services.AddScoped<IKeyboardShortcuts, BrowserKeyboardShortcuts>();
 
 var host = builder.Build();
 await host.Services.ApplyStoredCultureAsync();

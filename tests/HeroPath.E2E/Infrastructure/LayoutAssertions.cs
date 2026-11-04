@@ -84,6 +84,27 @@ public static class LayoutAssertions
         Assert.Empty(problems);
     }
 
+    /// <summary>The play page's side panel does not overflow itself (nothing sticks out at the bottom or the side) and the shortcut help lies inside it.</summary>
+    public static async Task AssertSidePanelFitsAsync(IPage page)
+    {
+        var problems = await page.EvaluateAsync<string[]>(@"() => {
+            const problems = [];
+            const panel = document.querySelector('[data-testid=side-panel]');
+            const box = panel.getBoundingClientRect();
+            if (panel.scrollHeight > panel.clientHeight + 1 || panel.scrollWidth > panel.clientWidth + 1) {
+                problems.push(`side panel overflows: ${panel.scrollWidth}x${panel.scrollHeight} > ${panel.clientWidth}x${panel.clientHeight}`);
+            }
+            for (const child of panel.querySelectorAll('.side-tools, [data-testid=shortcut-help]')) {
+                const r = child.getBoundingClientRect();
+                if (r.bottom > box.bottom + 0.5 || r.bottom > window.innerHeight) {
+                    problems.push(`${child.className || child.dataset.testid} ends at ${Math.round(r.bottom)}, panel at ${Math.round(box.bottom)}`);
+                }
+            }
+            return problems;
+        }");
+        Assert.Empty(problems);
+    }
+
     /// <summary>The page itself must not scroll: board and panels fit the viewport.</summary>
     public static async Task AssertNoPageScrollAsync(IPage page)
     {

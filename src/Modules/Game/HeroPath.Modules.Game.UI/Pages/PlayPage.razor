@@ -9,7 +9,7 @@
 
 @if (Choice.IsChosen && Session.Grid is { } grid && Session.Level is { } level)
 {
-    <main class="play-page" data-wide="@(grid.Width >= 2 * grid.Height ? "true" : null)">
+    <main class="play-page" data-wide="@(grid.Width >= 2 * grid.Height ? "true" : null)" data-shortcuts="@(_shortcutsActive ? "active" : null)">
         <section class="board-area" data-has-items="@(grid.Items.Count > 0 ? "true" : null)" style="--board-cols: @grid.Width; --board-rows: @grid.Height;">
             <div class="board-head">
                 <h2 class="level-name" data-testid="level-name">@LevelsLocalizer.NameOf(level)</h2>
@@ -46,6 +46,7 @@
                 <BlockPalette />
                 <ControlBar />
                 <MessageBox />
+                <ShortcutHelp />
                 @if (Session.Status == RunStatus.Succeeded && Progress.NextAfter(level.Id) is { } next)
                 {
                     <button type="button" class="next-level" data-testid="next-level" @onclick="() => LoadLevel(next)">@GameLocalizer["Level_Next"]</button>

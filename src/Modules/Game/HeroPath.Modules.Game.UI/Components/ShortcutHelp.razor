@@ -1,0 +1,48 @@
+@inherits LocalizedComponentBase
+@using HeroPath.Shared.UI.Components
+
+<details class="shortcut-help" data-testid="shortcut-help">
+    <summary class="shortcut-summary" data-testid="shortcut-help-toggle">@Localizer["Shortcuts_Title"]</summary>
+    <div class="shortcut-body" data-testid="shortcut-help-body">
+        <table class="shortcut-table">
+            <tbody>
+                <tr>
+                    <th scope="row">
+                        <span class="keys" role="group" aria-label="@Localizer["Shortcuts_Key_Arrows"]">
+                            <kbd>←</kbd><kbd>↑</kbd><kbd>→</kbd><kbd>↓</kbd>
+                        </span>
+                    </th>
+                    <td>@Localizer["Shortcuts_Insert"]</td>
+                </tr>
+                <tr>
+                    <th scope="row">
+                        <span class="keys"><kbd>@Localizer["Shortcuts_Key_Shift"]</kbd><span aria-hidden="true">+</span><kbd>↑</kbd><kbd>↓</kbd></span>
+                    </th>
+                    <td>@Localizer["Shortcuts_Move"]</td>
+                </tr>
+                <tr>
+                    <th scope="row">
+                        <span class="keys"><kbd>@Localizer["Shortcuts_Key_Delete"]</kbd><kbd>@Localizer["Shortcuts_Key_Backspace"]</kbd></span>
+                    </th>
+                    <td>@Localizer["Shortcuts_Delete"]</td>
+                </tr>
+                <tr>
+                    <th scope="row"><span class="keys"><kbd>@Localizer["Shortcuts_Key_Escape"]</kbd></span></th>
+                    <td>@Localizer["Shortcuts_Deselect"]</td>
+                </tr>
+                <tr>
+                    <th scope="row"><span class="keys"><kbd>@Localizer["Shortcuts_Key_Space"]</kbd></span></th>
+                    <td>@Localizer["Shortcuts_Play"]</td>
+                </tr>
+                <tr>
+                    <th scope="row"><span class="keys"><kbd>D</kbd></span></th>
+                    <td>@Localizer["Shortcuts_Debug"]</td>
+                </tr>
+                <tr>
+                    <th scope="row"><span class="keys"><kbd>R</kbd></span></th>
+                    <td>@Localizer["Shortcuts_Reset"]</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</details>
