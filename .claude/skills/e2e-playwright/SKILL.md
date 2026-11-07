@@ -18,6 +18,7 @@ HEROPATH_E2E=1 HEROPATH_BASE_URL=http://127.0.0.1:5198 dotnet test --project tes
 - The host starts with `dotnet run` on `http://127.0.0.1:5199` (startup timeout 3 min). If a run fails with "address in use", kill the leftover `HeroPath.Web` process.
 - A single E2E failure with `net::ERR_NETWORK_CHANGED` while loading `_framework` files is transient (the browser lost the wasm download). Rerun that test once before treating it as a finding.
 - Screenshots: `artifacts/screenshots/` (gitignored, cleared at the start of each run).
+- The README images in `docs/images/` are committed copies of `run.repeat-round.laptop.en` (`play-debug.png`), `start-page.laptop.en`, `success-confetti.laptop.en` (`success.png`) and `editor-built.laptop.en` (`level-editor.png`). When a change alters what they show, copy the new screenshots over them in the same commit.
 
 ## Infrastructure (`tests/HeroPath.E2E/Infrastructure`)
 

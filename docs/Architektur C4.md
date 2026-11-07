@@ -785,6 +785,7 @@ HeroPath/
 │  ├─ HeroPath.ArchitectureTests/      Abhängigkeitsregeln
 │  └─ HeroPath.E2E/                    Playwright, Screenshots nach artifacts/screenshots
 └─ docs/
+   ├─ images/                          Bilder für das README (Kopien von E2E-Screenshots)
    ├─ Projektidee.md
    ├─ Architektur C4.md
    ├─ Projekt_Kontext.md
