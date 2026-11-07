@@ -21,25 +21,39 @@
     <!-- golden ground in front of the castle -->
     <path d="M9 44 H55 L58 48 H6 Z" fill="#f2c230" />
 
-    <!-- Max: yellow T-shirt, blue trousers, short hair -->
-    <rect x="11" y="52" width="3.5" height="9" fill="#2f5fd0" />
-    <rect x="15.5" y="52" width="3.5" height="9" fill="#2f5fd0" />
-    <path d="M9 53 V45 a6 6 0 0 1 12 0 V53 Z" fill="#f7c600" />
-    <circle cx="15" cy="37" r="5.5" fill="#f5c9a0" />
-    <path d="M9.6 36 a5.5 5.5 0 0 1 10.8 0 Q15 33.5 9.6 36 Z" fill="#6b3f1f" />
-    <circle cx="13" cy="38" r="0.9" fill="#2b2b2b" stroke="none" />
-    <circle cx="17" cy="38" r="0.9" fill="#2b2b2b" stroke="none" />
-    <path d="M13.2 40.2 q1.8 1.4 3.6 0" fill="none" stroke-width="1" />
+  </g>
 
-    <!-- Lisa: red dress, longer hair -->
-    <rect x="44.5" y="54" width="3" height="7" fill="#f5c9a0" />
-    <rect x="49.5" y="54" width="3" height="7" fill="#f5c9a0" />
-    <path d="M48.5 32 c-6.5 0 -7.5 5 -7 11 h14 c0.5 -6 -0.5 -11 -7 -11 Z" fill="#b5651d" />
-    <path d="M48.5 41 L57 56 H40 Z" fill="#e0303a" />
-    <circle cx="48.5" cy="37" r="5.5" fill="#f5c9a0" />
-    <path d="M43 36.5 a5.5 5.5 0 0 1 11 0 Q48.5 34 43 36.5 Z" fill="#b5651d" />
-    <circle cx="46.5" cy="38" r="0.9" fill="#2b2b2b" stroke="none" />
-    <circle cx="50.5" cy="38" r="0.9" fill="#2b2b2b" stroke="none" />
-    <path d="M46.7 40.2 q1.8 1.4 3.6 0" fill="none" stroke-width="1" />
+  <!-- Max and Lisa: the same shapes and colours as HeroMax.razor and HeroLisa.razor (100x100 box, scaled). -->
+  <g clip-path="url(#tile)">
+    <g transform="translate(-3.5 28.3) scale(0.36)" stroke="#2b2d42" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+      <rect x="35" y="64" width="12" height="24" rx="4" fill="#3b6fd4" />
+      <rect x="53" y="64" width="12" height="24" rx="4" fill="#3b6fd4" />
+      <rect x="32" y="86" width="17" height="8" rx="4" fill="#2b2d42" />
+      <rect x="51" y="86" width="17" height="8" rx="4" fill="#2b2d42" />
+      <rect x="21" y="44" width="12" height="22" rx="6" fill="#f1c9a0" />
+      <rect x="67" y="44" width="12" height="22" rx="6" fill="#f1c9a0" />
+      <rect x="31" y="42" width="38" height="28" rx="9" fill="#f4d03f" />
+      <circle cx="50" cy="27" r="16" fill="#f1c9a0" />
+      <path d="M34 26 C33 10 49 6 58 10 C66 13 68 20 66 26 C60 22 50 21 44 17 C41 20 37 22 34 26 Z" fill="#6b4226" />
+      <circle cx="44" cy="30" r="2" fill="#2b2d42" stroke="none" />
+      <circle cx="56" cy="30" r="2" fill="#2b2d42" stroke="none" />
+      <path d="M45 36 Q50 40 55 36" fill="none" stroke-width="3" />
+    </g>
+    <g transform="translate(31.8 28.3) scale(0.36)" stroke="#2b2d42" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+      <path d="M30 24 C26 8 44 4 52 6 C68 6 76 16 70 36 L72 62 C66 68 34 68 28 62 Z" fill="#8a4b25" />
+      <rect x="38" y="70" width="9" height="18" rx="4" fill="#f1c9a0" />
+      <rect x="53" y="70" width="9" height="18" rx="4" fill="#f1c9a0" />
+      <rect x="35" y="86" width="15" height="8" rx="4" fill="#2b2d42" />
+      <rect x="50" y="86" width="15" height="8" rx="4" fill="#2b2d42" />
+      <rect x="23" y="46" width="11" height="20" rx="5.5" fill="#f1c9a0" />
+      <rect x="66" y="46" width="11" height="20" rx="5.5" fill="#f1c9a0" />
+      <path d="M40 42 L60 42 L74 80 L26 80 Z" fill="#d9455a" />
+      <path d="M33 80 Q40 85 47 80 Q54 85 60 80 Q64 84 74 80" fill="none" stroke-width="3" />
+      <circle cx="50" cy="27" r="16" fill="#f1c9a0" />
+      <path d="M33 30 C30 10 50 4 62 12 C68 17 68 24 67 30 C62 24 54 20 46 14 C42 20 38 26 33 30 Z" fill="#8a4b25" />
+      <circle cx="44" cy="30" r="2" fill="#2b2d42" stroke="none" />
+      <circle cx="56" cy="30" r="2" fill="#2b2d42" stroke="none" />
+      <path d="M45 36 Q50 40 55 36" fill="none" stroke-width="3" />
+    </g>
   </g>
 </svg>
