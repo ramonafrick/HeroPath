@@ -68,44 +68,44 @@ Den Rest bitte auf dem Weg ausführen, der am Zukunftstag gilt.
 
 | Nr. | Schritt | Erwartet | Ergebnis |
 |---|---|---|---|
-| 3.1 | Max und Lisa wählen, Namen ändern | Name erscheint in der Meldung beim Erfolg | |
-| 3.2 | Alle sieben Level per Maus lösen | Alle lösbar, am Ende «alle Level geschafft» | |
-| 3.3 | Bausteine per Drag & Drop einfügen, verschieben, löschen, verschachteln | Funktioniert flüssig | |
-| 3.4 | Dasselbe nur mit Klicks | Funktioniert | |
-| 3.5 | Play, Debug, Reset, Tempo langsam und schnell | Bewegung flüssig, Hervorhebung stimmt | |
-| 3.6 | Gegen Hindernis laufen, Spielfeld verlassen, Ziel nicht erreichen | Kindgerechte Meldung, Feld markiert | |
-| 3.7 | Erdbeere und Pizza einsammeln | Items verschwinden mit kleiner Animation, Zähler stimmt | |
-| 3.8 | Level lösen | Konfetti etwa 2 s, «Nächstes Level» klickbar | |
-| 3.9 | In Windows Animationen ausschalten (Barrierefreiheit), Level lösen | Kein Konfetti, ruhiger goldener Rahmen | |
-| 3.10 | Sprache während des Spiels wechseln | Name, Programm und Level bleiben | |
+| 3.1 | Max und Lisa wählen, Namen ändern | Name erscheint in der Meldung beim Erfolg | ok (2026-11-07) |
+| 3.2 | Alle sieben Level per Maus lösen | Alle lösbar, am Ende «alle Level geschafft» | ok (2026-11-07) |
+| 3.3 | Bausteine per Drag & Drop einfügen, verschieben, löschen, verschachteln | Funktioniert flüssig | ok (2026-11-07) |
+| 3.4 | Dasselbe nur mit Klicks | Funktioniert | ok (2026-11-07) |
+| 3.5 | Play, Debug, Reset, Tempo langsam und schnell | Bewegung flüssig, Hervorhebung stimmt | ok (2026-11-07) |
+| 3.6 | Gegen Hindernis laufen, Spielfeld verlassen, Ziel nicht erreichen | Kindgerechte Meldung, Feld markiert | ok (2026-11-07) |
+| 3.7 | Erdbeere und Pizza einsammeln | Items verschwinden mit kleiner Animation, Zähler stimmt | ok (2026-11-07) |
+| 3.8 | Level lösen | Konfetti etwa 2 s, «Nächstes Level» klickbar | ok (2026-11-07) |
+| 3.9 | In Windows Animationen ausschalten (Windows 11: Einstellungen > Barrierefreiheit > Visuelle Effekte > «Animationseffekte» aus), Browser neu laden, Level lösen. Danach wieder einschalten | Kein Konfetti, ruhiger goldener Rahmen | offen: Schalter in Windows nicht gefunden, siehe unten |
+| 3.10 | Sprache während des Spiels wechseln | Name, Programm und Level bleiben | ok (2026-11-07) |
 
 ## Sound
 
 | Nr. | Schritt | Erwartet | Ergebnis |
 |---|---|---|---|
-| 4.1 | Beim ersten Start | Ton ist aus | |
-| 4.2 | Ton einschalten, Level lösen | Kurzer, angenehmer Erfolgston | |
-| 4.3 | Fehler auslösen, Item einsammeln | Je ein eigener Ton | |
-| 4.4 | Lautstärke im Raum beurteilen | Stört nicht, oder Standard «aus» reicht | |
-| 4.5 | Neu laden, dann Level lösen | Einstellung bleibt, Ton klingt | |
+| 4.1 | Beim ersten Start | Ton ist aus | ok (2026-11-07) |
+| 4.2 | Ton einschalten, Level lösen | Kurzer, angenehmer Erfolgston | ok (2026-11-07) |
+| 4.3 | Fehler auslösen, Item einsammeln | Je ein eigener Ton | ok (2026-11-07) |
+| 4.4 | Lautstärke im Raum beurteilen | Stört nicht, oder Standard «aus» reicht | ok (2026-11-07) |
+| 4.5 | Neu laden, dann Level lösen | Einstellung bleibt, Ton klingt | ok (2026-11-07) |
 
 ## Tastatur
 
 | Nr. | Schritt | Erwartet | Ergebnis |
 |---|---|---|---|
-| 5.1 | Level nur mit Pfeilen, Leertaste, D und R lösen | Funktioniert | |
-| 5.2 | Baustein per Tab und Enter wählen, Shift+Pfeil hoch/runter, Entf, Esc | Verschieben, Löschen, Auswahl aufheben | |
-| 5.3 | Knopf «Tasten» öffnen | Liste verständlich und vollständig, in DE und EN | |
-| 5.4 | Am Laptop ohne externen Bildschirm prüfen | Funktioniert auch mit Laptop-Tastatur | |
+| 5.1 | Level nur mit Pfeilen, Leertaste, D und R lösen | Funktioniert | ok (2026-11-07) |
+| 5.2 | Baustein per Tab und Enter wählen, Shift+Pfeil hoch/runter, Entf, Esc | Verschieben, Löschen, Auswahl aufheben | ok (2026-11-07) |
+| 5.3 | Knopf «Tasten» öffnen | Liste verständlich und vollständig, in DE und EN | ok (2026-11-07) |
+| 5.4 | Am Laptop ohne externen Bildschirm prüfen | Funktioniert auch mit Laptop-Tastatur | ok (2026-11-07) |
 
 ## Level-Editor
 
 | Nr. | Schritt | Erwartet | Ergebnis |
 |---|---|---|---|
-| 6.1 | Level bauen, speichern, spielen | Erscheint unter «Meine Levels» | |
+| 6.1 | Level bauen, speichern, spielen | Erscheint unter «Meine Levels» | ok (2026-11-07) |
 | 6.2 | Neu laden | Level ist noch da, Held und Name sind zurückgesetzt | |
-| 6.3 | Level exportieren | Download erlaubt? Datei liegt im Download-Ordner | |
-| 6.4 | Level löschen, Datei importieren | Level ist wieder da | |
+| 6.3 | Level exportieren | Download erlaubt? Datei liegt im Download-Ordner | ok (2026-11-07) |
+| 6.4 | Level löschen, Datei importieren | Level ist wieder da | ok (2026-11-07) |
 | 6.5 | Im Editor mit ungespeicherten Änderungen den Zurück-Knopf des Browsers drücken | Rückfrage oder bekanntes Verhalten notieren | |
 | 6.6 | 20×20-Level, schnell auf Felder klicken | Kein spürbares Warten (Ziel: Anzeige in 200 ms) | |
 
@@ -128,7 +128,7 @@ Den Rest bitte auf dem Weg ausführen, der am Zukunftstag gilt.
 | Frage | Antwort |
 |---|---|
 | Darf `Start.bat` laufen (PowerShell mit lokalem Server auf `localhost`)? | |
-| Ist `ramonafrick.github.io` aus dem Firmennetz erreichbar? | |
+| Ist `ramonafrick.github.io` aus dem Firmennetz erreichbar? | Ja (2026-11-07) |
 | Sind Downloads für den Export erlaubt? | |
 | Dürfen Web-Apps installiert werden und darf die Seite einen Service Worker (Offline-Speicher) nutzen (Weg 3)? | |
 
@@ -144,7 +144,7 @@ Den Rest bitte auf dem Weg ausführen, der am Zukunftstag gilt.
 
 | Nr. | Beschreibung | Schwere (muss / soll / kann) | Entscheid |
 |---|---|---|---|
-| | | | |
+| F1 | Auf einem Handy im Hochformat wirkt die Seite unschön. Nur das Spielfeld passt sich an, die Knöpfe nicht. Getestet am 2026-11-07 | kann | Handy und Hochformat gehören nicht zu M6 (`requirements.md`, «Out of Scope»: Touch und MAUI in M7), am Zukunftstag laufen Laptops. Vorschlag: als Anforderung für M7 aufnehmen |
 
 ## Entscheide nach dem Probelauf
 
